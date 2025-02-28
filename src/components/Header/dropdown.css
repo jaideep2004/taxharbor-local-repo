@@ -1,0 +1,13 @@
+/* Base styles that enhance or override sx props if needed */
+.dropdown-menu {
+	transition: all 0.2s ease; /* Smooth appearance */
+}
+
+/* Ensure links remain consistent */
+.dropdown-link {
+	color: var(--primary) !important;
+	text-decoration: none !important;
+	font-weight: 600;
+}
+
+/* Remove unused or conflicting styles */

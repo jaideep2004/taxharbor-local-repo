@@ -1,0 +1,157 @@
+html {
+	overflow-x: hidden;
+}
+
+body {
+	font-family: "Poppins", sans-serif;
+	padding: 0;
+	margin: 0;
+	overflow-x: hidden;
+}
+
+.tax-header.scrolled {
+	background-color: white;
+	a {
+		color: var(--primary);
+	}
+	div {
+		color: var(--primary) !important;
+		span {
+			color: var(--primary) !important;
+		}
+	}
+}
+
+.tax-header {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	transition: background-color 0.3s ease, box-shadow 0.3s ease;
+	background-position: top center;
+	background-repeat: no-repeat;
+	background-size: cover;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 999;
+}
+
+.tax-header-wrap {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 4%; /* Relative padding */
+	width: 100%;
+	max-width: 1300px; /* Cap width for large screens */
+	margin: 0 auto;
+	a {
+		text-decoration: none;
+	}
+}
+
+.tax-logo {
+	border-radius: 20px;
+	overflow: hidden;
+	div {
+		font-size: clamp(1.5rem, 4vw, 2.2rem); /* Scales logo size */
+		font-weight: 700;
+		display: flex;
+		align-items: center;
+		padding: 0.5rem 0.75rem;
+		transition: all 0.3s ease;
+		span {
+			color: var(--secondary);
+		}
+		i {
+			margin-right: 0.3rem;
+		}
+	}
+}
+
+.tax-nav-wrap {
+	flex: 1; /* Allows nav to take available space */
+	display: flex;
+	justify-content: center;
+}
+
+.tax-top-nav {
+	display: flex;
+	align-items: center;
+	gap: clamp(1rem, 2vw, 2rem); /* Responsive gap */
+	a {
+		font-size: clamp(0.9rem, 2vw, 1.1rem); /* Responsive font size */
+		text-decoration: none;
+		color: var(--secondary);
+		padding: 0.5rem 0.75rem;
+		border-radius: 7px;
+		transition: all 0.3s ease;
+		white-space: nowrap; /* Prevents text wrapping */
+		&:hover {
+			background-color: var(--background);
+			color: var(--primary) !important;
+		}
+		i {
+			margin-left: 0.3rem;
+		}
+	}
+}
+
+.tax-top-nav .active {
+	background-color: var(--background);
+	color: var(--primary) !important;
+}
+
+.tax-header-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	button {
+		border-radius: 5px;
+		color: var(--secondary);
+		font-size: clamp(0.9rem, 2vw, 1rem);
+		border: none;
+		outline: none;
+		padding: 0.8rem 1.5rem;
+		background-color: var(--primary);
+		border: 1px solid var(--accent);
+		cursor: pointer;
+		transition: all 0.3s ease;
+		&:hover {
+			background-color: var(--accent);
+		}
+	}
+}
+
+/* Media Queries */
+@media only screen and (max-width: 1024px) {
+	.tax-header-wrap {
+		padding: 1rem 2%; /* Reduce padding on tablets */
+	}
+	.tax-nav-wrap {
+		flex: 0; /* Prevent overflow */
+	}
+}
+
+@media only screen and (max-width: 768px) {
+	/* Existing styles for other sections moved here for clarity */
+	.tax-section7-wrap,
+	.tax-section6wrap,
+	.tax9sliderwrap,
+	.tax-section8-wrap,
+	.tax-section11-wrap {
+		flex-direction: column;
+	}
+	.tax9sliderwrap {
+		width: 100%;
+	}
+	.slidercont {
+		max-width: 100%; /* Full width on mobile */
+	}
+	.tax-section8-right2 {
+		order: 1;
+	}
+	.tax-section9test-wrap {
+		width: auto;
+	}
+}

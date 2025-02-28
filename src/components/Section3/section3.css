@@ -1,0 +1,137 @@
+#tax-section3 {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	color: var(--primary);
+	h1 {
+		font-size: 43px;
+		color: var(--primary);
+	}
+	background-color: var(--background);
+	padding: 70px 0px;
+}
+
+.tax-section3-wrap {
+	display: flex;
+	align-items: start;
+	justify-content: center;
+	padding: 50px 20px;
+	gap: 35px;
+	flex-wrap: wrap;
+}
+
+.tax-section3-card {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 600px;
+	img {
+		width: 300px;
+		height: 300px;
+		border-top-left-radius: 30px;
+		border-bottom-left-radius: 30px;
+	}
+}
+
+.tax3-card-desc {
+	padding: 40px 20px;
+	gap: 15px;
+	display: flex;
+	flex-direction: column;
+	align-items: start;
+	justify-content: center;
+	background-color: var(--secondary);
+	a {
+		text-decoration: none;
+		color: var(--secondary);
+		background-color: var(--primary);
+		padding: 13px 30px;
+		border-radius: 10px;
+		border: 2px solid var(--primary);
+		transition: all 0.3s ease;
+		i {
+			color: var(--secondary);
+			margin-left: 5px;
+		}
+		&:hover {
+			color: var(--primary);
+			background-color: var(--secondary);
+			i {
+				transition: all 0.3s ease;
+				color: var(--primary);
+				transform: translateX(10px);
+			}
+		}
+	}
+	p {
+		color: var(--primary) !important;
+	}
+}
+
+/* Custom CSS for rotating an element upwards */
+.rotate-up {
+	opacity: 0;
+	transform: rotate(90deg);
+	transition: opacity 1s ease, transform 2s ease;
+}
+
+.rotate-up.aos-animate {
+	opacity: 1;
+	transform: rotate(0deg);
+}
+
+.rotate-up2 {
+	opacity: 0;
+	transform: rotate(-90deg);
+	transition: opacity 1s ease, transform 2s ease;
+}
+
+.rotate-up2.aos-animate {
+	opacity: 1;
+	transform: rotate(-180deg);
+}
+
+/* Mobile Responsiveness (below 768px) */
+@media only screen and (max-width: 768px) {
+	#tax-section3 {
+		padding: 40px 0; /* Reduce vertical padding */
+	}
+
+	.tax-section3-wrap {
+		flex-direction: column; /* Stack cards vertically */
+		align-items: center;
+		padding: 20px 10px; /* Reduce padding */
+		gap: 20px; /* Smaller gap between cards */
+	}
+
+	.tax-section3-card {
+		flex-direction: column; /* Stack image and description vertically */
+		max-width: 90%; /* Full width on mobile */
+		img {
+			width: 100%; /* Scale image to container width */
+			height: auto; /* Maintain aspect ratio */
+			border-radius: 30px 30px 0 0; /* Adjust border radius for top-only */
+		}
+	}
+
+	.tax3-card-desc {
+		padding: 20px; /* Reduce padding */
+		align-items: center; /* Center content */
+		text-align: center;
+		h2 {
+			font-size: 1.25rem; /* Smaller heading (20px) */
+		}
+		p {
+			font-size: 0.9rem; /* Smaller paragraph (14px) */
+		}
+		a {
+			padding: 10px 20px; /* Smaller button */
+			font-size: 0.9rem; /* Smaller text */
+		}
+	}
+
+	#tax-section3 h1 {
+		font-size: clamp(1.5rem, 6vw, 2.5rem); /* Scale down from 43px */
+	}
+}
