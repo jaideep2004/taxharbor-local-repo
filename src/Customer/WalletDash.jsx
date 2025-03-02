@@ -266,6 +266,12 @@ const WalletDash = () => {
 		);
 	}
 
+	const formatDate = (dateStr) => {
+		const date = new Date(dateStr);
+		const options = { day: "2-digit", month: "short", year: "numeric" };
+		return date.toLocaleDateString("en-GB", options).replace(/ /g, " ");
+	};
+
 	return (
 		<Container maxWidth='lg'>
 			<Grid container spacing={3}>
@@ -364,9 +370,9 @@ const WalletDash = () => {
 										</ListItemIcon>
 										<ListItemText
 											primary={transaction.description}
-											secondary={new Date(
-												transaction.createdAt
-											).toLocaleDateString()}
+											secondary={formatDate(
+												new Date(transaction.createdAt).toLocaleDateString()
+											)}
 										/>
 									</ListItem>
 								))}
@@ -433,9 +439,9 @@ const WalletDash = () => {
 										}>
 										<ListItemText
 											primary={`₹${request.amount}`}
-											secondary={new Date(
-												request.createdAt
-											).toLocaleDateString()}
+											secondary={formatDate(
+												new Date(request.createdAt).toLocaleDateString()
+											)}
 										/>
 									</ListItem>
 								))}
@@ -469,7 +475,9 @@ const WalletDash = () => {
 															variant='caption'
 															color='text.secondary'>
 															Joined{" "}
-															{new Date(user.joinedAt).toLocaleDateString()}
+															{formatDate(
+																new Date(user.joinedAt).toLocaleDateString()
+															)}
 														</Typography>
 													</Box>
 												</Stack>

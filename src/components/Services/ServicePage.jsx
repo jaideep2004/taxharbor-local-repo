@@ -427,7 +427,7 @@ const ServicePage = () => {
 						</Grid>
 					</Container>
 
-					<Container sx={{ py: 8 }}>
+					<Container sx={{ pt: 8, pb: 2 }}>
 						<Grid container spacing={4} id='service-pg-cards'>
 							{service?.packages?.map((pkg, index) => (
 								<Grid item xs={12} sm={4} key={index}>
@@ -496,6 +496,7 @@ const ServicePage = () => {
 						style={{
 							backgroundImage:
 								"url('https://gtkit.rometheme.pro/gaudit/wp-content/uploads/sites/20/2023/03/Service-Detail-Image.jpg')",
+							marginTop: "0px",
 						}}>
 						<Typography variant='h3'>
 							Having Trouble Managing Your Finances?

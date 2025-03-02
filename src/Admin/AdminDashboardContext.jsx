@@ -243,63 +243,6 @@ const AdminDashboardProvider = ({ children }) => {
 		setIsAuthenticated(false); // Update authentication state
 	};
 
-	// const handleCreateService = async () => {
-	// 	setLoading(true);
-	// 	const {
-	// 		category,
-	// 		name,
-	// 		description,
-	// 		hsncode,
-	// 		packages,
-	// 		requiredDocuments,
-	// 	} = newService;
-
-	// 	if (!category || !name || !description || !hsncode || !packages?.length) {
-	// 		showNotification(
-	// 			"Please fill in all required fields and add at least one package.",
-	// 			"error"
-	// 		);
-	// 		setLoading(false);
-	// 		return;
-	// 	}
-
-	// 	try {
-	// 		const token = localStorage.getItem("adminToken");
-	// 		const { data } = await axios.post(
-	// 			"http://localhost:8000/api/admin/services",
-	// 			{
-	// 				category,
-	// 				name,
-	// 				description,
-	// 				hsncode,
-	// 				packages,
-	// 				requiredDocuments,
-	// 			},
-	// 			{ headers: { Authorization: `Bearer ${token}` } }
-	// 		);
-	// 		setServices((prevServices) => [...prevServices, data.service]);
-	// 		showNotification("Service created successfully", "success", "admin");
-	// 		setLoading(false);
-	// 		setServicesCount(services.length);
-	// 		fetchDashboardData();
-	// 		setNewService({
-	// 			category: "",
-	// 			name: "",
-	// 			description: "",
-	// 			hsncode: "",
-	// 			packages: [],
-	// 			requiredDocuments: [],
-	// 		});
-	// 	} catch (err) {
-	// 		showNotification(
-	// 			err.response?.data?.message || "Error creating service.",
-	// 			"error",
-	// 			"admin"
-	// 		);
-	// 		setLoading(false);
-	// 	}
-	// };
-
 	const handleCreateService = async () => {
 		setLoading(true);
 		const {
@@ -403,70 +346,6 @@ const AdminDashboardProvider = ({ children }) => {
 			setLoading(false);
 		}
 	};
-
-	// const handleCreateEmployee = async () => {
-	// 	setLoading(true);
-	// 	const {
-	// 		name,
-	// 		email,
-	// 		serviceId,
-	// 		username,
-	// 		password,
-	// 		Lminus1code,
-	// 		L1EmpCode,
-	// 	} = newEmployee;
-
-	// 	// Validate required fields
-	// 	if (
-	// 		!name ||
-	// 		!email ||
-	// 		!serviceId ||
-	// 		!username ||
-	// 		!password ||
-	// 		!Lminus1code ||
-	// 		!L1EmpCode
-	// 	) {
-	// 		showNotification("Please provide all fields", "error");
-	// 		setLoading(false);
-	// 		return;
-	// 	}
-
-	// 	try {
-	// 		const token = localStorage.getItem("adminToken");
-	// 		const { data } = await axios.post(
-	// 			"http://localhost:8000/api/admin/employee",
-	// 			{
-	// 				name,
-	// 				email,
-	// 				role: "employee",
-	// 				serviceId,
-	// 				username,
-	// 				password,
-	// 				Lminus1code,
-	// 				L1EmpCode,
-	// 			},
-	// 			{ headers: { Authorization: `Bearer ${token}` } }
-	// 		);
-
-	// 		setUsers((prevUsers) => [...prevUsers, data.employee]);
-	// 		showNotification("Employee created successfully.", "success");
-	// 		setLoading(false);
-	// 		fetchDashboardData();
-	// 		setNewEmployee({
-	// 			name: "",
-	// 			email: "",
-	// 			serviceId: "",
-	// 			username: "",
-	// 			password: "",
-	// 			Lminus1code: "",
-	// 			L1EmpCode: "",
-	// 		});
-	// 	} catch (err) {
-	// 		showNotification("Error creating employee.", "error");
-	// 		setLoading(false);
-	// 		console.error("Error creating employee:", err);
-	// 	}
-	// };
 
 	const handleCreateEmployee = async () => {
 		setLoading(true);

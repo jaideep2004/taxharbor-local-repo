@@ -276,32 +276,120 @@ const ManagersSection = () => {
 		saveAs(blob, "managers_detailed.csv");
 	};
 	const handleDownloadPDF = () => {
-		const doc = new jsPDF();
+		const doc = new jsPDF("landscape", "pt", "a3"); // Use landscape for more columns
+
+		// Define table columns matching CSV fields
 		const tableColumn = [
-			"ID",
-			"Name",
-			"Email",
-			"Assigned Employees",
-			"Total Managed Customers",
-			"Status",
+			"Emp Code",
+			"Full Name",
+			"Email ID",
+			"Username",
+			"Phone",
+			"DOB",
+			"Gender",
+			"L1 Code",
+			"L1 Name",
+			"L2 Code",
+			"L2 Name",
+			"Dept Name",
+			"Designation",
+			"Emp Status",
+			"Join Date",
+			"PAN",
+			"TAN",
+			"GSTIN",
+			"Address",
+			"City",
+			"State",
+			"Country",
+			"Postal",
+			"Education",
+			"University",
+			"Pass Date",
+			"Experience",
+			"Prev Org",
+			"Prev From",
+			"Prev To",
+			"Reason",
+			"Bank Acc",
+			"Acc Holder",
+			"Bank Name",
+			"IFSC",
+			"Acc Type",
+			"Employees",
+			"Created",
+			"Updated",
 		];
+
+		// Prepare table rows with matching CSV data
 		const tableRows = managers.map((manager) => [
 			manager._id,
 			manager.name,
 			manager.email,
+			manager.username || "-",
+			manager.phoneNumber || "-",
+			formatDate(manager.dob),
+			manager.gender || "-",
+			manager.L1EmpCode || "-",
+			manager.L1Name || "-",
+			manager.L2EmpCode || "-",
+			manager.L2Name || "-",
+			manager.departmentName || "-",
+			manager.designation || "-",
+			manager.employeeStatus || "-",
+			formatDate(manager.dateOfJoining),
+			manager.pan || "-",
+			manager.tan || "-",
+			manager.gst || "-",
+			manager.fulladdress || manager.address || "-",
+			manager.city || "-",
+			manager.state || "-",
+			manager.country || "-",
+			manager.postalCode || "-",
+			manager.educationQualification || manager.education || "-",
+			manager.university || "-",
+			formatDate(manager.passingMonthYear),
+			manager.totalExperience || "-",
+			manager.previousOrganization || "-",
+			formatDate(manager.previousOrgFromDate),
+			formatDate(manager.previousOrgToDate),
+			manager.reasonForLeaving || "-",
+			manager.bankDetails?.accountNumber || "-",
+			manager.bankDetails?.accountHolderName || "-",
+			manager.bankDetails?.bankName || "-",
+			manager.bankDetails?.ifscCode || "-",
+			manager.bankDetails?.accountType || "-",
 			manager.assignedEmployees?.length || 0,
-			manager.assignedEmployees?.reduce((acc, employeeId) => {
-				const employee = users.find((user) => user._id === employeeId);
-				return acc + (employee?.assignedCustomers?.length || 0);
-			}, 0) || 0,
-			manager.isActive ? "Active" : "Inactive",
+			formatDate(manager.createdAt),
+			formatDate(manager.updatedAt),
 		]);
 
-		doc.text("Managers Data", 14, 15);
+		// Add title
+		doc.text("Managers Detailed Report", 14, 15);
+
+		// Configure and generate the table
 		doc.autoTable({
 			head: [tableColumn],
 			body: tableRows,
 			startY: 20,
+			styles: {
+				fontSize: 6, // Reduce font size to fit more columns
+				cellPadding: 1,
+				overflow: "linebreak",
+			},
+			columnStyles: {
+				0: { cellWidth: 15 }, // Employee Code
+				1: { cellWidth: 15 }, // Full Name
+				2: { cellWidth: 20 }, // Email ID
+				// Add more specific widths if needed
+			},
+			margin: { top: 20, left: 5, right: 5 },
+			theme: "grid",
+			headStyles: {
+				fillColor: [41, 128, 185],
+				textColor: 255,
+				fontSize: 7,
+			},
 		});
 
 		doc.save("managers_detailed.pdf");

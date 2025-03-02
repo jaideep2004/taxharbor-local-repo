@@ -122,7 +122,7 @@ const ServicesSection = () => {
 	};
 
 	const handleDownloadPDF = () => {
-		const doc = new jsPDF();
+		const doc = new jsPDF("landscape", "pt", "a3");
 		const tableColumn = [
 			"ID",
 			"Service Date",

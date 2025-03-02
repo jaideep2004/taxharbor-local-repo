@@ -126,38 +126,93 @@ const Orders = () => {
 	};
 
 	const handleDownloadPDF = () => {
-		const doc = new jsPDF({
-			orientation: "landscape",
-			unit: "in",
-			format: [4, 2],
-		});
+		const doc = new jsPDF("landscape", "pt", "a3"); // Use landscape for more columns
 
+		// Define table columns matching CSV fields
 		const tableColumn = [
 			"Order ID",
 			"Order Date",
-			"Customer Name",
-			"Service Name",
-			"Total Value",
+			"Cust ID",
+			"Cust Name",
+			"Cust Email",
+			"Cust Mobile",
+			"Emp Code",
+			"Emp Name",
+			"L1 Code",
+			"L1 Name",
+			"Service",
+			"Price",
+			"Discounts",
+			"IGST",
+			"CGST",
+			"SGST",
+			"Total",
 			"Status",
+			"Comp Date",
+			"Days Delay",
+			"Pay Status",
+			"Rating",
+			"Pay Method",
 		];
 
+		// Prepare table rows with matching CSV data
 		const tableRows = filteredOrders.map((order) => [
 			order["Order ID"],
 			formatDate(order["Order Date"]),
+			order["Customer ID"],
 			order["Customer Name"],
+			order["Customer Email"],
+			order["Customer Mobile Number"],
+			order["Employee Code"],
+			order["Employee Assigned"],
+			order["Employee Code"],
+			order["Employee Assigned"],
 			order["Service Name"],
+			formatCurrency(order["Service Price"]),
+			formatCurrency(order["Discounts"]),
+			formatCurrency(order["IGST Amount"]),
+			formatCurrency(order["CGST Amount"]),
+			formatCurrency(order["SGST Amount"]),
 			formatCurrency(order["Total Order Value"]),
 			order["Order Status"],
+			formatDate(order["Order Date"]),
+			order["Days Delayed"] || 0,
+			order["Payment Status"],
+			order["Rating"] || "N/A",
+			order["Payment Method"] || "N/A",
 		]);
 
-		doc.text("Orders Report", 14, 15);
+		// Add title
+		doc.text("Orders Detailed Report", 14, 15);
+
+		// Configure and generate the table
 		doc.autoTable({
 			head: [tableColumn],
 			body: tableRows,
 			startY: 20,
+			styles: {
+				fontSize: 6, // Reduce font size to fit more columns
+				cellPadding: 1,
+				overflow: "linebreak",
+			},
+			columnStyles: {
+				0: { cellWidth: 15 }, // Order ID
+				1: { cellWidth: 15 }, // Order Date
+				2: { cellWidth: 15 }, // Customer ID
+				3: { cellWidth: 20 }, // Customer Name
+				4: { cellWidth: 25 }, // Customer Email
+				// Add more specific widths if needed
+			},
+			margin: { top: 20, left: 5, right: 5 },
+			theme: "grid",
+			headStyles: {
+				fillColor: [41, 128, 185],
+				textColor: 255,
+				fontSize: 7,
+			},
 		});
 
-		doc.save("orders.pdf");
+		doc.save("orders_detailed.pdf");
 	};
 
 	const clearAllFilters = () => {

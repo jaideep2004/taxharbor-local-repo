@@ -307,31 +307,158 @@ const EmployeesSection = () => {
 		saveAs(blob, "employees_detailed.csv");
 	};
 
+	// const handleDownloadPDF = () => {
+	// 	const doc = new jsPDF();
+	// 	const tableColumn = [
+	// 		"ID",
+	// 		"Name",
+	// 		"Email",
+	// 		"Service",
+	// 		"Assigned Customers",
+	// 		"Status",
+	// 	];
+	// 	const tableRows = employees.map((employee) => [
+	// 		employee._id,
+	// 		employee.name,
+	// 		employee.email,
+	// 		services.find((service) => service._id === employee.serviceId)?.name ||
+	// 			"No service assigned",
+	// 		employee.assignedCustomers?.length || 0,
+	// 		employee.isActive ? "Active" : "Inactive",
+	// 	]);
+
+	// 	doc.text("Employee Data", 14, 15);
+	// 	doc.autoTable({
+	// 		head: [tableColumn],
+	// 		body: tableRows,
+	// 		startY: 20,
+	// 	});
+
+	// 	doc.save("employees_detailed.pdf");
+	// };
 	const handleDownloadPDF = () => {
-		const doc = new jsPDF();
+		const doc = new jsPDF("landscape", "pt", "a3"); // Use landscape for more columns
+
+		// Define table columns matching CSV fields
 		const tableColumn = [
-			"ID",
-			"Name",
-			"Email",
-			"Service",
-			"Assigned Customers",
-			"Status",
+			"Employee Code",
+			"Full Name",
+			"Email ID",
+			"Username",
+			"Phone Number",
+			"Date of Birth",
+			"Gender",
+			"L1 Emp Code",
+			"L1 Name",
+			"L2 Emp Code",
+			"L2 Name",
+			"Dept Name",
+			"Position Code",
+			"Position Desc",
+			"Designation",
+			"Emp Status",
+			"Joining Date",
+			"PAN",
+			"TAN",
+			"GSTIN",
+			"Address",
+			"City",
+			"State",
+			"Country",
+			"Postal Code",
+			"Education",
+			"University",
+			"Passing Date",
+			"Experience",
+			"Prev Org",
+			"Prev From",
+			"Prev To",
+			"Reason",
+			"Bank Acc",
+			"Acc Holder",
+			"Bank Name",
+			"IFSC",
+			"Acc Type",
+			"Services",
+			"Customers",
+			"Download",
+			"Created At",
+			"Last Updated",
 		];
+
+		// Prepare table rows with matching CSV data
 		const tableRows = employees.map((employee) => [
 			employee._id,
 			employee.name,
 			employee.email,
-			services.find((service) => service._id === employee.serviceId)?.name ||
-				"No service assigned",
+			employee.username || "-",
+			employee.phoneNumber || "-",
+			formatDate(employee.dob),
+			employee.gender || "-",
+			employee.L1EmpCode || "-",
+			employee.L1Name || "-",
+			employee.L2EmpCode || "-",
+			employee.L2Name || "-",
+			employee.departmentName || "-",
+			employee.positionCode || "-",
+			employee.positionDescription || "-",
+			employee.designation || "-",
+			employee.employeeStatus || "-",
+			formatDate(employee.dateOfJoining),
+			employee.pan || "-",
+			employee.tan || "-",
+			employee.gst || "-",
+			employee.fulladdress || employee.address || "-",
+			employee.city || "-",
+			employee.state || "-",
+			employee.country || "-",
+			employee.postalCode || "-",
+			employee.educationQualification || employee.education || "-",
+			employee.university || "-",
+			formatDate(employee.passingMonthYear),
+			employee.totalExperience || "-",
+			employee.previousOrganization || "-",
+			formatDate(employee.previousOrgFromDate),
+			formatDate(employee.previousOrgToDate),
+			employee.reasonForLeaving || "-",
+			employee.bankDetails?.accountNumber || "-",
+			employee.bankDetails?.accountHolderName || "-",
+			employee.bankDetails?.bankName || "-",
+			employee.bankDetails?.ifscCode || "-",
+			employee.bankDetails?.accountType || "-",
+			employee.servicesHandled?.length || "No services handled",
 			employee.assignedCustomers?.length || 0,
-			employee.isActive ? "Active" : "Inactive",
+			employee.downloadAccess ? "Yes" : "No",
+			formatDate(employee.createdAt),
+			formatDate(employee.updatedAt),
 		]);
 
-		doc.text("Employee Data", 14, 15);
+		// Add title
+		doc.text("Employee Detailed Report", 14, 15);
+
+		// Configure and generate the table
 		doc.autoTable({
 			head: [tableColumn],
 			body: tableRows,
 			startY: 20,
+			styles: {
+				fontSize: 6, // Reduce font size to fit more columns
+				cellPadding: 1,
+				overflow: "linebreak",
+			},
+			columnStyles: {
+				0: { cellWidth: 15 }, // Employee Code
+				1: { cellWidth: 15 }, // Full Name
+				2: { cellWidth: 20 }, // Email ID
+				// Add more specific widths if needed
+			},
+			margin: { top: 20, left: 5, right: 5 },
+			theme: "grid",
+			headStyles: {
+				fillColor: [41, 128, 185],
+				textColor: 255,
+				fontSize: 7,
+			},
 		});
 
 		doc.save("employees_detailed.pdf");

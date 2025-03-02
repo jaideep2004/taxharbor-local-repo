@@ -346,6 +346,10 @@
 	}
 
 	.service-form {
+		h1 {
+			font-size: 34px;
+			text-align: center;
+		}
 		padding: 20px;
 		input {
 			min-width: 0; /* Fit screen */
@@ -361,6 +365,7 @@
 		.sform-div {
 			flex-direction: column; /* Stack form fields */
 			gap: 15px;
+			width: 100%;
 		}
 	}
 
