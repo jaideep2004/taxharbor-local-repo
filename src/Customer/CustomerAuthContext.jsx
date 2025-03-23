@@ -85,7 +85,7 @@ export const CustomerAuthProvider = ({ children }) => {
 
 		try {
 			const { data } = await axios.post(
-				"http://localhost:8000/api/customers/user-login",
+				"https://195-35-45-82.sslip.io:8000/api/customers/user-login",
 				{ email, password }
 			);
 
@@ -123,7 +123,7 @@ export const CustomerAuthProvider = ({ children }) => {
 		try {
 			setLoading(true);
 			const { data } = await axios.get(
-				"http://localhost:8000/api/customers/cdashboard",
+				"https://195-35-45-82.sslip.io:8000/api/customers/cdashboard",
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);
 
@@ -176,7 +176,7 @@ export const CustomerAuthProvider = ({ children }) => {
 	const fetchServiceAndEmployeeMaps = async (token) => {
 		try {
 			const serviceResponse = await axios.get(
-				"http://localhost:8000/api/customers/user-services",
+				"https://195-35-45-82.sslip.io:8000/api/customers/user-services",
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);
 
@@ -220,7 +220,7 @@ export const CustomerAuthProvider = ({ children }) => {
 
 		try {
 			const { data } = await axios.get(
-				"http://localhost:8000/api/customers/user-services",
+				"https://195-35-45-82.sslip.io:8000/api/customers/user-services",
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);
 			return data.services || [];
@@ -252,7 +252,7 @@ export const CustomerAuthProvider = ({ children }) => {
 
 		try {
 			const { data } = await axios.post(
-				"http://localhost:8000/api/customers/upload-documents",
+				"https://195-35-45-82.sslip.io:8000/api/customers/upload-documents",
 				formData,
 				{
 					headers: {
@@ -281,7 +281,7 @@ export const CustomerAuthProvider = ({ children }) => {
 	const fetchQueries = async () => {
 		try {
 			const response = await axios.get(
-				"http://localhost:8000/api/customers/queries",
+				"https://195-35-45-82.sslip.io:8000/api/customers/queries",
 				{
 					headers: {
 						Authorization: `Bearer ${localStorage.getItem("customerToken")}`,
@@ -311,7 +311,7 @@ export const CustomerAuthProvider = ({ children }) => {
 	const sendQuery = async (formData) => {
 		try {
 			const response = await axios.post(
-				"http://localhost:8000/api/customers/sendQuery",
+				"https://195-35-45-82.sslip.io:8000/api/customers/sendQuery",
 				formData,
 				{
 					headers: {
@@ -342,7 +342,7 @@ export const CustomerAuthProvider = ({ children }) => {
 	const fetchWalletDetails = async () => {
 		try {
 			const response = await axios.get(
-				"http://localhost:8000/api/customers/wallet",
+				"https://195-35-45-82.sslip.io:8000/api/customers/wallet",
 				{
 					headers: {
 						Authorization: `Bearer ${localStorage.getItem("customerToken")}`,
@@ -360,7 +360,7 @@ export const CustomerAuthProvider = ({ children }) => {
 	const requestWithdrawal = async (amount) => {
 		try {
 			const response = await axios.post(
-				"http://localhost:8000/api/customers/wallet/withdraw",
+				"https://195-35-45-82.sslip.io:8000/api/customers/wallet/withdraw",
 				{ amount },
 				{
 					headers: {
@@ -388,7 +388,7 @@ export const CustomerAuthProvider = ({ children }) => {
 	const fetchReferralStats = async () => {
 		try {
 			const response = await axios.get(
-				"http://localhost:8000/api/customers/wallet/referral/stats",
+				"https://195-35-45-82.sslip.io:8000/api/customers/wallet/referral/stats",
 				{
 					headers: {
 						Authorization: `Bearer ${localStorage.getItem("customerToken")}`,
@@ -423,7 +423,7 @@ export const CustomerAuthProvider = ({ children }) => {
 				return;
 			}
 			const response = await axios.get(
-				"http://localhost:8000/api/messages",
+				"https://195-35-45-82.sslip.io:8000/api/messages",
 				{
 					headers: { Authorization: `Bearer ${token}` },
 				}
@@ -489,7 +489,7 @@ export const CustomerAuthProvider = ({ children }) => {
 
 					try {
 						const { data } = await axios.put(
-							"http://localhost:8000/api/customers/update-profile",
+							"https://195-35-45-82.sslip.io:8000/api/customers/update-profile",
 							formData,
 							{ headers: { Authorization: `Bearer ${token}` } }
 						);

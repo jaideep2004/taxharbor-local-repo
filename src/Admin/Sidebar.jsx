@@ -10,6 +10,7 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
 		"Managers",
 		"Employees",
 		"Orders",
+		"Leads",
 		"Message Center",
 		"Withdrawal Requests",
 	];

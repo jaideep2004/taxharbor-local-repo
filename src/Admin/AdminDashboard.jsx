@@ -8,6 +8,7 @@ import EmployeesSection from "./EmployeesSection";
 import UsersSection from "./UsersSection";
 import ManagersSection from "./ManagersSection";
 import AdminMessageCenter from "./AdminMessageCenter";
+import LeadsSection from "./LeadsSection";
 import "./admin.css";
 import { AdminDashboardContext } from "./AdminDashboardContext";
 import { useNotification } from "../NotificationContext";
@@ -165,6 +166,7 @@ const AdminDashboard = () => {
 						/>
 					)}
 					{activeSection === "Orders" && <Orders />}
+					{activeSection === "Leads" && <LeadsSection />}
 					{activeSection === "Message Center" && <AdminMessageCenter />}
 					{activeSection === "Withdrawal Requests" && <WalletTransactions />}
 				</div>

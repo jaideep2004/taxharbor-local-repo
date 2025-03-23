@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import axios from "../Admin/utils/axiosConfig";
 import ServiceProgress from "./ServiceProgress";
 import { useNotification } from "../NotificationContext";
+import { useNavigate } from "react-router-dom";
 
 const CDashSection = () => {
 	const {
@@ -18,6 +19,7 @@ const CDashSection = () => {
 	const sliderRef = useRef(null);
 
 	const { showNotification, setCurrentPage } = useNotification();
+	const navigate = useNavigate();
 
 	useEffect(() => {
 		setCurrentPage("customer");
@@ -120,23 +122,90 @@ const CDashSection = () => {
 						<div key={index} className='service-card'>
 							<h3>{service.name}</h3>
 							<p>{service.description}</p>
-							<p className='service-price'>Price: ₹{service.actualPrice}</p>
+							<p>
+								<strong>Price:</strong> ₹{service.salePrice}{" "}
+								<span className='original-price'>₹{service.actualPrice}</span>
+							</p>
+							{service.packages && service.packages.length > 0 ? (
+								<div className="package-options">
+									<p><strong>Available Packages:</strong></p>
+									<select className="package-select">
+										{service.packages.map((pkg, i) => (
+											<option key={i} value={pkg.name}>
+												{pkg.name} - ₹{pkg.salePrice}
+											</option>
+										))}
+									</select>
+								</div>
+							) : null}
 							<button
-								onClick={() => handleServicePurchase(service)}
-								className='buy-button'>
-								Buy Now
+								className='buy-service-btn'
+								onClick={() => handleServicePurchase(service)}>
+								Purchase
 							</button>
 						</div>
 					))}
 				</div>
-				<div className='slider-controls'>
-					<button className='slider-button' onClick={() => scroll("left")}>
-						<ChevronLeft />
-					</button>
-					<button className='slider-button' onClick={() => scroll("right")}>
-						<ChevronRight />
-					</button>
-				</div>
+				<button className='scroll-btn left' onClick={() => scroll("left")}>
+					&lt;
+				</button>
+				<button className='scroll-btn right' onClick={() => scroll("right")}>
+					&gt;
+				</button>
+			</div>
+
+			<div className='active-services-container'>
+				<h2>Your Active Services</h2>
+				{services.length === 0 ? (
+					<p>No active services found. Purchase a service to get started.</p>
+				) : (
+					<div className='active-services-grid'>
+						{services.map((service, index) => {
+							const serviceInfo = allServices.find(
+								(s) => s._id === service.serviceId
+							);
+							return (
+								<div key={index} className='active-service-card'>
+									<div className='service-header'>
+										<h3>{serviceInfo?.name}</h3>
+										<span className={`status-badge ${service.status.toLowerCase().replace(/\s+/g, '-')}`}>
+											{service.status}
+										</span>
+									</div>
+									{service.packageName && (
+										<p className="package-info">
+											<strong>Package:</strong> {service.packageName}
+										</p>
+									)}
+									<p>
+										<strong>Order ID:</strong> {service.orderId}
+									</p>
+									<p>
+										<strong>Processing Days:</strong> {service.processingDays || "7"} days
+									</p>
+									<p>
+										<strong>Due Date:</strong>{" "}
+										{service.dueDate
+											? new Date(service.dueDate).toLocaleDateString()
+											: "Not set"}
+									</p>
+									<p>
+										<strong>Assigned To:</strong>{" "}
+										{service.employeeId ? "Yes" : "Not assigned yet"}
+									</p>
+									<div className='service-actions'>
+										<button
+											onClick={() =>
+												navigate(`/customers/service/${service.serviceId}`)
+											}>
+											View Details
+										</button>
+									</div>
+								</div>
+							);
+						})}
+					</div>
+				)}
 			</div>
 		</div>
 	);

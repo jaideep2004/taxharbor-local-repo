@@ -50,7 +50,7 @@ const WalletTransactions = () => {
 			setLoading(true);
 			const token = localStorage.getItem("adminToken");
 			const response = await axios.get(
-				"https://195-35-45-82.sslip.io:8000/api/admin/withdrawal-requests",
+				"http://localhost:8000/api/admin/withdrawal-requests",
 				{
 					headers: { Authorization: `Bearer ${token}` },
 				}
@@ -80,7 +80,7 @@ const WalletTransactions = () => {
 		try {
 			const token = localStorage.getItem("adminToken");
 			await axios.post(
-				"https://195-35-45-82.sslip.io:8000/api/admin/approve-withdrawal",
+				"http://localhost:8000/api/admin/approve-withdrawal",
 				{
 					requestId: selectedRequest._id,
 					userId: selectedRequest.userId,

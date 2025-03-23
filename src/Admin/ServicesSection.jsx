@@ -8,6 +8,13 @@ import "jspdf-autotable";
 import DocumentRequirements from "./DocumentRequirements";
 import Orders from "./Orders";
 
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+
 const ServicesSection = () => {
 	const [showServiceForm, setShowServiceForm] = useState(false);
 	const {
@@ -17,6 +24,7 @@ const ServicesSection = () => {
 		handleCreateService,
 		handleUpdateService,
 		handleDeleteService,
+		handleToggleServiceActivation,
 	} = useContext(AdminDashboardContext);
 
 	const { showNotification } = useNotification();
@@ -104,13 +112,14 @@ const ServicesSection = () => {
 	// Export functions
 	const handleDownloadCSV = () => {
 		const csvData = services.map((service) => ({
-			ID: service._id,
+			ServiceID: service._id,
 			ServiceDate: formatDate(service.createdAt),
 			ServiceCategory: service.category,
 			ServiceName: service.name,
 			ServiceDescription: service.description,
 			SalePrice: service.actualPrice,
 			DiscountedPrice: service.salePrice,
+			Currency: service.currency,
 			HSNCode: service.hsncode,
 			ProcessingDays: service.processingDays,
 			RequiredDocuments: service.requiredDocuments.length,
@@ -124,14 +133,14 @@ const ServicesSection = () => {
 	const handleDownloadPDF = () => {
 		const doc = new jsPDF("landscape", "pt", "a3");
 		const tableColumn = [
-			"ID",
+			"Service ID",
 			"Service Date",
 			"Service Category",
 			"Service Name",
 			"Service Description",
-
 			"Sale Price",
 			"Discounted Price",
+			"Currency",
 			"HSN Code",
 			"Processing Days",
 			"Required Documents",
@@ -144,6 +153,7 @@ const ServicesSection = () => {
 			service.description,
 			service.actualPrice,
 			service.salePrice,
+			service.currency,
 			service.hsncode,
 			service.processingDays,
 			service.requiredDocuments?.length,
@@ -302,6 +312,7 @@ const ServicesSection = () => {
 							<th>HSN Code</th>
 							<th>Completion Days</th>
 							<th>Required Documents</th>
+							<th>Status</th>
 							<th>Actions</th>
 						</tr>
 					</thead>
@@ -315,16 +326,46 @@ const ServicesSection = () => {
 								<td>{service.description}</td>
 
 								<td>
-									<span style={{ textDecoration: "line-through" }}>
-										₹{service.actualPrice}
-									</span>
+									{service.packages && service.packages.length > 0 ? (
+										<div>
+											{service.packages.map((pkg, index) => (
+												<div key={index} style={{ marginBottom: '5px' }}>
+													<strong>{pkg.name}</strong>: ₹{pkg.actualPrice || 'N/A'}
+												</div>
+											))}
+										</div>
+									) : (
+										<span>No packages</span>
+									)}
 								</td>
 								<td>
-									₹{service.salePrice} <br />
+									{service.packages && service.packages.length > 0 ? (
+										<div>
+											{service.packages.map((pkg, index) => (
+												<div key={index} style={{ marginBottom: '5px' }}>
+													<strong>{pkg.name}</strong>: ₹{pkg.salePrice || 'N/A'}
+												</div>
+											))}
+										</div>
+									) : (
+										<span>No packages</span>
+									)}
 								</td>
-								<td>₹</td>
+								<td>{service.currency}</td>
 								<td>{service.hsncode || "No HSN Code"}</td>
-								<td>{service.processingDays || 0} days</td>
+								<td>
+									{service.packages && service.packages.length > 0 ? (
+										<div>
+											{service.packages.map((pkg, index) => (
+												<div key={index} style={{ marginBottom: '5px' }}>
+													<strong>{pkg.name}</strong>: {pkg.processingDays || 0} days
+												</div>
+											))}
+										</div>
+									) : (
+										<span>No packages</span>
+									)}
+								</td>
 								<td>
 									{service.requiredDocuments &&
 									service.requiredDocuments.length > 0 ? (
@@ -345,11 +386,30 @@ const ServicesSection = () => {
 										"No documnets specified"
 									)}
 								</td>
+								<td>
+									<span
+										style={{
+											color: service.isActive ? "green" : "red",
+											fontWeight: "bold",
+										}}>
+										{service.isActive !== false ? "Active" : "Inactive"}
+									</span>
+								</td>
 								<td className='tax-btn-cont'>
 									<button
 										className='tax-service-btn'
 										onClick={() => setEditingService(service)}>
 										<i class='fa-solid fa-pencil'></i>
+									</button>
+									<button
+										className='tax-service-btn'
+										onClick={() => handleToggleServiceActivation(service._id)}
+										style={{
+											backgroundColor:
+												service.isActive !== false ? "#ff6b6b" : "#4caf50",
+											color: "white",
+										}}>
+										{service.isActive !== false ? "Deactivate" : "Activate"}
 									</button>
 									<button
 										className='serviceDelete'
@@ -363,172 +423,169 @@ const ServicesSection = () => {
 				</table>
 			</div>
 
-			{showServiceForm && (
-				<div className='smodal'>
-					<h3>Add Service</h3>
-					<div>
-						<input
-							type='text'
-							placeholder='Service Category'
-							value={newService.category}
-							onChange={(e) =>
-								setNewService({ ...newService, category: e.target.value })
-							}
-						/>
-						<input
-							type='text'
-							placeholder='Service Name'
-							value={newService.name}
-							onChange={(e) =>
-								setNewService({ ...newService, name: e.target.value })
-							}
-						/>
-					</div>
-					<div>
-						<input
-							type='text'
-							placeholder='Service Description'
-							value={newService.description}
-							onChange={(e) =>
-								setNewService({ ...newService, description: e.target.value })
-							}
-						/>
-						<input
-							type='number'
-							placeholder='Service Price'
-							value={newService.actualPrice}
-							onChange={(e) =>
-								setNewService({ ...newService, actualPrice: e.target.value })
-							}
-						/>
-					</div>
-					<div>
-						<input
-							type='number'
-							placeholder='Discounted Service Price'
-							value={newService.salePrice}
-							onChange={(e) =>
-								setNewService({ ...newService, salePrice: e.target.value })
-							}
-						/>
-						<input
-							type='text'
-							placeholder='HSN Code'
-							value={newService.hsncode}
-							onChange={(e) =>
-								setNewService({ ...newService, hsncode: e.target.value })
-							}
-						/>
-					</div>
-					<div>
-						<label
-							htmlFor='tdueDate'
-							style={{ padding: "0", color: "white", textAlign: "left" }}>
-							Processing Days
-						</label>
-						<input
-							id='tdueDate'
-							type='number'
-							placeholder='Processing Days'
-							value={newService.processingDays}
-							// onChange={(e) =>
-							// 	setNewService({ ...newService, dueDate: e.target.value })
-							onChange={(e) =>
-								setNewService((prev) => ({
-									...prev,
-									processingDays: parseInt(e.target.value),
-								}))
-							}
-							min='1'
-						/>
-					</div>
+			<Dialog
+				open={showServiceForm}
+				onClose={() => setShowServiceForm(false)}
+				maxWidth='md'
+				fullWidth>
+				<DialogTitle>Add Service</DialogTitle>
+				<DialogContent>
+					<TextField
+						margin='dense'
+						label='Service Category'
+						fullWidth
+						value={newService.category}
+						onChange={(e) =>
+							setNewService({ ...newService, category: e.target.value })
+						}
+					/>
+					<TextField
+						margin='dense'
+						label='Service Name'
+						fullWidth
+						value={newService.name}
+						onChange={(e) =>
+							setNewService({ ...newService, name: e.target.value })
+						}
+					/>
+					<TextField
+						margin='dense'
+						label='Service Description'
+						fullWidth
+						value={newService.description}
+						onChange={(e) =>
+							setNewService({ ...newService, description: e.target.value })
+						}
+					/>
+					<TextField
+						margin='dense'
+						label='HSN Code'
+						fullWidth
+						value={newService.hsncode}
+						onChange={(e) =>
+							setNewService({ ...newService, hsncode: e.target.value })
+						}
+					/>
+					<TextField
+						margin='dense'
+						label='Currency'
+						fullWidth
+						value={newService.currency}
+						onChange={(e) =>
+							setNewService({ ...newService, currency: e.target.value })
+						}
+					/>
 
-					{/* <h4>Packages</h4>
-					{newService.packages.map((pkg, packageIndex) => (
-						<div
-							key={packageIndex}
-							className='package-section'
-							style={{ display: "flex", flexDirection: "column" }}>
-							<h5>Package {packageIndex + 1}</h5>
-							<div>
-								<input
-									type='text'
-									placeholder='Package Name'
-									value={pkg.name}
-									onChange={(e) =>
-										updatePackage(packageIndex, "name", e.target.value)
-									}
-								/>
-								<input
-									type='text'
-									placeholder='Package Description'
-									value={pkg.description}
-									onChange={(e) =>
-										updatePackage(packageIndex, "description", e.target.value)
-									}
-								/>
-							</div>
-							<div>
-								<input
-									type='number'
-									placeholder='Actual Price'
-									value={pkg.actualPrice}
-									onChange={(e) =>
-										updatePackage(packageIndex, "actualPrice", e.target.value)
-									}
-								/>
-								<input
-									type='number'
-									placeholder='Sale Price'
-									value={pkg.salePrice}
-									onChange={(e) =>
-										updatePackage(packageIndex, "salePrice", e.target.value)
-									}
-								/>
-							</div>
-							<input
-								type='number'
-								placeholder='Processing Days'
-								value={pkg.processingDays}
-								onChange={(e) =>
-									updatePackage(
-										packageIndex,
-										"processingDays",
-										parseInt(e.target.value)
-									)
-								}
-								min='1'
-							/>
-
-							<h6>Features</h6>
-							{pkg.features.map((feature, featureIndex) => (
-								<div key={featureIndex} className='feature-input'>
-									<input
-										type='text'
-										placeholder='Feature'
-										value={feature}
-										onChange={(e) =>
-											updateFeature(packageIndex, featureIndex, e.target.value)
-										}
-									/>
-									<button
-										onClick={() => removeFeature(packageIndex, featureIndex)}>
-										Remove Feature
-									</button>
+					{/* Packages Section */}
+					<div style={{ marginTop: '20px', marginBottom: '10px' }}>
+						<h3>Packages</h3>
+						<Button
+							variant="contained"
+							color="primary"
+							onClick={addPackage}
+							style={{ marginBottom: '10px' }}
+						>
+							Add Package
+						</Button>
+						
+						{newService.packages.map((pkg, packageIndex) => (
+							<div 
+								key={packageIndex}
+								style={{ 
+									border: '1px solid #ccc', 
+									padding: '15px', 
+									marginBottom: '15px',
+									borderRadius: '5px'
+								}}
+							>
+								<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+									<h4>Package {packageIndex + 1}</h4>
+									<Button 
+										variant="outlined" 
+										color="error" 
+										onClick={() => removePackage(packageIndex)}
+									>
+										Remove Package
+									</Button>
 								</div>
-							))}
-							<button onClick={() => addFeature(packageIndex)}>
-								Add Feature
-							</button>
-
-							{newService.packages.length > 1 && (
-								<button onClick={() => removePackage(packageIndex)}>
-									Remove Package
-								</button>
-							)}
-						</div>
-					))}
-					<button onClick={addPackage}>Add Package</button> */}
+								
+								<TextField
+									margin='dense'
+									label='Package Name'
+									fullWidth
+									value={pkg.name}
+									onChange={(e) => updatePackage(packageIndex, 'name', e.target.value)}
+								/>
+								<TextField
+									margin='dense'
+									label='Package Description'
+									fullWidth
+									value={pkg.description}
+									onChange={(e) => updatePackage(packageIndex, 'description', e.target.value)}
+								/>
+								<div style={{ display: 'flex', gap: '10px' }}>
+									<TextField
+										margin='dense'
+										label='Actual Price'
+										type='number'
+										fullWidth
+										value={pkg.actualPrice}
+										onChange={(e) => updatePackage(packageIndex, 'actualPrice', e.target.value)}
+									/>
+									<TextField
+										margin='dense'
+										label='Sale Price'
+										type='number'
+										fullWidth
+										value={pkg.salePrice}
+										onChange={(e) => updatePackage(packageIndex, 'salePrice', e.target.value)}
+									/>
+								</div>
+								<TextField
+									margin='dense'
+									label='Processing Days'
+									type='number'
+									fullWidth
+									value={pkg.processingDays}
+									onChange={(e) => updatePackage(packageIndex, 'processingDays', parseInt(e.target.value))}
+									inputProps={{ min: 1 }}
+								/>
+								
+								{/* Features Section */}
+								<div style={{ marginTop: '15px' }}>
+									<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+										<h5>Features</h5>
+										<Button 
+											variant="outlined" 
+											onClick={() => addFeature(packageIndex)}
+										>
+											Add Feature
+										</Button>
+									</div>
+									
+									{pkg.features.map((feature, featureIndex) => (
+										<div key={featureIndex} style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+											<TextField
+												margin='dense'
+												label={`Feature ${featureIndex + 1}`}
+												fullWidth
+												value={feature}
+												onChange={(e) => updateFeature(packageIndex, featureIndex, e.target.value)}
+											/>
+											<Button 
+												variant="outlined" 
+												color="error" 
+												onClick={() => removeFeature(packageIndex, featureIndex)}
+												style={{ marginTop: '8px' }}
+											>
+												Remove
+											</Button>
+										</div>
+									))}
+								</div>
+							</div>
+						))}
+					</div>
 
 					<div>
 						<button
@@ -551,135 +608,330 @@ const ServicesSection = () => {
 							}
 						/>
 					</div>
-					{/* Modal Buttons */}
-					<div id='modal-div'>
-						<button onClick={handleCreateService}>Create</button>
-						<button onClick={() => setShowServiceForm(false)}>Cancel</button>
-					</div>
-				</div>
-			)}
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleCreateService}>Create</Button>
+					<Button onClick={() => setShowServiceForm(false)}>Cancel</Button>
+				</DialogActions>
+			</Dialog>
 
-			{/* Edit Service Modal */}
-			{editingService && (
-				<div className='smodal'>
-					<h3>Edit Service</h3>
-					<input
-						type='text'
-						placeholder='Service Category'
-						value={editingService.category}
-						onChange={(e) =>
-							setEditingService({ ...editingService, category: e.target.value })
-						}
-					/>
-					<input
-						type='text'
-						placeholder='Service Name'
-						value={editingService.name}
-						onChange={(e) =>
-							setEditingService({ ...editingService, name: e.target.value })
-						}
-					/>
-					<input
-						type='text'
-						placeholder='Service Description'
-						value={editingService.description}
-						onChange={(e) =>
-							setEditingService({
-								...editingService,
-								description: e.target.value,
-							})
-						}
-					/>
-					<input
-						type='number'
-						placeholder='Service Price'
-						value={editingService.actualPrice}
-						onChange={(e) =>
-							setEditingService({
-								...editingService,
-								actualPrice: parseFloat(e.target.value) || 0,
-							})
-						}
-					/>
-					<input
-						type='number'
-						placeholder='Discounted Service Price'
-						value={editingService.salePrice}
-						onChange={(e) =>
-							setEditingService({
-								...editingService,
-								salePrice: parseFloat(e.target.value) || 0,
-							})
-						}
-					/>
-					<input
-						type='text'
-						placeholder='HSN Code'
-						value={editingService.hsncode}
-						onChange={(e) =>
-							setEditingService({
-								...editingService,
-								hsncode: e.target.value,
-							})
-						}
-					/>
-					<div className='processing-days-section'>
-						<label htmlFor='processingDays'>Processing Days</label>
-						<input
-							id='processingDays'
-							type='number'
-							placeholder='Processing Days'
-							value={editingService.processingDays}
-							onChange={(e) =>
-								setEditingService({
-									...editingService,
-									processingDays: parseInt(e.target.value) || 0,
-								})
-							}
-							min='1'
-						/>
-						{editingService.processingDays !==
-							services.find((s) => s._id === editingService._id)
-								?.processingDays && (
-							<span className='processing-days-notice'>
-								This will update processing days for all active services
-							</span>
-						)}
-					</div>
+			{/* Edit Service Modal with MUI */}
+			<Dialog
+				open={!!editingService}
+				onClose={() => setEditingService(null)}
+				maxWidth='md'
+				fullWidth>
+				<DialogTitle>Edit Service</DialogTitle>
+				<DialogContent>
+					{editingService && (
+						<>
+							<TextField
+								margin='dense'
+								label='Service Category'
+								fullWidth
+								value={editingService.category}
+								onChange={(e) =>
+									setEditingService({
+										...editingService,
+										category: e.target.value,
+									})
+								}
+							/>
+							<TextField
+								margin='dense'
+								label='Service Name'
+								fullWidth
+								value={editingService.name}
+								onChange={(e) =>
+									setEditingService({ ...editingService, name: e.target.value })
+								}
+							/>
+							<TextField
+								margin='dense'
+								label='Service Description'
+								fullWidth
+								value={editingService.description}
+								onChange={(e) =>
+									setEditingService({
+										...editingService,
+										description: e.target.value,
+									})
+								}
+							/>
+							<TextField
+								margin='dense'
+								label='HSN Code'
+								fullWidth
+								value={editingService.hsncode}
+								onChange={(e) =>
+									setEditingService({
+										...editingService,
+										hsncode: e.target.value,
+									})
+								}
+							/>
+							<TextField
+								margin='dense'
+								label='Currency'
+								fullWidth
+								value={editingService.currency}
+								onChange={(e) =>
+									setEditingService({
+										...editingService,
+										currency: e.target.value,
+									})
+								}
+							/>
+							
+							{/* Packages Section for Editing */}
+							<div style={{ marginTop: '20px', marginBottom: '10px' }}>
+								<h3>Packages</h3>
+								<Button
+									variant="contained"
+									color="primary"
+									onClick={() => {
+										setEditingService({
+											...editingService,
+											packages: [
+												...(editingService.packages || []),
+												{
+													name: "",
+													description: "",
+													actualPrice: "",
+													salePrice: "",
+													features: [],
+													processingDays: 7,
+												}
+											]
+										})
+									}}
+									style={{ marginBottom: '10px' }}
+								>
+									Add Package
+								</Button>
+								
+								{(editingService.packages || []).map((pkg, packageIndex) => (
+									<div 
+										key={packageIndex}
+										style={{ 
+											border: '1px solid #ccc', 
+											padding: '15px', 
+											marginBottom: '15px',
+											borderRadius: '5px'
+										}}
+									>
+										<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+											<h4>Package {packageIndex + 1}</h4>
+											<Button 
+												variant="outlined" 
+												color="error" 
+												onClick={() => {
+													setEditingService({
+														...editingService,
+														packages: editingService.packages.filter((_, i) => i !== packageIndex)
+													})
+												}}
+											>
+												Remove Package
+											</Button>
+										</div>
+										
+										<TextField
+											margin='dense'
+											label='Package Name'
+											fullWidth
+											value={pkg.name}
+											onChange={(e) => {
+												const newPackages = [...editingService.packages];
+												newPackages[packageIndex] = {
+													...newPackages[packageIndex],
+													name: e.target.value
+												};
+												setEditingService({
+													...editingService,
+													packages: newPackages
+												})
+											}}
+										/>
+										<TextField
+											margin='dense'
+											label='Package Description'
+											fullWidth
+											value={pkg.description}
+											onChange={(e) => {
+												const newPackages = [...editingService.packages];
+												newPackages[packageIndex] = {
+													...newPackages[packageIndex],
+													description: e.target.value
+												};
+												setEditingService({
+													...editingService,
+													packages: newPackages
+												})
+											}}
+										/>
+										<div style={{ display: 'flex', gap: '10px' }}>
+											<TextField
+												margin='dense'
+												label='Actual Price'
+												type='number'
+												fullWidth
+												value={pkg.actualPrice}
+												onChange={(e) => {
+													const newPackages = [...editingService.packages];
+													newPackages[packageIndex] = {
+														...newPackages[packageIndex],
+														actualPrice: e.target.value
+													};
+													setEditingService({
+														...editingService,
+														packages: newPackages
+													})
+												}}
+											/>
+											<TextField
+												margin='dense'
+												label='Sale Price'
+												type='number'
+												fullWidth
+												value={pkg.salePrice}
+												onChange={(e) => {
+													const newPackages = [...editingService.packages];
+													newPackages[packageIndex] = {
+														...newPackages[packageIndex],
+														salePrice: e.target.value
+													};
+													setEditingService({
+														...editingService,
+														packages: newPackages
+													})
+												}}
+											/>
+										</div>
+										<TextField
+											margin='dense'
+											label='Processing Days'
+											type='number'
+											fullWidth
+											value={pkg.processingDays}
+											onChange={(e) => {
+												const newPackages = [...editingService.packages];
+												newPackages[packageIndex] = {
+													...newPackages[packageIndex],
+													processingDays: parseInt(e.target.value) || 7
+												};
+												setEditingService({
+													...editingService,
+													packages: newPackages
+												})
+											}}
+											inputProps={{ min: 1 }}
+										/>
+										
+										{/* Features Section */}
+										<div style={{ marginTop: '15px' }}>
+											<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+												<h5>Features</h5>
+												<Button 
+													variant="outlined" 
+													onClick={() => {
+														const newPackages = [...editingService.packages];
+														newPackages[packageIndex] = {
+															...newPackages[packageIndex],
+															features: [...(newPackages[packageIndex].features || []), ""]
+														};
+														setEditingService({
+															...editingService,
+															packages: newPackages
+														})
+													}}
+												>
+													Add Feature
+												</Button>
+											</div>
+											
+											{(pkg.features || []).map((feature, featureIndex) => (
+												<div key={featureIndex} style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+													<TextField
+														margin='dense'
+														label={`Feature ${featureIndex + 1}`}
+														fullWidth
+														value={feature}
+														onChange={(e) => {
+															const newPackages = [...editingService.packages];
+															newPackages[packageIndex] = {
+																...newPackages[packageIndex],
+																features: newPackages[packageIndex].features.map(
+																	(f, i) => i === featureIndex ? e.target.value : f
+																)
+															};
+															setEditingService({
+																...editingService,
+																packages: newPackages
+															})
+														}}
+													/>
+													<Button 
+														variant="outlined" 
+														color="error" 
+														onClick={() => {
+															const newPackages = [...editingService.packages];
+															newPackages[packageIndex] = {
+																...newPackages[packageIndex],
+																features: newPackages[packageIndex].features.filter(
+																	(_, i) => i !== featureIndex
+																)
+															};
+															setEditingService({
+																...editingService,
+																packages: newPackages
+															})
+														}}
+														style={{ marginTop: '8px' }}
+													>
+														Remove
+													</Button>
+												</div>
+											))}
+										</div>
+									</div>
+								))}
+							</div>
 
-					<div>
-						<button
-							className='tax-service-btn2'
-							onClick={() => setShowDocuments((prev) => !prev)}>
-							{showDocuments
-								? "Hide Document Requirements"
-								: "Show Document Requirements"}
-						</button>
-					</div>
+							<div>
+								<button
+									className='tax-service-btn2'
+									onClick={() => setShowDocuments((prev) => !prev)}>
+									{showDocuments
+										? "Hide Document Requirements"
+										: "Show Document Requirements"}
+								</button>
+							</div>
 
-					{showDocuments && (
-						<DocumentRequirements
-							documents={editingService.requiredDocuments || []}
-							onUpdate={(docs) =>
-								setEditingService({
-									...editingService,
-									requiredDocuments: docs,
-								})
-							}
-						/>
+							{showDocuments && (
+								<DocumentRequirements
+									documents={editingService.requiredDocuments || []}
+									onUpdate={(docs) =>
+										setEditingService({
+											...editingService,
+											requiredDocuments: docs,
+										})
+									}
+								/>
+							)}
+						</>
 					)}
-
-					<div id='modal-div'>
-						<button
-							onClick={() =>
-								handleUpdateServiceWithProcessingDays(editingService)
-							}>
-							Update
-						</button>
-						<button onClick={() => setEditingService(null)}>Cancel</button>
-					</div>
-				</div>
-			)}
+				</DialogContent>
+				<DialogActions>
+					<Button
+						onClick={() =>
+							handleUpdateServiceWithProcessingDays(editingService)
+						}>
+						Update
+					</Button>
+					<Button onClick={() => setEditingService(null)}>Cancel</Button>
+				</DialogActions>
+			</Dialog>
 		</div>
 	);
 };

@@ -28,16 +28,23 @@ const ServicePage = () => {
 
 	const handlePackageSelect = (pkg) => {
 		setSelectedPackage(pkg);
+		setShowForm(true);
+		setTimeout(() => {
+			formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+		}, 100);
 	};
 
 	const fetchService = async () => {
 		setLoading(true);
 		try {
 			const response = await axios.get(
-				`https://195-35-45-82.sslip.io:8000/api/customers/user-services/${serviceId}`
+				`http://localhost:8000/api/customers/user-services/${serviceId}`
 			);
 			setLoading(false);
 			setService(response.data.service);
+			if (response.data.service.packages && response.data.service.packages.length === 1) {
+				setSelectedPackage(response.data.service.packages[0]);
+			}
 		} catch (error) {
 			if (error.response && error.response.status === 404) {
 				navigate("/not-found");
@@ -58,7 +65,12 @@ const ServicePage = () => {
 	const handleRegisterAndPay = async () => {
 		setLoading(true);
 		try {
-			// Field validation
+			if (!selectedPackage) {
+				showNotification("Please select a package before proceeding.", "error");
+				setLoading(false);
+				return;
+			}
+
 			const { name, email, mobile, username, password } = customerDetails;
 			if (!name || !email || !mobile || !username || !password) {
 				showNotification("Please fill in all required fields.", "error");
@@ -66,32 +78,23 @@ const ServicePage = () => {
 				return;
 			}
 
-			if (!service?.salePrice) {
-				showNotification("Service details are missing.", "error");
-				setLoading(false);
-				return;
-			}
-
-			// Create order
 			const paymentResponse = await axios.post(
-				"https://195-35-45-82.sslip.io:8000/api/customers/user-payment",
-				{ amount: service.salePrice }
+				"http://localhost:8000/api/customers/user-payment",
+				{ amount: selectedPackage.salePrice }
 			);
 
 			const { order } = paymentResponse?.data;
 
-			// Validate Razorpay script
 			if (typeof window.Razorpay === "undefined") {
 				throw new Error("Razorpay script not loaded correctly");
 			}
 
-			// Configure Razorpay options
 			const options = {
 				key: "rzp_test_brvO8EMMhXPsDD",
 				amount: order.amount,
 				currency: order.currency,
 				name: "TaxHarbor",
-				description: service?.name,
+				description: `${service?.name} - ${selectedPackage.name} Package`,
 				order_id: order?.id,
 				prefill: {
 					name: customerDetails.name,
@@ -100,6 +103,7 @@ const ServicePage = () => {
 				},
 				notes: {
 					serviceId: serviceId,
+					packageName: selectedPackage.name
 				},
 				theme: {
 					color: "#95b8a2",
@@ -123,17 +127,18 @@ const ServicePage = () => {
 				},
 				handler: async function (response) {
 					try {
-						// First register the user
 						const registrationResponse = await axios.post(
-							"https://195-35-45-82.sslip.io:8000/api/customers/user-register",
+							"http://localhost:8000/api/customers/user-register",
 							{
 								name,
 								email,
 								mobile,
 								username,
 								password,
-								referralCode: customerDetails.referralCode, // Pass referral code
+								referralCode: customerDetails.referralCode,
 								order_id: order.id,
+								selectedPackage: selectedPackage.name,
+								processingDays: selectedPackage.processingDays
 							}
 						);
 
@@ -142,15 +147,13 @@ const ServicePage = () => {
 							throw new Error("User registration failed");
 						}
 
-						// Log in the user
 						const loginResponse = await login(email, password);
 						if (!loginResponse.success) {
 							throw new Error(`Login failed: ${loginResponse.message}`);
 						}
 						await fetchCustomerDashboard();
-						// Save payment details
 						await axios.post(
-							"https://195-35-45-82.sslip.io:8000/api/customers/payment-success",
+							"http://localhost:8000/api/customers/payment-success",
 							{
 								razorpay_payment_id: response.razorpay_payment_id,
 								razorpay_order_id: response.razorpay_order_id,
@@ -158,6 +161,8 @@ const ServicePage = () => {
 								amount: order.amount,
 								userId: registeredUserId,
 								serviceId: serviceId,
+								packageName: selectedPackage.name,
+								processingDays: selectedPackage.processingDays,
 								order_id: order.id,
 							}
 						);
@@ -176,7 +181,6 @@ const ServicePage = () => {
 				},
 			};
 
-			// Initialize Razorpay
 			const razorpay = new window.Razorpay(options);
 			razorpay.open();
 		} catch (error) {
@@ -241,189 +245,81 @@ const ServicePage = () => {
 						</div>
 						<div>
 							<p>
-								Proin laoreet nisi vitae pharetr mattis. Etiam luctus suscipit
-								velit vitae mixue ultricies. Augue molestie a etiam quis
-								tincidunt est, et efficitur ipsum nunc bibendum ut risus et
-								vehicula proin tempus tellus diam laoreet justo donec tempus.
+								Choose from our flexible pricing packages designed to meet your specific needs. 
+								Each package includes features tailored to different requirements and budgets.
+								Select the one that works best for you and get started with our services today.
 							</p>
 						</div>
 					</div>
 					{/* Package Cards */}
 					<Container sx={{ py: 8 }}>
 						<Grid container spacing={4} id='service-pg-cards'>
-							<Grid item xs={12} sm={4}>
-								<Paper
-									elevation={3}
-									sx={{
-										p: 4,
-										height: "100%",
-										display: "flex",
-										flexDirection: "column",
-										justifyContent: "space-between",
-									}}>
-									<div>
-										<Typography variant='h5'>Standard</Typography>
-										<Typography variant='h4' color='primary'>
-											$49
-										</Typography>
-										<Typography variant='body2' color='text.secondary'>
-											Per Month
-										</Typography>
-										<Box
-											sx={{
-												display: "flex",
-												alignItems: "center",
-												marginTop: 2,
-											}}>
-											<CheckCircle color='primary' />
-											<Typography variant='body2' ml={1}>
-												Nulla congue aliqet veinate
+							{service?.packages?.map((pkg, index) => (
+								<Grid item xs={12} sm={4} key={index}>
+									<Paper
+										elevation={3}
+										sx={{
+											p: 4,
+											height: "100%",
+											display: "flex",
+											flexDirection: "column",
+											justifyContent: "space-between",
+											backgroundColor:
+												selectedPackage?.name === pkg.name
+													? "var(--accent)"
+													: "inherit",
+											transform:
+												selectedPackage?.name === pkg.name
+													? "translateY(-5px)"
+													: "none",
+											transition: "all 0.3s ease",
+											border: selectedPackage?.name === pkg.name 
+												? "2px solid var(--primary)" 
+												: "none"
+										}}>
+										<div>
+											<Typography variant='h5'>{pkg.name}</Typography>
+											<Typography
+												variant='h4'
+												color='primary'
+												style={{ marginTop: "5px" }}>
+												₹{pkg.salePrice}
 											</Typography>
-										</Box>
-										<Box
-											sx={{
-												display: "flex",
-												alignItems: "center",
-												marginTop: 2,
-											}}>
-											<CheckCircle color='primary' />
-											<Typography variant='body2' ml={1}>
-												Nulla congue aliqet veinate
+											<Typography variant='body2' color='text.secondary'>
+												<span style={{ textDecoration: "line-through" }}>
+													₹{pkg.actualPrice}
+												</span>
 											</Typography>
-										</Box>
-										<Box
-											sx={{
-												display: "flex",
-												alignItems: "center",
-												marginTop: 2,
-											}}>
-											<CheckCircle color='primary' />
-											<Typography variant='body2' ml={1}>
-												Nulla congue aliqet veinate
-											</Typography>
-										</Box>
-									</div>
-									<Button variant='contained'>Get Started</Button>
-								</Paper>
-							</Grid>
-							<Grid item xs={12} sm={4}>
-								<Paper
-									elevation={3}
-									sx={{
-										p: 4,
-										height: "100%",
-										display: "flex",
-										flexDirection: "column",
-										justifyContent: "space-between",
-									}}
-									style={{
-										background: "var(--accent)",
-										transform: "translateY(-5px)",
-									}}>
-									<div>
-										<Typography variant='h5'>Enterprise</Typography>
-										<Typography variant='h4' color='primary'>
-											$49
-										</Typography>
-										<Typography variant='body2' color='text.secondary'>
-											Per Month
-										</Typography>
-										<Box
-											sx={{
-												display: "flex",
-												alignItems: "center",
-												marginTop: 2,
-											}}>
-											<CheckCircle color='secondary' />
-											<Typography variant='body2' ml={1}>
-												Nulla congue aliqet veinate
-											</Typography>
-										</Box>
-										<Box
-											sx={{
-												display: "flex",
-												alignItems: "center",
-												marginTop: 2,
-											}}>
-											<CheckCircle color='primary' />
-											<Typography variant='body2' ml={1}>
-												Nulla congue aliqet veinate
-											</Typography>
-										</Box>
-										<Box
-											sx={{
-												display: "flex",
-												alignItems: "center",
-												marginTop: 2,
-											}}>
-											<CheckCircle color='primary' />
-											<Typography variant='body2' ml={1}>
-												Nulla congue aliqet veinate
-											</Typography>
-										</Box>
-									</div>
-									<Button variant='contained' color='primary'>
-										Get Started
-									</Button>
-								</Paper>
-							</Grid>
-							<Grid item xs={12} sm={4}>
-								<Paper
-									elevation={3}
-									sx={{
-										p: 4,
-										height: "100%",
-										display: "flex",
-										flexDirection: "column",
-										justifyContent: "space-between",
-									}}>
-									<div>
-										<Typography variant='h5'>Professional</Typography>
-										<Typography variant='h4' color='primary'>
-											$49
-										</Typography>
-										<Typography variant='body2' color='text.secondary'>
-											Per Month
-										</Typography>
-										<Box
-											sx={{
-												display: "flex",
-												alignItems: "center",
-												marginTop: 2,
-											}}>
-											<CheckCircle color='primary' />
-											<Typography variant='body2' ml={1}>
-												Nulla congue aliqet veinate
-											</Typography>
-										</Box>
-										<Box
-											sx={{
-												display: "flex",
-												alignItems: "center",
-												marginTop: 2,
-											}}>
-											<CheckCircle color='primary' />
-											<Typography variant='body2' ml={1}>
-												Nulla congue aliqet veinate
-											</Typography>
-										</Box>
-										<Box
-											sx={{
-												display: "flex",
-												alignItems: "center",
-												marginTop: 2,
-											}}>
-											<CheckCircle color='primary' />
-											<Typography variant='body2' ml={1}>
-												Nulla congue aliqet veinate
-											</Typography>
-										</Box>
-									</div>
-									<Button variant='contained' color='primary'>
-										Get Started
-									</Button>
-								</Paper>
-							</Grid>
+											{pkg.features && pkg.features.map((feature, idx) => (
+												<Box
+													key={idx}
+													sx={{
+														display: "flex",
+														alignItems: "center",
+														marginTop: 2,
+													}}>
+													<CheckCircle color='primary' />
+													<Typography variant='body2' ml={1}>
+														{feature}
+													</Typography>
+												</Box>
+											))}
+											<Box sx={{ mt: 2 }}>
+												<Typography variant="body2" color="text.secondary">
+													Processing time: {pkg.processingDays} days
+												</Typography>
+											</Box>
+										</div>
+										<Button
+											variant='contained'
+											color='primary'
+											onClick={() => handlePackageSelect(pkg)}
+											sx={{ mt: 2 }}>
+											Select Package
+										</Button>
+									</Paper>
+								</Grid>
+							))}
 						</Grid>
 					</Container>
 
@@ -708,15 +604,33 @@ const ServicePage = () => {
 						</Grid>
 					</Container>
 
-					{/* Existing Form Section */}
+					{/* Registration Form Section */}
 					{showForm && (
 						<Box ref={formRef}>
-							{/* <h1>Register Today!</h1> */}
-							{/* Existing form content */}
 							<div className='service-page-wrap'>
 								<div className='service-content'>
 									<div className='service-form'>
 										<h1>Register Today!</h1>
+										{selectedPackage ? (
+											<Box sx={{ mb: 3, p: 2, bgcolor: 'rgba(149, 184, 162, 0.1)', borderRadius: 2 }}>
+												<Typography variant="h6" sx={{ mb: 1, color: 'var(--primary)' }}>
+													Selected Package: {selectedPackage.name}
+												</Typography>
+												<Typography variant="body1">
+													Price: <span style={{ textDecoration: "line-through" }}>₹{selectedPackage.actualPrice}</span> ₹{selectedPackage.salePrice}
+												</Typography>
+												<Typography variant="body2" sx={{ mt: 1 }}>
+													Processing Time: {selectedPackage.processingDays} days
+												</Typography>
+											</Box>
+										) : (
+											<Box sx={{ mb: 3, p: 2, bgcolor: 'rgba(255, 152, 0, 0.1)', borderRadius: 2 }}>
+												<Typography variant="body1" color="warning.main">
+													Please select a package before proceeding with registration.
+												</Typography>
+											</Box>
+										)}
+										
 										<div className='sform-div'>
 											<div>
 												<label htmlFor=''>First Name</label>
@@ -789,12 +703,22 @@ const ServicePage = () => {
 											</div>
 										</div>
 
-										<button onClick={handleRegisterAndPay}>
+										<button 
+											onClick={handleRegisterAndPay}
+											disabled={!selectedPackage}
+											style={{ opacity: selectedPackage ? 1 : 0.7 }}
+										>
 											<h4>
-												<span style={{ textDecoration: "line-through" }}>
-													₹{service.actualPrice}
-												</span>
-												₹{service.salePrice} <br />
+												{selectedPackage ? (
+													<>
+														<span style={{ textDecoration: "line-through" }}>
+															₹{selectedPackage.actualPrice}
+														</span>{" "}
+														₹{selectedPackage.salePrice} <br />
+													</>
+												) : (
+													"Select a package"
+												)}
 											</h4>{" "}
 											Register & Pay
 										</button>
@@ -805,7 +729,9 @@ const ServicePage = () => {
 					)}
 				</Box>
 			) : (
-				<>loading</>
+				<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+					<ClipLoader size={50} color='var(--primary)' />
+				</Box>
 			)}
 		</div>
 	);

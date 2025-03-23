@@ -19,6 +19,7 @@ const AdminDashboardProvider = ({ children }) => {
 	const [users, setUsers] = useState([]);
 	const [messages, setMessages] = useState([]);
 	const [orders, setOrders] = useState([]);
+	const [leads, setLeads] = useState([]);
 
 	const [assignOrder, setAssignOrder] = useState({
 		orderId: "",
@@ -45,38 +46,31 @@ const AdminDashboardProvider = ({ children }) => {
 		category: "",
 		name: "",
 		description: "",
-		actualPrice: "",
-		salePrice: "",
 		hsncode: "",
+		currency: "INR",
+		packages: [
+			{
+				name: "",
+				description: "",
+				actualPrice: "",
+				salePrice: "",
+				features: [],
+				processingDays: 7,
+			},
+		],
 		requiredDocuments: [],
-		processingDays: 7,
 	});
-
-	// const [newService, setNewService] = useState({
-	// 	category: "",
-	// 	name: "",
-	// 	description: "",
-	// 	hsncode: "",
-	// 	packages: [
-	// 		{
-	// 			name: "",
-	// 			description: "",
-	// 			actualPrice: "",
-	// 			salePrice: "",
-	// 			features: [],
-	// 			processingDays: 7,
-	// 		},
-	// 	],
-	// 	requiredDocuments: [],
-	// });
 
 	const [newEmployee, setNewEmployee] = useState({
 		name: "",
 		email: "",
 		role: "",
-		serviceId: "",
+		services: [],
 		username: "",
 		password: "",
+		Lminus1code: "",
+		L1EmpCode: "",
+		designation: "",
 	});
 	const [newManager, setNewManager] = useState({
 		name: "",
@@ -249,25 +243,31 @@ const AdminDashboardProvider = ({ children }) => {
 			category,
 			name,
 			description,
-			actualPrice,
-			salePrice,
 			hsncode,
-			processingDays,
+			currency,
+			packages,
 			requiredDocuments,
 		} = newService;
-		if (
-			!category ||
-			!name ||
-			!description ||
-			!actualPrice ||
-			!salePrice ||
-			!hsncode ||
-			!processingDays
-		) {
-			showNotification("Please fill in all fields.", "error");
+
+		// Basic validation
+		if (!category || !name || !description || !hsncode) {
+			showNotification("Please fill in all required service fields.", "error");
 			setLoading(false);
 			return;
 		}
+
+		// Packages validation - only validate the packages that are provided
+		if (packages && packages.length > 0) {
+			for (let i = 0; i < packages.length; i++) {
+				const pkg = packages[i];
+				if (!pkg.name) {
+					showNotification(`Package ${i + 1} must have a name.`, "error");
+					setLoading(false);
+					return;
+				}
+			}
+		}
+
 		try {
 			const token = localStorage.getItem("adminToken");
 			const { data } = await axios.post(
@@ -276,10 +276,9 @@ const AdminDashboardProvider = ({ children }) => {
 					category,
 					name,
 					description,
-					actualPrice,
-					salePrice,
 					hsncode,
-					processingDays,
+					currency,
+					packages,
 					requiredDocuments,
 				},
 				{ headers: { Authorization: ` Bearer ${token}` } }
@@ -293,10 +292,18 @@ const AdminDashboardProvider = ({ children }) => {
 				category: "",
 				name: "",
 				description: "",
-				actualPrice: "",
-				salePrice: "",
 				hsncode: "",
-				processingDays: 7,
+				currency: "INR",
+				packages: [
+					{
+						name: "",
+						description: "",
+						actualPrice: "",
+						salePrice: "",
+						features: [],
+						processingDays: 7,
+					},
+				],
 				requiredDocuments: [],
 			});
 		} catch (err) {
@@ -357,27 +364,33 @@ const AdminDashboardProvider = ({ children }) => {
 			password,
 			Lminus1code,
 			L1EmpCode,
+			designation,
 		} = newEmployee;
 
 		// Validate required fields
-		if (
-			!name ||
-			!email ||
-			!services ||
-			!Array.isArray(services) ||
-			services.length === 0 ||
-			!username ||
-			!password ||
-			!Lminus1code ||
-			!L1EmpCode
-		) {
+		if (!name || !email || !username || !password) {
 			showNotification(
-				"Please provide all fields. Make sure to select at least one service.",
+				"Please provide all required fields: name, email, username, and password.",
 				"error"
 			);
 			setLoading(false);
 			return;
 		}
+
+		if (!services || !Array.isArray(services) || services.length === 0) {
+			showNotification(
+				"Please select at least one service for the employee.",
+				"error"
+			);
+			setLoading(false);
+			return;
+		}
+
+		// if (!L1EmpCode) {
+		// 	showNotification("Please select an L+1 employee.", "error");
+		// 	setLoading(false);
+		// 	return;
+		// }
 
 		try {
 			const token = localStorage.getItem("adminToken");
@@ -392,6 +405,7 @@ const AdminDashboardProvider = ({ children }) => {
 					password,
 					Lminus1code,
 					L1EmpCode,
+					designation,
 				},
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);
@@ -410,11 +424,47 @@ const AdminDashboardProvider = ({ children }) => {
 				password: "",
 				Lminus1code: "",
 				L1EmpCode: "",
+				designation: "",
 			});
 		} catch (err) {
-			showNotification("Error creating employee.", "error");
-			setLoading(false);
 			console.error("Error creating employee:", err);
+			const errorMessage =
+				err.response?.data?.message || "Error creating employee.";
+			showNotification(errorMessage, "error");
+			setLoading(false);
+		}
+	};
+
+	const handleCreateUser = async () => {
+		setLoading(true);
+		const { name, email, role = "customer", username, password } = newUser;
+		if (!name || !email || !username || !password) {
+			showNotification("Please provide all fields.", "error");
+			setLoading(false);
+			return;
+		}
+		try {
+			const token = localStorage.getItem("adminToken");
+			const response = await axios.post(
+				"http://localhost:8000/api/admin/createUser",
+				{ name, email, role: "customer", username, password },
+				{ headers: { Authorization: `Bearer ${token}` } }
+			);
+			setUsers((prevUsers) => [...prevUsers, response.data.user]);
+			showNotification("User created successfully.", "success");
+			setLoading(false);
+			fetchDashboardData();
+			setNewUser({
+				name: "",
+				email: "",
+				username: "",
+				role: "customer",
+
+				password: "",
+			});
+		} catch (err) {
+			showNotification("Error creating user.", "error");
+			setLoading(false);
 		}
 	};
 
@@ -800,6 +850,157 @@ const AdminDashboardProvider = ({ children }) => {
 		setUsers(newUsers);
 	};
 
+	const handleToggleServiceActivation = async (serviceId) => {
+		try {
+			setLoading(true);
+			const token = localStorage.getItem("adminToken");
+
+			const response = await axios.put(
+				`http://localhost:8000/api/admin/services/${serviceId}/toggle-activation`,
+				{},
+				{
+					headers: { Authorization: `Bearer ${token}` },
+				}
+			);
+
+			// Update the services state with the updated service
+			setServices((prevServices) =>
+				prevServices.map((service) =>
+					service._id === serviceId
+						? { ...service, isActive: response.data.service.isActive }
+						: service
+				)
+			);
+
+			const statusMessage = response.data.service.isActive
+				? "activated"
+				: "deactivated";
+			showNotification(`Service ${statusMessage} successfully!`, "success");
+			setLoading(false);
+			return true;
+		} catch (error) {
+			console.error("Error toggling service activation:", error);
+			showNotification(
+				"Failed to update service status. Please try again.",
+				"error",
+				"admin"
+			);
+			setLoading(false);
+			return false;
+		}
+	};
+
+	// Fetch all leads
+	const fetchAllLeads = async () => {
+		try {
+			const token = localStorage.getItem("adminToken");
+			const { data } = await axios.get(
+				"http://localhost:8000/api/admin/leads",
+				{
+					headers: { Authorization: `Bearer ${token}` },
+				}
+			);
+
+			setLeads(data.leads);
+			console.log("Leads:", data.leads);
+		} catch (error) {
+			console.error("Error fetching leads:", error);
+			showNotification(
+				error.response?.data?.message || "Error fetching leads",
+				"error",
+				"admin"
+			);
+		}
+	};
+	
+	// Assign lead to employee
+	const handleAssignLead = async (leadId, employeeId) => {
+		setLoading(true);
+		try {
+			const token = localStorage.getItem("adminToken");
+			const response = await axios.post(
+				"http://localhost:8000/api/admin/leads/assign",
+				{ leadId, employeeId },
+				{ headers: { Authorization: `Bearer ${token}` } }
+			);
+			
+			// Update local state
+			setLeads(prevLeads => 
+				prevLeads.map(lead => 
+					lead._id === leadId 
+						? { 
+							...lead, 
+							status: "assigned", 
+							assignedToEmployee: employeeId,
+							assignedAt: new Date()
+						} 
+						: lead
+				)
+			);
+			
+			showNotification("Lead assigned successfully", "success");
+			setLoading(false);
+			return true;
+		} catch (error) {
+			console.error("Error assigning lead:", error);
+			showNotification(
+				error.response?.data?.message || "Error assigning lead",
+				"error"
+			);
+			setLoading(false);
+			return false;
+		}
+	};
+	
+	// Convert lead to customer order
+	const handleConvertLead = async (leadId, paymentDetails) => {
+		setLoading(true);
+		try {
+			const token = localStorage.getItem("adminToken");
+			const response = await axios.post(
+				"http://localhost:8000/api/admin/leads/convert",
+				{ leadId, paymentDetails },
+				{ headers: { Authorization: `Bearer ${token}` } }
+			);
+			
+			// Update local state
+			setLeads(prevLeads => 
+				prevLeads.map(lead => 
+					lead._id === leadId 
+						? { 
+							...lead, 
+							status: "converted",
+							convertedToOrderId: response.data.orderId,
+							convertedAt: new Date()
+						} 
+						: lead
+				)
+			);
+			
+			// Fetch updated data
+			fetchAllLeads();
+			fetchDashboardData();
+			
+			showNotification("Lead converted to customer order successfully", "success");
+			setLoading(false);
+			return true;
+		} catch (error) {
+			console.error("Error converting lead:", error);
+			showNotification(
+				error.response?.data?.message || "Error converting lead",
+				"error"
+			);
+			setLoading(false);
+			return false;
+		}
+	};
+	
+	useEffect(() => {
+		if (isAuthenticated) {
+			fetchAllLeads();
+		}
+	}, [isAuthenticated]);
+
 	return (
 		<AdminDashboardContext.Provider
 			value={{
@@ -828,7 +1029,7 @@ const AdminDashboardProvider = ({ children }) => {
 				handleCreateManager,
 				handleActivateUser,
 				handleDeactivateUser,
-				// handleCreateUser,
+				handleCreateUser,
 				handleDeleteUser,
 				assignCustomer,
 				assignService,
@@ -869,6 +1070,15 @@ const AdminDashboardProvider = ({ children }) => {
 				assignOrder,
 				setAssignOrder,
 				handleAssignOrderToEmployee,
+				handleToggleServiceActivation,
+				showUserForm,
+				setShowUserForm,
+				showEmployeeForm,
+				setShowEmployeeForm,
+				leads,
+				fetchAllLeads,
+				handleAssignLead,
+				handleConvertLead,
 			}}>
 			{loading && (
 				<div

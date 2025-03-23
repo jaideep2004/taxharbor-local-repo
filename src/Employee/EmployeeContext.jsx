@@ -82,13 +82,17 @@ export const EmployeeProvider = ({ children }) => {
 		}));
 	};
 
+	const [employeeInfo, setEmployeeInfo] = useState(null);
+	const [metrics, setMetrics] = useState(null);
+	const [status, setStatus] = useState(null);
+
 	const login = async (email, password) => {
 		setLoading(true);
 		setError(null);
 
 		try {
 			const response = await axios.post(
-				"http://localhost:8000/api/employees/login",
+				"https://195-35-45-82.sslip.io:8000/api/employees/login",
 				{ email, password }
 			);
 			const token = response.data.token;
@@ -98,6 +102,11 @@ export const EmployeeProvider = ({ children }) => {
 				const decodedToken = jwtDecode(token);
 				console.log("Decoded Token:", decodedToken);
 				setIsAuthenticated(true);
+				// Set user data from decoded token or response if available
+				setUser({
+					email: decodedToken.email || email,
+					downloadAccess: response.data.employee?.downloadAccess || false, // Adjust based on API response
+				});
 				return true;
 			} else {
 				throw new Error("Token not received from server.");
@@ -111,12 +120,9 @@ export const EmployeeProvider = ({ children }) => {
 		}
 	};
 
-	const [employeeInfo, setEmployeeInfo] = useState(null);
-	const [metrics, setMetrics] = useState(null);
-	const [status, setStatus] = useState(null);
-
+	// Update fetchEmployeeDashboard function
 	const fetchEmployeeDashboard = useCallback(async () => {
-		setLoading(true);
+		// setLoading(true);
 		setError(null);
 		try {
 			const token = localStorage.getItem("employeeToken");
@@ -125,7 +131,7 @@ export const EmployeeProvider = ({ children }) => {
 			}
 
 			const response = await axios.get(
-				"http://localhost:8000/api/employees/emdashboard",
+				"https://195-35-45-82.sslip.io:8000/api/employees/emdashboard",
 				{
 					headers: {
 						Authorization: `Bearer ${token}`,
@@ -138,10 +144,16 @@ export const EmployeeProvider = ({ children }) => {
 			setEmployeeInfo(employeeInfo);
 			setMetrics(metrics);
 			setStatus(status);
+			// Set user data from employeeInfo
+			setUser({
+				email: employeeInfo.email,
+				downloadAccess: employeeInfo.downloadAccess,
+				// Add other fields as needed
+			});
+
 			console.log("employeeInfo", employeeInfo);
 			console.log("metrics", metrics);
 			console.log("status", status);
-			// Return the data in case it's needed by the component
 			return { employeeInfo, metrics, status };
 		} catch (error) {
 			console.error("Error fetching dashboard:", error);
@@ -153,12 +165,12 @@ export const EmployeeProvider = ({ children }) => {
 	}, []);
 
 	const fetchAssignedCustomers = async () => {
-		setLoading(true);
+		// setLoading(true);
 		setError(null);
 
 		try {
 			const response = await axios.get(
-				"http://localhost:8000/api/employees/assigned-customers",
+				"https://195-35-45-82.sslip.io:8000/api/employees/assigned-customers",
 				{
 					headers: {
 						Authorization: `Bearer ${localStorage.getItem("employeeToken")}`,
@@ -178,7 +190,7 @@ export const EmployeeProvider = ({ children }) => {
 			setError("Failed to fetch customers.");
 			setAssignedCustomers([]); // Ensure it defaults to empty array
 		} finally {
-			setLoading(false);
+			// setLoading(false);
 		}
 	};
 
@@ -192,7 +204,7 @@ export const EmployeeProvider = ({ children }) => {
 	const fetchQueries = async () => {
 		try {
 			const response = await axios.get(
-				"http://localhost:8000/api/employees/queries",
+				"https://195-35-45-82.sslip.io:8000/api/employees/queries",
 				{
 					headers: {
 						Authorization: `Bearer ${localStorage.getItem("employeeToken")}`,
@@ -212,7 +224,7 @@ export const EmployeeProvider = ({ children }) => {
 		setLoading(true);
 		try {
 			const response = await axios.put(
-				`http://localhost:8000/api/employees/update-service-status/${serviceId}`,
+				`https://195-35-45-82.sslip.io:8000/api/employees/update-service-status/${serviceId}`,
 				{ status, customerId }, // Pass customerId along with serviceId and status
 				{
 					headers: {
@@ -265,7 +277,7 @@ export const EmployeeProvider = ({ children }) => {
 			}, {});
 
 			const response = await axios.put(
-				"http://localhost:8000/api/employees/update-employee-profile",
+				"https://195-35-45-82.sslip.io:8000/api/employees/update-employee-profile",
 				changedFields,
 				{
 					headers: { Authorization: `Bearer ${token}` },

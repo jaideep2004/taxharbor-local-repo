@@ -226,7 +226,7 @@ const WalletDash = () => {
 		setLoading(true);
 		try {
 			await axios.post(
-				"http://localhost:8000/api/customers/update-bank-details",
+				"https://195-35-45-82.sslip.io:8000/api/customers/update-bank-details",
 				{
 					bankDetails,
 					userId: user._id,

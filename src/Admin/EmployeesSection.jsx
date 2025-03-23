@@ -12,6 +12,14 @@ import {
 	DialogContent,
 	DialogContentText,
 	DialogTitle,
+	TextField,
+	Select,
+	MenuItem,
+	FormControl,
+	InputLabel,
+	FormHelperText,
+	Checkbox,
+	ListItemText,
 } from "@mui/material";
 
 const EmployeesSection = () => {
@@ -64,6 +72,21 @@ const EmployeesSection = () => {
 		setAssignOrder,
 		handleAssignOrderToEmployee,
 	} = useContext(AdminDashboardContext);
+
+	// Add a state for L+1 validation
+	const [l1ValidationError, setL1ValidationError] = useState("");
+
+	// Add a function to validate L+1 employee code
+	const validateL1EmpCode = (code) => {
+		if (!code) return true; // Optional field
+		const employee = employees.find(emp => emp._id === code);
+		if (!employee) {
+			setL1ValidationError("Employee not found with this code");
+			return false;
+		}
+		setL1ValidationError("");
+		return true;
+	};
 
 	// Start editing row
 	const handleStartEdit = (employee) => {
@@ -138,7 +161,7 @@ const EmployeesSection = () => {
 		const changes = getChangedFields();
 		try {
 			const response = await axios.patch(
-				`https://195-35-45-82.sslip.io:8000/api/admin/users/${editingRow}`,
+				`http://localhost:8000/api/admin/users/${editingRow}`,
 				changes
 			);
 
@@ -218,7 +241,7 @@ const EmployeesSection = () => {
 		setLoading(true);
 		try {
 			const response = await axios.post(
-				"https://195-35-45-82.sslip.io:8000/api/admin/promote-to-manager",
+				"http://localhost:8000/api/admin/promote-to-manager",
 				{
 					employeeId: promotingEmployee._id,
 				},
@@ -307,35 +330,6 @@ const EmployeesSection = () => {
 		saveAs(blob, "employees_detailed.csv");
 	};
 
-	// const handleDownloadPDF = () => {
-	// 	const doc = new jsPDF();
-	// 	const tableColumn = [
-	// 		"ID",
-	// 		"Name",
-	// 		"Email",
-	// 		"Service",
-	// 		"Assigned Customers",
-	// 		"Status",
-	// 	];
-	// 	const tableRows = employees.map((employee) => [
-	// 		employee._id,
-	// 		employee.name,
-	// 		employee.email,
-	// 		services.find((service) => service._id === employee.serviceId)?.name ||
-	// 			"No service assigned",
-	// 		employee.assignedCustomers?.length || 0,
-	// 		employee.isActive ? "Active" : "Inactive",
-	// 	]);
-
-	// 	doc.text("Employee Data", 14, 15);
-	// 	doc.autoTable({
-	// 		head: [tableColumn],
-	// 		body: tableRows,
-	// 		startY: 20,
-	// 	});
-
-	// 	doc.save("employees_detailed.pdf");
-	// };
 	const handleDownloadPDF = () => {
 		const doc = new jsPDF("landscape", "pt", "a3"); // Use landscape for more columns
 
@@ -381,7 +375,7 @@ const EmployeesSection = () => {
 			"Acc Type",
 			"Services",
 			"Customers",
-			"Download",
+			"DownloadAccess",
 			"Created At",
 			"Last Updated",
 		];
@@ -468,7 +462,7 @@ const EmployeesSection = () => {
 		setLoading(true);
 		try {
 			const response = await axios.post(
-				"https://195-35-45-82.sslip.io:8000/api/admin/update-download-access",
+				"http://localhost:8000/api/admin/update-download-access",
 				{
 					employeeId,
 					allowDownload,
@@ -534,6 +528,32 @@ const EmployeesSection = () => {
 		setNewEmployee({ ...newEmployee, services: selectedOptions });
 	};
 
+	// Add state for L-1 employees
+	const [selectedL1Employees, setSelectedL1Employees] = useState([]);
+
+	// Add a helper function to count orders
+	const countEmployeeOrders = (employee) => {
+		if (!employee.assignedCustomers || employee.assignedCustomers.length === 0) {
+			return { total: 0, completed: 0 };
+		}
+		
+		let totalOrders = 0;
+		let completedOrders = 0;
+		
+		employee.assignedCustomers.forEach(customer => {
+			if (customer.services && customer.services.length > 0) {
+				customer.services.forEach(service => {
+					totalOrders++;
+					if (service.status === 'completed') {
+						completedOrders++;
+					}
+				});
+			}
+		});
+		
+		return { total: totalOrders, completed: completedOrders };
+	};
+
 	return (
 		<div className='tax-dashboard-employee'>
 			{/* ... keep existing filter and buttons section ... */}
@@ -589,6 +609,9 @@ const EmployeesSection = () => {
 						<tr>
 							<th>Employee Code</th>
 							<th>Date of Joining</th>
+							<th>Date of Relieving</th>
+							<th>Total Orders Assigned</th>
+							<th>Orders Completed</th>
 							<th>Full Name</th>
 							<th>Email ID</th>
 							<th>Username</th>
@@ -638,7 +661,7 @@ const EmployeesSection = () => {
 							<th>Download Access</th>
 							<th>Created At</th>
 							<th>Last Updated</th>
-							<th>Download Access</th>
+
 							<th>Actions</th>
 						</tr>
 					</thead>
@@ -648,6 +671,9 @@ const EmployeesSection = () => {
 								{/* ... keep existing static cells ... */}
 								<td>{employee._id}</td>
 								<td>{formatDate(employee.dateOfJoining)}</td>
+								<td>{formatDate(employee.currentOrgRelieveDate)}</td>
+								<td>{countEmployeeOrders(employee).total}</td>
+								<td>{countEmployeeOrders(employee).completed}</td>
 								<td>{renderCell(employee, "name", employee.name)}</td>
 								<td>{renderCell(employee, "email", employee.email)}</td>
 								<td>{renderCell(employee, "username", employee.username)}</td>
@@ -865,7 +891,7 @@ const EmployeesSection = () => {
 								<td>{employee.downloadAccess ? "Yes" : "No"}</td>
 								<td>{formatDate(employee.createdAt)}</td>
 								<td>{formatDate(employee.updatedAt)}</td>
-								<td>{employee.downloadAccess ? "Yes" : "No"}</td>
+
 								<td className='tax-btn-cont'>
 									{editingRow === employee._id ? (
 										<>
@@ -933,7 +959,7 @@ const EmployeesSection = () => {
 				</table>
 			</div>
 
-			{/* Add the confirmation dialog */}
+			{/* Confirmation Dialog - remains unchanged */}
 			<Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
 				<DialogTitle>Confirm Changes</DialogTitle>
 				<DialogContent>
@@ -957,210 +983,223 @@ const EmployeesSection = () => {
 				</DialogActions>
 			</Dialog>
 
-			{/* ... keep existing modals ... */}
-			{showEmployeeForm && (
-				<div className='smodal'>
-					<h3>Add Employee</h3>
-					<input
-						type='text'
-						placeholder='Employee Full Name'
+			{/* Add Employee Modal with MUI */}
+			<Dialog
+				open={showEmployeeForm}
+				onClose={() => setShowEmployeeForm(false)}
+				maxWidth='sm'
+				fullWidth>
+				<DialogTitle>Add Employee</DialogTitle>
+				<DialogContent>
+					<TextField
+						margin='dense'
+						label='Employee Full Name'
+						fullWidth
 						value={newEmployee.name}
 						onChange={(e) =>
 							setNewEmployee({ ...newEmployee, name: e.target.value })
 						}
 					/>
-					<input
+					<TextField
+						margin='dense'
+						label='Email ID'
 						type='email'
-						placeholder='Email ID'
+						fullWidth
 						value={newEmployee.email}
 						onChange={(e) =>
 							setNewEmployee({ ...newEmployee, email: e.target.value })
 						}
 					/>
-					{/* <select
-						value={newEmployee.serviceId}
-						onChange={(e) =>
-							setNewEmployee({ ...newEmployee, serviceId: e.target.value })
-						}>
-						<option value=''>Select Service</option>
-						{services.map((service) => (
-							<option key={service._id} value={service._id}>
-								{service.name}
-							</option>
-						))}
-					</select> */}
-					<select
-						multiple
-						value={selectedServices}
-						onChange={handleServiceSelection}
-						style={{ height: "100px" }} // Add some height for multiple selections
-					>
-						{services.map((service) => (
-							<option key={service._id} value={service._id}>
-								{service.name}
-							</option>
-						))}
-					</select>
-					<small>Hold Ctrl/Cmd to select multiple services</small>
-
-					<input
-						type='text'
-						placeholder='Username'
+					<FormControl fullWidth margin='dense'>
+						<InputLabel shrink>Services</InputLabel>
+						<Select
+							multiple
+							value={newEmployee.services || []} // Directly use newEmployee.services
+							onChange={(e) => {
+								const selected = e.target.value;
+								setNewEmployee({ ...newEmployee, services: selected });
+							}}
+							label='Services'
+							renderValue={(selected) =>
+								selected
+									.map(
+										(serviceId) =>
+											services.find((s) => s._id === serviceId)?.name ||
+											serviceId
+									)
+									.join(", ")
+							}>
+							{services.map((service) => (
+								<MenuItem key={service._id} value={service._id}>
+									<Checkbox
+										checked={
+											(newEmployee.services || []).indexOf(service._id) > -1
+										}
+									/>
+									<ListItemText primary={service.name} />
+								</MenuItem>
+							))}
+						</Select>
+						<FormHelperText>
+							Hold Ctrl/Cmd to select multiple services
+						</FormHelperText>
+					</FormControl>
+					<TextField
+						margin='dense'
+						label='Username'
+						fullWidth
 						value={newEmployee.username}
 						onChange={(e) =>
 							setNewEmployee({ ...newEmployee, username: e.target.value })
 						}
 					/>
-					<input
+					<TextField
+						margin='dense'
+						label='Password'
 						type='password'
-						placeholder='Password'
+						fullWidth
 						value={newEmployee.password}
 						onChange={(e) =>
 							setNewEmployee({ ...newEmployee, password: e.target.value })
 						}
 					/>
-
-					<input
-						type='text'
-						placeholder='L-1 Code'
-						value={newEmployee.Lminus1code}
-						onChange={(e) =>
-							setNewEmployee({ ...newEmployee, Lminus1code: e.target.value })
-						}
-					/>
-					<input
-						type='text'
-						placeholder='L+1 Code'
-						value={newEmployee.L1EmpCode}
-						onChange={(e) =>
-							setNewEmployee({ ...newEmployee, L1EmpCode: e.target.value })
-						}
-					/>
-
-					<div id='modal-div'>
-						<button onClick={handleCreateEmployee}>Create</button>
-						<button onClick={() => setShowEmployeeForm(false)}>Cancel</button>
-					</div>
-				</div>
-			)}
-
-			{showPromoteModal && promotingEmployee && (
-				<div className='smodal' style={{ color: "white" }}>
-					<h3>Promote Employee to Manager</h3>
-					<p>
-						Are you sure you want to promote{" "}
-						<strong>{promotingEmployee.name}</strong> to a Manager role?
-					</p>
-					<p>This action will:</p>
-					<ul style={{ textAlign: "left", marginLeft: "20px" }}>
-						<li>Change their role from employee to manager</li>
-						<li>Allow them to manage other employees</li>
-						<li>Grant them additional dashboard access</li>
-					</ul>
-					<div id='modal-div'>
-						<button onClick={handlePromoteToManager} disabled={loading}>
-							{loading ? "Processing..." : "Confirm Promotion"}
-						</button>
-						<button onClick={() => setShowPromoteModal(false)}>Cancel</button>
-					</div>
-				</div>
-			)}
-
-			{/* {showAssignCustomerForm && (
-				<div className='smodal'>
-					<h3>Assign Customer to Employee</h3>
-					<select
-						value={assignCustomer.customerId}
-						onChange={(e) =>
-							setAssignCustomer({
-								...assignCustomer,
-								customerId: e.target.value,
-							})
-						}>
-						<option value=''>Select Customer</option>
-						{users
-							.filter((user) => user.role === "customer")
-							.map((customer) => (
-								<option key={customer._id} value={customer._id}>
-									{customer.name}
-								</option>
+					<FormControl fullWidth margin='dense'>
+						<InputLabel id="lminus1-employee-label">L-1 Employees (Optional)</InputLabel>
+						<Select
+							labelId="lminus1-employee-label"
+							multiple
+							value={selectedL1Employees}
+							onChange={(e) => {
+								const selectedValues = e.target.value;
+								setSelectedL1Employees(selectedValues);
+								setNewEmployee({ 
+									...newEmployee, 
+									Lminus1code: selectedValues.join(',')
+								});
+							}}
+							renderValue={(selected) => {
+								if (selected.length === 0) {
+									return <em>Select L-1 Employees</em>;
+								}
+								
+								return selected.map(id => {
+									const emp = employees.find(e => e._id === id);
+									return emp ? emp.name : id;
+								}).join(', ');
+							}}
+						>
+							{employees.map((emp) => (
+								<MenuItem key={emp._id} value={emp._id}>
+									<Checkbox checked={selectedL1Employees.indexOf(emp._id) > -1} />
+									<ListItemText primary={`${emp.name} (${emp._id})`} />
+								</MenuItem>
 							))}
-					</select>
-					<select
-						value={assignCustomer.employeeId}
+						</Select>
+					</FormControl>
+					<FormControl fullWidth margin='dense'>
+						<InputLabel id="l1-employee-label">L+1 Employee</InputLabel>
+						<Select
+							labelId="l1-employee-label"
+							value={newEmployee.L1EmpCode || ''}
+							onChange={(e) => {
+								const selectedEmp = employees.find(emp => emp._id === e.target.value);
+								setNewEmployee({ 
+									...newEmployee, 
+									L1EmpCode: e.target.value,
+									L1Name: selectedEmp ? selectedEmp.name : ''
+								});
+								setL1ValidationError("");
+							}}
+							error={!!l1ValidationError}
+						>
+							<MenuItem value="">
+								<em>None</em>
+							</MenuItem>
+							{employees.map((emp) => (
+								<MenuItem key={emp._id} value={emp._id}>
+									{emp.name} ({emp._id})
+								</MenuItem>
+							))}
+						</Select>
+						{l1ValidationError && (
+							<FormHelperText error>{l1ValidationError}</FormHelperText>
+						)}
+					</FormControl>
+					
+					<TextField
+						margin='dense'
+						label='Designation'
+						fullWidth
+						value={newEmployee.designation || ''}
 						onChange={(e) =>
-							setAssignCustomer({
-								...assignCustomer,
-								employeeId: e.target.value,
-							})
-						}>
-						<option value=''>Select Employee</option>
-						{employees.map((employee) => (
-							<option key={employee._id} value={employee._id}>
-								{employee.name}
-							</option>
-						))}
-					</select>
-					<div id='modal-div'>
-						<button onClick={handleAssignCustomer}>Assign</button>
-						<button onClick={() => setShowAssignCustomerForm(false)}>
-							Cancel
-						</button>
-					</div>
-				</div>
-			)} */}
+							setNewEmployee({ ...newEmployee, designation: e.target.value })
+						}
+					/>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleCreateEmployee}>Create</Button>
+					<Button onClick={() => setShowEmployeeForm(false)}>Cancel</Button>
+				</DialogActions>
+			</Dialog>
 
-			{showAssignOrderForm && (
-				<div className='smodal'>
-					<h3>Assign Order to Employee</h3>
-					<select
-						value={assignOrder.orderId}
-						onChange={(e) =>
-							setAssignOrder({
-								...assignOrder,
-								orderId: e.target.value,
-							})
-						}>
-						<option value=''>Select Order</option>
-						{orders.map((order) => (
-							<option key={order["Order ID"]} value={order["Order ID"]}>
-								{order["Order ID"]} - {order["Service Name"]} -{" "}
-								{order["Customer Name"]}
-							</option>
-						))}
-					</select>
-					<select
-						value={assignOrder.employeeId}
-						onChange={(e) =>
-							setAssignOrder({
-								...assignOrder,
-								employeeId: e.target.value,
-							})
-						}>
-						<option value=''>Select Employee</option>
-						{employees.map((employee) => (
-							<option key={employee._id} value={employee._id}>
-								{employee.name} - Handles: {employee.servicesHandled.length}{" "}
-								services
-							</option>
-						))}
-					</select>
-					<div id='modal-div'>
-						<button onClick={handleAssignOrderToEmployee} disabled={loading}>
-							{loading ? "Assigning..." : "Assign"}
-						</button>
-						<button onClick={() => setShowAssignOrderForm(false)}>
-							Cancel
-						</button>
-					</div>
-				</div>
-			)}
+			{/* Assign Order Modal with MUI */}
+			<Dialog
+				open={showAssignOrderForm}
+				onClose={() => setShowAssignOrderForm(false)}
+				maxWidth='sm'
+				fullWidth>
+				<DialogTitle>Assign Order to Employee</DialogTitle>
+				<DialogContent>
+					<FormControl fullWidth margin='dense'>
+						<InputLabel>Select Order</InputLabel>
+						<Select
+							value={assignOrder.orderId}
+							label='Select Order'
+							onChange={(e) =>
+								setAssignOrder({
+									...assignOrder,
+									orderId: e.target.value,
+								})
+							}>
+							<MenuItem value=''>Select Order</MenuItem>
+							{orders.map((order) => (
+								<MenuItem key={order["Order ID"]} value={order["Order ID"]}>
+									{order["Order ID"]} - {order["Service Name"]} -{" "}
+									{order["Customer Name"]}
+								</MenuItem>
+							))}
+						</Select>
+					</FormControl>
+					<FormControl fullWidth margin='dense'>
+						<InputLabel>Select Employee</InputLabel>
+						<Select
+							value={assignOrder.employeeId}
+							label='Select Employee'
+							onChange={(e) =>
+								setAssignOrder({
+									...assignOrder,
+									employeeId: e.target.value,
+								})
+							}>
+							<MenuItem value=''>Select Employee</MenuItem>
+							{employees.map((employee) => (
+								<MenuItem key={employee._id} value={employee._id}>
+									{employee.name} - Handles: {employee.servicesHandled.length}{" "}
+									services
+								</MenuItem>
+							))}
+						</Select>
+					</FormControl>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleAssignOrderToEmployee} disabled={loading}>
+						{loading ? "Assigning..." : "Assign"}
+					</Button>
+					<Button onClick={() => setShowAssignOrderForm(false)}>Cancel</Button>
+				</DialogActions>
+			</Dialog>
+
 			<div className='table-bottom-btns'>
-				{/* <button
-					className='tax-service-btn'
-					onClick={() => setShowAssignCustomerForm(true)}>
-					Assign Order to Employee
-				</button> */}
 				<button
 					className='tax-service-btn'
 					onClick={() => setShowAssignOrderForm(true)}>

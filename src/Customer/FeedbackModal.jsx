@@ -38,7 +38,7 @@ const FeedbackModal = ({ service, onClose }) => {
 
 			// Make the request with the token in headers
 			await axios.post(
-				"http://localhost:8000/api/customers/feedback",
+				"https://195-35-45-82.sslip.io:8000/api/customers/feedback",
 				{
 					userId: user._id,
 					serviceId: service.serviceId,

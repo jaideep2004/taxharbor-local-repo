@@ -44,7 +44,7 @@ const EmployeeQueries = () => {
 
 		try {
 			await axios.put(
-				"http://localhost:8000/api/employees/queries/reply",
+				"https://195-35-45-82.sslip.io:8000/api/employees/queries/reply",
 				{
 					queryId,
 					response,
@@ -89,7 +89,7 @@ const EmployeeQueries = () => {
 		if (!fileUrl) return "";
 		return fileUrl.startsWith("http")
 			? fileUrl
-			: `http://localhost:8000${fileUrl}`;
+			: `https://195-35-45-82.sslip.io:8000${fileUrl}`;
 	};
 
 	return (

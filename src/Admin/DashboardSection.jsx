@@ -6,6 +6,24 @@ import { useNotification } from "../NotificationContext";
 import DocumentRequirements from "./DocumentRequirements";
 import DashboardCharts from "./DashboardCharts";
 
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+
+import {
+	DialogContentText,
+	Select,
+	MenuItem,
+	FormControl,
+	InputLabel,
+	FormHelperText,
+	Checkbox,
+	ListItemText,
+} from "@mui/material";
+
 const DashboardSection = () => {
 	const navigate = useNavigate();
 	const { showNotification } = useNotification();
@@ -32,7 +50,6 @@ const DashboardSection = () => {
 		users,
 		newUser,
 		setNewUser,
-		handleCreateUser,
 		handleActivateUser,
 		handleDeactivateUser,
 		handleDeleteUser,
@@ -48,6 +65,7 @@ const DashboardSection = () => {
 		fetchDashboardData,
 		error,
 		setError,
+		handleCreateUser,
 	} = useContext(AdminDashboardContext);
 
 	useEffect(() => {
@@ -115,6 +133,11 @@ const DashboardSection = () => {
 					onClick={() => setShowEmployeeForm(true)}>
 					Add Employee
 				</button>
+				<button
+					className='tax-service-btn'
+					onClick={() => setShowUserForm(true)}>
+					Add Customer
+				</button>
 			</div>
 
 			<DashboardCharts
@@ -127,83 +150,83 @@ const DashboardSection = () => {
 				users={users}
 			/>
 
-			{showServiceForm && (
-				<div className='smodal'>
-					<h3>Add Service</h3>
-					<div>
-						<input
-							type='text'
-							placeholder='Service Category'
-							value={newService.category}
-							onChange={(e) =>
-								setNewService({ ...newService, category: e.target.value })
-							}
-						/>
-						<input
-							type='text'
-							placeholder='Service Name'
-							value={newService.name}
-							onChange={(e) =>
-								setNewService({ ...newService, name: e.target.value })
-							}
-						/>
-					</div>
-					<div>
-						<input
-							type='text'
-							placeholder='Service Description'
-							value={newService.description}
-							onChange={(e) =>
-								setNewService({ ...newService, description: e.target.value })
-							}
-						/>
-						<input
-							type='number'
-							placeholder='Service Price'
-							value={newService.actualPrice}
-							onChange={(e) =>
-								setNewService({ ...newService, actualPrice: e.target.value })
-							}
-						/>
-					</div>
-					<div>
-						<input
-							type='number'
-							placeholder='Discounted Service Price'
-							value={newService.salePrice}
-							onChange={(e) =>
-								setNewService({ ...newService, salePrice: e.target.value })
-							}
-						/>
-						<input
-							type='text'
-							placeholder='HSN Code'
-							value={newService.hsncode}
-							onChange={(e) =>
-								setNewService({ ...newService, hsncode: e.target.value })
-							}
-						/>
-					</div>
-					<div>
-						<label
-							htmlFor='tdueDate'
-							style={{ padding: "0", color: "white", textAlign: "left" }}>
-							Processing Days
-						</label>
-						<input
-							id='tdueDate'
-							type='number'
-							placeholder='Processing Days'
-							value={newService.processingDays}
-							onChange={(e) =>
-								setNewService((prev) => ({
-									...prev,
-									processingDays: parseInt(e.target.value),
-								}))
-							}
-							min='1'
-						/>
-					</div>
+			<Dialog
+				open={showServiceForm}
+				onClose={() => setShowServiceForm(false)}
+				maxWidth='md'
+				fullWidth>
+				<DialogTitle>Add Service</DialogTitle>
+				<DialogContent>
+					<TextField
+						margin='dense'
+						label='Service Category'
+						fullWidth
+						value={newService.category}
+						onChange={(e) =>
+							setNewService({ ...newService, category: e.target.value })
+						}
+					/>
+					<TextField
+						margin='dense'
+						label='Service Name'
+						fullWidth
+						value={newService.name}
+						onChange={(e) =>
+							setNewService({ ...newService, name: e.target.value })
+						}
+					/>
+					<TextField
+						margin='dense'
+						label='Service Description'
+						fullWidth
+						value={newService.description}
+						onChange={(e) =>
+							setNewService({ ...newService, description: e.target.value })
+						}
+					/>
+					<TextField
+						margin='dense'
+						label='Service Price'
+						type='number'
+						fullWidth
+						value={newService.actualPrice}
+						onChange={(e) =>
+							setNewService({ ...newService, actualPrice: e.target.value })
+						}
+					/>
+					<TextField
+						margin='dense'
+						label='Discounted Service Price'
+						type='number'
+						fullWidth
+						value={newService.salePrice}
+						onChange={(e) =>
+							setNewService({ ...newService, salePrice: e.target.value })
+						}
+					/>
+					<TextField
+						margin='dense'
+						label='HSN Code'
+						fullWidth
+						value={newService.hsncode}
+						onChange={(e) =>
+							setNewService({ ...newService, hsncode: e.target.value })
+						}
+					/>
+					<TextField
+						margin='dense'
+						label='Processing Days'
+						type='number'
+						fullWidth
+						value={newService.processingDays}
+						onChange={(e) =>
+							setNewService((prev) => ({
+								...prev,
+								processingDays: parseInt(e.target.value),
+							}))
+						}
+						inputProps={{ min: 1 }}
+					/>
 
 					<div>
 						<button
@@ -226,166 +249,231 @@ const DashboardSection = () => {
 							}
 						/>
 					</div>
-					<div id='modal-div'>
-						<button onClick={handleCreateService}>Create</button>
-						<button onClick={() => setShowServiceForm(false)}>Cancel</button>
-					</div>
-				</div>
-			)}
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleCreateService}>Create</Button>
+					<Button onClick={() => setShowServiceForm(false)}>Cancel</Button>
+				</DialogActions>
+			</Dialog>
 
-			{showManagerForm && (
-				<div className='smodal'>
-					<h3>Add Manager</h3>
-					<input
-						type='text'
-						placeholder='Manager Name'
+			<Dialog
+				open={showUserForm}
+				onClose={() => setShowUserForm(false)}
+				maxWidth='md'
+				fullWidth>
+				<DialogTitle>Add Customer</DialogTitle>
+				<DialogContent>
+					<TextField
+						margin='dense'
+						label='Full Name'
+						fullWidth
+						value={newUser.name || ""}
+						onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+					/>
+					<TextField
+						margin='dense'
+						label='Email'
+						type='email'
+						fullWidth
+						value={newUser.email || ""}
+						onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+					/>
+					<TextField
+						margin='dense'
+						label='Password'
+						type='password'
+						fullWidth
+						value={newUser.password || ""}
+						onChange={(e) =>
+							setNewUser({ ...newUser, password: e.target.value })
+						}
+					/>
+					{/* <TextField
+						margin='dense'
+						label='Mobile Number'
+						fullWidth
+						value={newUser.mobile || ''}
+						onChange={(e) =>
+							setNewUser({ ...newUser, mobile: e.target.value })
+						}
+					/> */}
+					<TextField
+						margin='dense'
+						label='Username'
+						fullWidth
+						value={newUser.username || ""}
+						onChange={(e) =>
+							setNewUser({ ...newUser, username: e.target.value })
+						}
+					/>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setShowUserForm(false)}>Cancel</Button>
+					<Button
+						onClick={() => {
+							handleCreateUser();
+							setShowUserForm(false);
+						}}>
+						Add Customer
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			<Dialog
+				open={showManagerForm}
+				onClose={() => setShowManagerForm(false)}
+				maxWidth='sm'
+				fullWidth>
+				<DialogTitle>Add Manager</DialogTitle>
+				<DialogContent>
+					<TextField
+						margin='dense'
+						label='Manager Name'
+						fullWidth
 						value={newManager.name}
 						onChange={(e) =>
 							setNewManager({ ...newManager, name: e.target.value })
 						}
 					/>
-					<input
+					<TextField
+						margin='dense'
+						label='Manager Email'
 						type='email'
-						placeholder='Manager Email'
+						fullWidth
 						value={newManager.email}
 						onChange={(e) =>
 							setNewManager({ ...newManager, email: e.target.value })
 						}
 					/>
-					<input
-						type='text'
-						placeholder='Username'
+					<TextField
+						margin='dense'
+						label='Username'
+						fullWidth
 						value={newManager.username}
 						onChange={(e) =>
 							setNewManager({ ...newManager, username: e.target.value })
 						}
 					/>
-					<input
+					<TextField
+						margin='dense'
+						label='Password'
 						type='password'
-						placeholder='Password'
+						fullWidth
 						value={newManager.password}
 						onChange={(e) =>
 							setNewManager({ ...newManager, password: e.target.value })
 						}
 					/>
-					<div id='modal-div'>
-						<button onClick={handleCreateManager}>Create</button>
-						<button onClick={() => setShowManagerForm(false)}>Cancel</button>
-					</div>
-				</div>
-			)}
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleCreateManager}>Create</Button>
+					<Button onClick={() => setShowManagerForm(false)}>Cancel</Button>
+				</DialogActions>
+			</Dialog>
 
-			{showUserForm && (
-				<div className='smodal'>
-					<h3>Add Customer</h3>
-					<input
-						type='text'
-						placeholder='Customer Name'
-						value={newUser.name}
-						onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-					/>
-					<input
-						type='email'
-						placeholder='Customer Email'
-						value={newUser.email}
-						onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-					/>
-					<select
-						value={newUser.role}
-						onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}>
-						<option value=''>Select Role</option>
-						<option value='admin'>Admin</option>
-						<option value='employee'>Employee</option>
-						<option value='customer'>Customer</option>
-					</select>
-					<select
-						value={newUser.serviceId}
-						onChange={(e) =>
-							setNewUser({ ...newUser, serviceId: e.target.value })
-						}>
-						<option value=''>Select Service</option>
-						{services.map((service) => (
-							<option key={service._id} value={service._id}>
-								{service.name}
-							</option>
-						))}
-					</select>
-					<input
-						type='text'
-						placeholder='Username'
-						value={newUser.username}
-						onChange={(e) =>
-							setNewUser({ ...newUser, username: e.target.value })
-						}
-					/>
-					<input
-						type='password'
-						placeholder='Password'
-						value={newUser.password}
-						onChange={(e) =>
-							setNewUser({ ...newUser, password: e.target.value })
-						}
-					/>
-					<div id='modal-div'>
-						<button onClick={handleCreateUser}>Create</button>
-						<button onClick={() => setShowUserForm(false)}>Cancel</button>
-					</div>
-				</div>
-			)}
-
-			{showEmployeeForm && (
-				<div className='smodal'>
-					<h3>Add Employee</h3>
-					<input
-						type='text'
-						placeholder='Employee Full Name'
+			<Dialog
+				open={showEmployeeForm}
+				onClose={() => setShowEmployeeForm(false)}
+				maxWidth='sm'
+				fullWidth>
+				<DialogTitle>Add Employee</DialogTitle>
+				<DialogContent>
+					<TextField
+						margin='dense'
+						label='Employee Full Name'
+						fullWidth
 						value={newEmployee.name}
 						onChange={(e) =>
 							setNewEmployee({ ...newEmployee, name: e.target.value })
 						}
 					/>
-					<input
+					<TextField
+						margin='dense'
+						label='Email ID'
 						type='email'
-						placeholder='Email ID'
+						fullWidth
 						value={newEmployee.email}
 						onChange={(e) =>
 							setNewEmployee({ ...newEmployee, email: e.target.value })
 						}
 					/>
-					<select
-						value={newEmployee.serviceId}
-						onChange={(e) =>
-							setNewEmployee({ ...newEmployee, serviceId: e.target.value })
-						}>
-						<option value=''>Select Service</option>
-						{services.map((service) => (
-							<option key={service._id} value={service._id}>
-								{service.name}
-							</option>
-						))}
-					</select>
-					<input
-						type='text'
-						placeholder='Username'
+					<FormControl fullWidth margin='dense'>
+						<InputLabel shrink>Services</InputLabel>
+						<Select
+							multiple
+							value={newEmployee.services || []} // Directly use newEmployee.services
+							onChange={(e) => {
+								const selected = e.target.value;
+								setNewEmployee({ ...newEmployee, services: selected });
+							}}
+							label='Services'
+							renderValue={(selected) =>
+								selected
+									.map(
+										(serviceId) =>
+											services.find((s) => s._id === serviceId)?.name ||
+											serviceId
+									)
+									.join(", ")
+							}>
+							{services.map((service) => (
+								<MenuItem key={service._id} value={service._id}>
+									<Checkbox
+										checked={
+											(newEmployee.services || []).indexOf(service._id) > -1
+										}
+									/>
+									<ListItemText primary={service.name} />
+								</MenuItem>
+							))}
+						</Select>
+						<FormHelperText>
+							Hold Ctrl/Cmd to select multiple services
+						</FormHelperText>
+					</FormControl>
+					<TextField
+						margin='dense'
+						label='Username'
+						fullWidth
 						value={newEmployee.username}
 						onChange={(e) =>
 							setNewEmployee({ ...newEmployee, username: e.target.value })
 						}
 					/>
-					<input
+					<TextField
+						margin='dense'
+						label='Password'
 						type='password'
-						placeholder='Password'
+						fullWidth
 						value={newEmployee.password}
 						onChange={(e) =>
 							setNewEmployee({ ...newEmployee, password: e.target.value })
 						}
 					/>
-					<div id='modal-div'>
-						<button onClick={handleCreateEmployee}>Create</button>
-						<button onClick={() => setShowEmployeeForm(false)}>Cancel</button>
-					</div>
-				</div>
-			)}
+					<TextField
+						margin='dense'
+						label='L-1 Code'
+						fullWidth
+						value={newEmployee.Lminus1code}
+						onChange={(e) =>
+							setNewEmployee({ ...newEmployee, Lminus1code: e.target.value })
+						}
+					/>
+					<TextField
+						margin='dense'
+						label='L+1 Code'
+						fullWidth
+						value={newEmployee.L1EmpCode}
+						onChange={(e) =>
+							setNewEmployee({ ...newEmployee, L1EmpCode: e.target.value })
+						}
+					/>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleCreateEmployee}>Create</Button>
+					<Button onClick={() => setShowEmployeeForm(false)}>Cancel</Button>
+				</DialogActions>
+			</Dialog>
 		</div>
 	);
 };

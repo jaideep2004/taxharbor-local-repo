@@ -13,6 +13,11 @@ import {
 	DialogContent,
 	DialogContentText,
 	DialogTitle,
+	TextField,
+	Select,
+	MenuItem,
+	FormControl,
+	InputLabel,
 } from "@mui/material";
 
 const ManagersSection = () => {
@@ -115,7 +120,7 @@ const ManagersSection = () => {
 		const changes = getChangedFields();
 		try {
 			const response = await axios.patch(
-				`https://195-35-45-82.sslip.io:8000/api/admin/users/${editingRow}`,
+				`http://localhost:8000/api/admin/users/${editingRow}`,
 				changes
 			);
 
@@ -143,22 +148,6 @@ const ManagersSection = () => {
 		setEditedData({});
 		setOriginalData({});
 	};
-
-	// const filteredManagers = managers.filter((manager) => {
-	// 	const matchesSearch =
-	// 		manager._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-	// 		manager.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-	// 		manager.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-	// 		(manager.username &&
-	// 			manager.username.toLowerCase().includes(searchTerm.toLowerCase()));
-
-	// 	const createdAt = new Date(manager.createdAt);
-	// 	const matchesDate =
-	// 		(!dateFilter.fromDate || createdAt >= new Date(dateFilter.fromDate)) &&
-	// 		(!dateFilter.toDate || createdAt <= new Date(dateFilter.toDate));
-
-	// 	return matchesSearch && matchesDate;
-	// });
 
 	const normalizeDate = (dateStr) => {
 		const date = new Date(dateStr);
@@ -693,7 +682,6 @@ const ManagersSection = () => {
 				</table>
 			</div>
 
-			{/* Confirmation Dialog */}
 			<Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
 				<DialogTitle>Confirm Changes</DialogTitle>
 				<DialogContent>
@@ -717,93 +705,118 @@ const ManagersSection = () => {
 				</DialogActions>
 			</Dialog>
 
-			{showManagerForm && (
-				<div className='smodal'>
-					<h3>Add Manager</h3>
-					<input
-						type='text'
-						placeholder='Manager Name'
+			{/* Add Manager Modal with MUI */}
+			<Dialog
+				open={showManagerForm}
+				onClose={() => setShowManagerForm(false)}
+				maxWidth='sm'
+				fullWidth>
+				<DialogTitle>Add Manager</DialogTitle>
+				<DialogContent>
+					<TextField
+						margin='dense'
+						label='Manager Name'
+						fullWidth
 						value={newManager.name}
 						onChange={(e) =>
 							setNewManager({ ...newManager, name: e.target.value })
 						}
 					/>
-					<input
+					<TextField
+						margin='dense'
+						label='Manager Email'
 						type='email'
-						placeholder='Manager Email'
+						fullWidth
 						value={newManager.email}
 						onChange={(e) =>
 							setNewManager({ ...newManager, email: e.target.value })
 						}
 					/>
-					<input
-						type='text'
-						placeholder='Username'
+					<TextField
+						margin='dense'
+						label='Username'
+						fullWidth
 						value={newManager.username}
 						onChange={(e) =>
 							setNewManager({ ...newManager, username: e.target.value })
 						}
 					/>
-					<input
+					<TextField
+						margin='dense'
+						label='Password'
 						type='password'
-						placeholder='Password'
+						fullWidth
 						value={newManager.password}
 						onChange={(e) =>
 							setNewManager({ ...newManager, password: e.target.value })
 						}
 					/>
-					<div id='modal-div'>
-						<button onClick={handleCreateManager}>Create</button>
-						<button onClick={() => setShowManagerForm(false)}>Cancel</button>
-					</div>
-				</div>
-			)}
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleCreateManager}>Create</Button>
+					<Button onClick={() => setShowManagerForm(false)}>Cancel</Button>
+				</DialogActions>
+			</Dialog>
 
-			{showAssignEmployeeForm && (
-				<div className='smodal'>
-					<h3>Assign Employee to Manager</h3>
-					<select
-						value={assignEmployee.employeeId}
-						onChange={(e) =>
-							setAssignEmployee({
-								...assignEmployee,
-								employeeId: e.target.value,
-							})
-						}>
-						<option value=''>Select Employee</option>
-						{users
-							.filter((user) => user.role === "employee")
-							.map((employee) => (
-								<option key={employee._id} value={employee._id}>
-									{employee.name}
-								</option>
-							))}
-					</select>
-					<select
-						value={assignEmployee.managerId}
-						onChange={(e) =>
-							setAssignEmployee({
-								...assignEmployee,
-								managerId: e.target.value,
-							})
-						}>
-						<option value=''>Select Manager</option>
-						{users
-							.filter((user) => user.role === "manager")
-							.map((manager) => (
-								<option key={manager._id} value={manager._id}>
-									{manager.name}
-								</option>
-							))}
-					</select>
-					<div id='modal-div'>
-						<button onClick={handleAssignEmployee}>Assign Employee</button>
-						<button onClick={() => setShowAssignEmployeeForm(false)}>
-							Cancel
-						</button>
-					</div>
-				</div>
-			)}
+			{/* Assign Employee Modal with MUI */}
+			<Dialog
+				open={showAssignEmployeeForm}
+				onClose={() => setShowAssignEmployeeForm(false)}
+				maxWidth='sm'
+				fullWidth>
+				<DialogTitle>Assign Employee to Manager</DialogTitle>
+				<DialogContent>
+					<FormControl fullWidth margin='dense'>
+						<InputLabel>Select Employee</InputLabel>
+						<Select
+							value={assignEmployee.employeeId}
+							label='Select Employee'
+							onChange={(e) =>
+								setAssignEmployee({
+									...assignEmployee,
+									employeeId: e.target.value,
+								})
+							}>
+							<MenuItem value=''>Select Employee</MenuItem>
+							{users
+								.filter((user) => user.role === "employee")
+								.map((employee) => (
+									<MenuItem key={employee._id} value={employee._id}>
+										{employee.name}
+									</MenuItem>
+								))}
+						</Select>
+					</FormControl>
+					<FormControl fullWidth margin='dense'>
+						<InputLabel>Select Manager</InputLabel>
+						<Select
+							value={assignEmployee.managerId}
+							label='Select Manager'
+							onChange={(e) =>
+								setAssignEmployee({
+									...assignEmployee,
+									managerId: e.target.value,
+								})
+							}>
+							<MenuItem value=''>Select Manager</MenuItem>
+							{users
+								.filter((user) => user.role === "manager")
+								.map((manager) => (
+									<MenuItem key={manager._id} value={manager._id}>
+										{manager.name}
+									</MenuItem>
+								))}
+						</Select>
+					</FormControl>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleAssignEmployee}>Assign Employee</Button>
+					<Button onClick={() => setShowAssignEmployeeForm(false)}>
+						Cancel
+					</Button>
+				</DialogActions>
+			</Dialog>
+
 			<div className='table-bottom-btns'>
 				<button
 					className='tax-service-btn'

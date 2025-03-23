@@ -99,7 +99,7 @@ const CustomerMessageCenter = () => {
 		try {
 			const token = localStorage.getItem("customerToken");
 			const response = await axios.post(
-				"http://localhost:8000/api/messages/send",
+				"https://195-35-45-82.sslip.io:8000/api/messages/send",
 				formData,
 				{
 					headers: {
@@ -127,7 +127,7 @@ const CustomerMessageCenter = () => {
 		if (!fileUrl) return null;
 		return fileUrl.startsWith("http")
 			? fileUrl
-			: `http://localhost:8000${fileUrl}`;
+			: `https://195-35-45-82.sslip.io:8000${fileUrl}`;
 	};
 
 	return (
