@@ -31,7 +31,7 @@ const FlexiCustomerForm = () => {
 		const fetchServices = async () => {
 			try {
 				const response = await axios.get(
-					"http://localhost:8000/api/customers/user-services"
+					"https://195-35-45-82.sslip.io:8000/api/customers/user-services"
 				);
 				setServices(response.data.services);
 			} catch (error) {
@@ -65,7 +65,7 @@ const FlexiCustomerForm = () => {
 			}
 
 			const response = await axios.post(
-				"http://localhost:8000/api/customers/flexi-register",
+				"https://195-35-45-82.sslip.io:8000/api/customers/flexi-register",
 				formData
 			);
 

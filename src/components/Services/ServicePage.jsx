@@ -38,7 +38,7 @@ const ServicePage = () => {
 		setLoading(true);
 		try {
 			const response = await axios.get(
-				`http://localhost:8000/api/customers/user-services/${serviceId}`
+				`https://195-35-45-82.sslip.io:8000/api/customers/user-services/${serviceId}`
 			);
 			setLoading(false);
 			setService(response.data.service);
@@ -79,7 +79,7 @@ const ServicePage = () => {
 			}
 
 			const paymentResponse = await axios.post(
-				"http://localhost:8000/api/customers/user-payment",
+				"https://195-35-45-82.sslip.io:8000/api/customers/user-payment",
 				{ amount: selectedPackage.salePrice }
 			);
 
@@ -128,7 +128,7 @@ const ServicePage = () => {
 				handler: async function (response) {
 					try {
 						const registrationResponse = await axios.post(
-							"http://localhost:8000/api/customers/user-register",
+							"https://195-35-45-82.sslip.io:8000/api/customers/user-register",
 							{
 								name,
 								email,
@@ -153,7 +153,7 @@ const ServicePage = () => {
 						}
 						await fetchCustomerDashboard();
 						await axios.post(
-							"http://localhost:8000/api/customers/payment-success",
+							"https://195-35-45-82.sslip.io:8000/api/customers/payment-success",
 							{
 								razorpay_payment_id: response.razorpay_payment_id,
 								razorpay_order_id: response.razorpay_order_id,
@@ -323,7 +323,7 @@ const ServicePage = () => {
 						</Grid>
 					</Container>
 
-					<Container sx={{ pt: 8, pb: 2 }}>
+					{/* <Container sx={{ pt: 8, pb: 2 }}>
 						<Grid container spacing={4} id='service-pg-cards'>
 							{service?.packages?.map((pkg, index) => (
 								<Grid item xs={12} sm={4} key={index}>
@@ -384,7 +384,7 @@ const ServicePage = () => {
 								</Grid>
 							))}
 						</Grid>
-					</Container>
+					</Container> */}
 
 					{/* Banner with Heading */}
 					<div

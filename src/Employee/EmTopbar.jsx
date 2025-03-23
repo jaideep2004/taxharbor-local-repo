@@ -7,7 +7,7 @@ const EmTopbar = ({ activeSection }) => {
 		switch (activeSection) {
 			case "Dashboard":
 				return "Employee Dashboard";
-			case "Customers":
+			case "Orders":
 				return "Assigned Orders";
 			case "Customer Queries":
 				return "Customer Queries";

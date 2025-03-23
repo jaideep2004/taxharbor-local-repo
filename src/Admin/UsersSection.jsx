@@ -135,7 +135,7 @@ const UsersSection = () => {
 		const changes = getChangedFields();
 		try {
 			const response = await axios.patch(
-				`http://localhost:8000/api/admin/users/${editingRow}`,
+				`https://195-35-45-82.sslip.io:8000/api/admin/users/${editingRow}`,
 				changes
 			);
 

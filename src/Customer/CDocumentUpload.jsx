@@ -45,7 +45,7 @@ const CDocumentUpload = () => {
 
 	const renderUploadedDocuments = () => {
 		if (!user?._id) return null;
-		const baseUrl = `http://localhost:8000/uploads/${user._id}/`;
+		const baseUrl = `https://195-35-45-82.sslip.io:8000/uploads/${user._id}/`;
 
 		return (
 			<div className='uploaded-documents'>

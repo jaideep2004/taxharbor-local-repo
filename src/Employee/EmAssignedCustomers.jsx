@@ -162,7 +162,7 @@ const EmAssignedCustomers = () => {
 					</tbody>
 				</table>
 			) : (
-				<p>No assigned customers available.</p>
+				<p>No assigned orders available.</p>
 			)}
 
 			{canDownload && (

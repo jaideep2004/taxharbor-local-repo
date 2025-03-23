@@ -49,7 +49,7 @@ const CDashSection = () => {
 
 		try {
 			const paymentResponse = await axios.post(
-				"http://localhost:8000/api/customers/user-payment",
+				"https://195-35-45-82.sslip.io:8000/api/customers/user-payment",
 				{
 					amount: actualPrice,
 					currency: "INR",
@@ -67,7 +67,7 @@ const CDashSection = () => {
 				order_id: order.id,
 				handler: async (response) => {
 					await axios.post(
-						"http://localhost:8000/api/customers/payment-success",
+						"https://195-35-45-82.sslip.io:8000/api/customers/payment-success",
 						{
 							razorpay_payment_id: response.razorpay_payment_id,
 							amount: actualPrice * 100,

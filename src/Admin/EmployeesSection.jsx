@@ -161,7 +161,7 @@ const EmployeesSection = () => {
 		const changes = getChangedFields();
 		try {
 			const response = await axios.patch(
-				`http://localhost:8000/api/admin/users/${editingRow}`,
+				`https://195-35-45-82.sslip.io:8000/api/admin/users/${editingRow}`,
 				changes
 			);
 
@@ -241,7 +241,7 @@ const EmployeesSection = () => {
 		setLoading(true);
 		try {
 			const response = await axios.post(
-				"http://localhost:8000/api/admin/promote-to-manager",
+				"https://195-35-45-82.sslip.io:8000/api/admin/promote-to-manager",
 				{
 					employeeId: promotingEmployee._id,
 				},
@@ -462,7 +462,7 @@ const EmployeesSection = () => {
 		setLoading(true);
 		try {
 			const response = await axios.post(
-				"http://localhost:8000/api/admin/update-download-access",
+				"https://195-35-45-82.sslip.io:8000/api/admin/update-download-access",
 				{
 					employeeId,
 					allowDownload,

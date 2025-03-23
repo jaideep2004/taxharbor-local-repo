@@ -7,7 +7,7 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
 		"Dashboard",
 		"Services",
 		"Customers",
-		"Managers",
+		// "Managers",
 		"Employees",
 		"Orders",
 		"Leads",

@@ -135,7 +135,7 @@ const AdminDashboardProvider = ({ children }) => {
 
 		try {
 			const { data } = await axios.get(
-				"http://localhost:8000/api/admin/dashboard",
+				"https://195-35-45-82.sslip.io:8000/api/admin/dashboard",
 				{ headers }
 			);
 			// setLoading(true);
@@ -196,7 +196,7 @@ const AdminDashboardProvider = ({ children }) => {
 		try {
 			// Send login request
 			const response = await axios.post(
-				"http://localhost:8000/api/admin/login",
+				"https://195-35-45-82.sslip.io:8000/api/admin/login",
 				{
 					email,
 					password,
@@ -271,7 +271,7 @@ const AdminDashboardProvider = ({ children }) => {
 		try {
 			const token = localStorage.getItem("adminToken");
 			const { data } = await axios.post(
-				"http://localhost:8000/api/admin/services",
+				"https://195-35-45-82.sslip.io:8000/api/admin/services",
 				{
 					category,
 					name,
@@ -330,7 +330,7 @@ const AdminDashboardProvider = ({ children }) => {
 		try {
 			const token = localStorage.getItem("adminToken");
 			const response = await axios.post(
-				"http://localhost:8000/api/admin/manager",
+				"https://195-35-45-82.sslip.io:8000/api/admin/manager",
 				{ name, email, role: "manager", username, password },
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);
@@ -395,7 +395,7 @@ const AdminDashboardProvider = ({ children }) => {
 		try {
 			const token = localStorage.getItem("adminToken");
 			const { data } = await axios.post(
-				"http://localhost:8000/api/admin/employee",
+				"https://195-35-45-82.sslip.io:8000/api/admin/employee",
 				{
 					name,
 					email,
@@ -446,7 +446,7 @@ const AdminDashboardProvider = ({ children }) => {
 		try {
 			const token = localStorage.getItem("adminToken");
 			const response = await axios.post(
-				"http://localhost:8000/api/admin/createUser",
+				"https://195-35-45-82.sslip.io:8000/api/admin/createUser",
 				{ name, email, role: "customer", username, password },
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);
@@ -480,7 +480,7 @@ const AdminDashboardProvider = ({ children }) => {
 		try {
 			const token = localStorage.getItem("adminToken");
 			await axios.put(
-				`http://localhost:8000/api/admin/user/activate/${userId}`,
+				`https://195-35-45-82.sslip.io:8000/api/admin/user/activate/${userId}`,
 				{},
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);
@@ -515,7 +515,7 @@ const AdminDashboardProvider = ({ children }) => {
 			);
 			const token = localStorage.getItem("adminToken");
 			await axios.put(
-				`http://localhost:8000/api/admin/user/deactivate/${userId}`,
+				`https://195-35-45-82.sslip.io:8000/api/admin/user/deactivate/${userId}`,
 				{},
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);
@@ -539,7 +539,7 @@ const AdminDashboardProvider = ({ children }) => {
 		setLoading(true);
 		try {
 			const token = localStorage.getItem("adminToken");
-			await axios.delete(`http://localhost:8000/api/admin/user/${userId}`, {
+			await axios.delete(`https://195-35-45-82.sslip.io:8000/api/admin/user/${userId}`, {
 				headers: { Authorization: `Bearer ${token}` },
 			});
 
@@ -565,7 +565,7 @@ const AdminDashboardProvider = ({ children }) => {
 			const token = localStorage.getItem("adminToken");
 			console.log("Assign Order Payload:", { orderId, employeeId });
 			await axios.post(
-				"http://localhost:8000/api/admin/assign-order",
+				"https://195-35-45-82.sslip.io:8000/api/admin/assign-order",
 				{ orderId, employeeId },
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);
@@ -595,7 +595,7 @@ const AdminDashboardProvider = ({ children }) => {
 		try {
 			const token = localStorage.getItem("adminToken");
 			await axios.post(
-				"http://localhost:8000/api/admin/assign-employee",
+				"https://195-35-45-82.sslip.io:8000/api/admin/assign-employee",
 				{ employeeId, managerId },
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);
@@ -623,7 +623,7 @@ const AdminDashboardProvider = ({ children }) => {
 			};
 
 			const response = await axios.put(
-				`http://localhost:8000/api/admin/services/${updatedService._id}`,
+				`https://195-35-45-82.sslip.io:8000/api/admin/services/${updatedService._id}`,
 				requestData,
 				{
 					headers: { Authorization: `Bearer ${token}` },
@@ -658,7 +658,7 @@ const AdminDashboardProvider = ({ children }) => {
 		try {
 			const token = localStorage.getItem("adminToken");
 			await axios.delete(
-				`http://localhost:8000/api/admin/services/${serviceId}`,
+				`https://195-35-45-82.sslip.io:8000/api/admin/services/${serviceId}`,
 				{
 					headers: { Authorization: `Bearer ${token}` },
 				}
@@ -712,7 +712,7 @@ const AdminDashboardProvider = ({ children }) => {
 			// Make the API request with the Authorization header
 			console.log("Making API request to update service status..."); // Log before making the request
 			const response = await axios.put(
-				`http://localhost:8000/api/admin/update-service-status/${userId}`,
+				`https://195-35-45-82.sslip.io:8000/api/admin/update-service-status/${userId}`,
 				{ serviceId, status }, // Pass serviceId and status
 				{
 					headers: {
@@ -753,7 +753,7 @@ const AdminDashboardProvider = ({ children }) => {
 		try {
 			const token = localStorage.getItem("adminToken");
 			const { data } = await axios.get(
-				"http://localhost:8000/api/admin/orders",
+				"https://195-35-45-82.sslip.io:8000/api/admin/orders",
 				{
 					headers: { Authorization: `Bearer ${token}` },
 				}
@@ -780,7 +780,7 @@ const AdminDashboardProvider = ({ children }) => {
 	const fetchMessages = async () => {
 		try {
 			// setLoading(true);
-			const response = await axios.get("http://localhost:8000/api/messages", {
+			const response = await axios.get("https://195-35-45-82.sslip.io:8000/api/messages", {
 				headers: {
 					Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
 				},
@@ -817,7 +817,7 @@ const AdminDashboardProvider = ({ children }) => {
 		try {
 			setAssigningService(true);
 			const response = await axios.post(
-				`http://localhost:8000/api/admin/users/${userId}/assign-service`,
+				`https://195-35-45-82.sslip.io:8000/api/admin/users/${userId}/assign-service`,
 				{ serviceId }
 			);
 			if (response.status === 200) {
@@ -856,7 +856,7 @@ const AdminDashboardProvider = ({ children }) => {
 			const token = localStorage.getItem("adminToken");
 
 			const response = await axios.put(
-				`http://localhost:8000/api/admin/services/${serviceId}/toggle-activation`,
+				`https://195-35-45-82.sslip.io:8000/api/admin/services/${serviceId}/toggle-activation`,
 				{},
 				{
 					headers: { Authorization: `Bearer ${token}` },
@@ -895,7 +895,7 @@ const AdminDashboardProvider = ({ children }) => {
 		try {
 			const token = localStorage.getItem("adminToken");
 			const { data } = await axios.get(
-				"http://localhost:8000/api/admin/leads",
+				"https://195-35-45-82.sslip.io:8000/api/admin/leads",
 				{
 					headers: { Authorization: `Bearer ${token}` },
 				}
@@ -919,7 +919,7 @@ const AdminDashboardProvider = ({ children }) => {
 		try {
 			const token = localStorage.getItem("adminToken");
 			const response = await axios.post(
-				"http://localhost:8000/api/admin/leads/assign",
+				"https://195-35-45-82.sslip.io:8000/api/admin/leads/assign",
 				{ leadId, employeeId },
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);
@@ -958,7 +958,7 @@ const AdminDashboardProvider = ({ children }) => {
 		try {
 			const token = localStorage.getItem("adminToken");
 			const response = await axios.post(
-				"http://localhost:8000/api/admin/leads/convert",
+				"https://195-35-45-82.sslip.io:8000/api/admin/leads/convert",
 				{ leadId, paymentDetails },
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);

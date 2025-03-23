@@ -22,7 +22,7 @@ const Orders = () => {
 				setLoading(true);
 				const token = localStorage.getItem("adminToken");
 				const response = await axios.get(
-					"http://localhost:8000/api/admin/orders",
+					"https://195-35-45-82.sslip.io:8000/api/admin/orders",
 					{
 						headers: { Authorization: `Bearer ${token}` },
 					}

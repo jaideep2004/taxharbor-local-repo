@@ -25,7 +25,7 @@ const EmployeeDashboard = () => {
 				<EmTopbar activeSection={activeSection} />
 				<div className='content'>
 					{activeSection === "Dashboard" && <EmDash />}
-					{activeSection === "Customers" && <EmAssignedCustomers />}
+					{activeSection === "Orders" && <EmAssignedCustomers />}
 					{activeSection === "Customer Queries" && <EmployeeQueries />}
 					{activeSection === "Profile" && <EmProfile />}
 				</div>

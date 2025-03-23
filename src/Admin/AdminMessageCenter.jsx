@@ -74,7 +74,7 @@ const AdminMessageCenter = () => {
 		const fetchFilterOptions = async () => {
 			try {
 				const response = await axios.get(
-					"http://localhost:8000/api/admin/filters",
+					"https://195-35-45-82.sslip.io:8000/api/admin/filters",
 					{
 						headers: {
 							Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
@@ -199,7 +199,7 @@ const AdminMessageCenter = () => {
 
 		try {
 			const response = await axios.patch(
-				`http://localhost:8000/api/messages/${messageId}/reply`,
+				`https://195-35-45-82.sslip.io:8000/api/messages/${messageId}/reply`,
 				formData,
 				{
 					headers: {
@@ -237,7 +237,7 @@ const AdminMessageCenter = () => {
 		if (!fileUrl) return "";
 		return fileUrl.startsWith("http")
 			? fileUrl
-			: `http://localhost:8000${fileUrl}`;
+			: `https://195-35-45-82.sslip.io:8000${fileUrl}`;
 	};
 
 	// Get file icon based on mime type
