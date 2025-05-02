@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { AdminDashboardContext } from "./AdminDashboardContext";
 import { useNotification } from "../NotificationContext";
 import { saveAs } from "file-saver";
@@ -14,6 +14,11 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
 
 const ServicesSection = () => {
 	const [showServiceForm, setShowServiceForm] = useState(false);
@@ -41,6 +46,13 @@ const ServicesSection = () => {
 	const handleToggleDocRequirements = () => {
 		setShowDocRequirements((prev) => !prev); // Toggle visibility
 	};
+
+	const [uniqueCategories, setUniqueCategories] = useState([]);
+	const [newCategoryInput, setNewCategoryInput] = useState("");
+	const [categoryInputMode, setCategoryInputMode] = useState(false);
+
+	const [editCategoryInputMode, setEditCategoryInputMode] = useState(false);
+	const [editNewCategoryInput, setEditNewCategoryInput] = useState("");
 
 	const normalizeDate = (dateStr) => {
 		const date = new Date(dateStr);
@@ -86,6 +98,80 @@ const ServicesSection = () => {
 			return 0;
 		});
 
+	// Extract unique categories from services
+	useEffect(() => {
+		if (services && services.length > 0) {
+			const categories = [...new Set(services.map(service => service.category))];
+			setUniqueCategories(categories.filter(Boolean).sort());
+		}
+	}, [services]);
+
+	// Handle category selection or new category creation
+	const handleCategoryChange = (e) => {
+		const value = e.target.value;
+		if (value === "add_new_category") {
+			setCategoryInputMode(true);
+		} else {
+			setNewService({ 
+				...newService, 
+				category: value,
+				packages: newService?.packages || [] 
+			});
+		}
+	};
+
+	// Handle saving a new category
+	const handleSaveNewCategory = () => {
+		if (newCategoryInput.trim()) {
+			setNewService({ 
+				...newService, 
+				category: newCategoryInput.trim(),
+				packages: newService?.packages || [] 
+			});
+			setUniqueCategories([...uniqueCategories, newCategoryInput.trim()].sort());
+			setCategoryInputMode(false);
+			setNewCategoryInput("");
+		}
+	};
+
+	// Cancel adding a new category
+	const handleCancelNewCategory = () => {
+		setCategoryInputMode(false);
+		setNewCategoryInput("");
+	};
+
+	// Handle category change in edit form
+	const handleEditCategoryChange = (e) => {
+		const value = e.target.value;
+		if (value === "add_new_category") {
+			setEditCategoryInputMode(true);
+		} else {
+			setEditingService({
+				...editingService,
+				category: value,
+			});
+		}
+	};
+
+	// Handle saving a new category in edit form
+	const handleSaveEditNewCategory = () => {
+		if (editNewCategoryInput.trim()) {
+			setEditingService({
+				...editingService,
+				category: editNewCategoryInput.trim(),
+			});
+			setUniqueCategories([...uniqueCategories, editNewCategoryInput.trim()].sort());
+			setEditCategoryInputMode(false);
+			setEditNewCategoryInput("");
+		}
+	};
+
+	// Cancel adding a new category in edit form
+	const handleCancelEditNewCategory = () => {
+		setEditCategoryInputMode(false);
+		setEditNewCategoryInput("");
+	};
+
 	const handleUpdateServiceWithProcessingDays = async (updatedService) => {
 		const originalService = services.find((s) => s._id === updatedService._id);
 
@@ -107,6 +193,8 @@ const ServicesSection = () => {
 			await handleUpdateService(updatedService);
 		}
 		setEditingService(null);
+		setEditCategoryInputMode(false);
+		setEditNewCategoryInput("");
 	};
 
 	// Export functions
@@ -173,7 +261,7 @@ const ServicesSection = () => {
 		setNewService((prev) => ({
 			...prev,
 			packages: [
-				...prev.packages,
+				...(prev.packages || []),
 				{
 					name: "",
 					description: "",
@@ -189,14 +277,14 @@ const ServicesSection = () => {
 	const removePackage = (index) => {
 		setNewService((prev) => ({
 			...prev,
-			packages: prev.packages.filter((_, i) => i !== index),
+			packages: (prev.packages || []).filter((_, i) => i !== index),
 		}));
 	};
 
 	const updatePackage = (index, field, value) => {
 		setNewService((prev) => ({
 			...prev,
-			packages: prev.packages.map((pkg, i) =>
+			packages: (prev.packages || []).map((pkg, i) =>
 				i === index ? { ...pkg, [field]: value } : pkg
 			),
 		}));
@@ -205,8 +293,10 @@ const ServicesSection = () => {
 	const addFeature = (packageIndex) => {
 		setNewService((prev) => ({
 			...prev,
-			packages: prev.packages.map((pkg, i) =>
-				i === packageIndex ? { ...pkg, features: [...pkg.features, ""] } : pkg
+			packages: (prev.packages || []).map((pkg, i) =>
+				i === packageIndex
+					? { ...pkg, features: [...(pkg.features || []), ""] }
+					: pkg
 			),
 		}));
 	};
@@ -214,11 +304,11 @@ const ServicesSection = () => {
 	const updateFeature = (packageIndex, featureIndex, value) => {
 		setNewService((prev) => ({
 			...prev,
-			packages: prev.packages.map((pkg, i) =>
+			packages: (prev.packages || []).map((pkg, i) =>
 				i === packageIndex
 					? {
 							...pkg,
-							features: pkg.features.map((feat, j) =>
+							features: (pkg.features || []).map((feat, j) =>
 								j === featureIndex ? value : feat
 							),
 					  }
@@ -230,11 +320,13 @@ const ServicesSection = () => {
 	const removeFeature = (packageIndex, featureIndex) => {
 		setNewService((prev) => ({
 			...prev,
-			packages: prev.packages.map((pkg, i) =>
+			packages: (prev.packages || []).map((pkg, i) =>
 				i === packageIndex
 					? {
 							...pkg,
-							features: pkg.features.filter((_, j) => j !== featureIndex),
+							features: (pkg.features || []).filter(
+								(_, j) => j !== featureIndex
+							),
 					  }
 					: pkg
 			),
@@ -286,7 +378,22 @@ const ServicesSection = () => {
 					</button>
 					<button
 						className='tax-service-btn'
-						onClick={() => setShowServiceForm(true)}>
+						onClick={() => {
+							// Initialize a new service with default values
+							setNewService({
+								name: "",
+								description: "",
+								category: "",
+								actualPrice: "",
+								salePrice: "",
+								currency: "INR",
+								processingDays: 7,
+								packages: [],
+								requiredDocuments: [],
+								gstRate: 18
+							});
+							setShowServiceForm(true);
+						}}>
 						Add Service
 					</button>
 					<button className='tax-service-btn' onClick={handleDownloadCSV}>
@@ -306,139 +413,252 @@ const ServicesSection = () => {
 							<th>Service Category</th>
 							<th>Service Name</th>
 							<th>Service Description</th>
-							<th>Sale Price</th>
-							<th>Discounted Price</th>
-							<th>Currency</th>
+							<th>Packages</th>
 							<th>HSN Code</th>
-							<th>Completion Days</th>
+							<th>Currency</th>
 							<th>Required Documents</th>
 							<th>Status</th>
 							<th>Actions</th>
 						</tr>
 					</thead>
 					<tbody>
-						{filteredServices.map((service) => (
-							<tr key={service._id}>
-								<td>{service._id}</td>
-								<td>{formatDate(service.createdAt)}</td>
-								<td>{service.category}</td>
-								<td>{service.name}</td>
-								<td>{service.description}</td>
-
-								<td>
-									{service.packages && service.packages.length > 0 ? (
-										<div>
-											{service.packages.map((pkg, index) => (
-												<div key={index} style={{ marginBottom: '5px' }}>
-													<strong>{pkg.name}</strong>: ₹{pkg.actualPrice || 'N/A'}
-												</div>
-											))}
-										</div>
-									) : (
-										<span>No packages</span>
-									)}
-								</td>
-								<td>
-									{service.packages && service.packages.length > 0 ? (
-										<div>
-											{service.packages.map((pkg, index) => (
-												<div key={index} style={{ marginBottom: '5px' }}>
-													<strong>{pkg.name}</strong>: ₹{pkg.salePrice || 'N/A'}
-												</div>
-											))}
-										</div>
-									) : (
-										<span>No packages</span>
-									)}
-								</td>
-								<td>{service.currency}</td>
-								<td>{service.hsncode || "No HSN Code"}</td>
-								<td>
-									{service.packages && service.packages.length > 0 ? (
-										<div>
-											{service.packages.map((pkg, index) => (
-												<div key={index} style={{ marginBottom: '5px' }}>
-													<strong>{pkg.name}</strong>: {pkg.processingDays || 0} days
-												</div>
-											))}
-										</div>
-									) : (
-										<span>No packages</span>
-									)}
-								</td>
-								<td>
-									{service.requiredDocuments &&
-									service.requiredDocuments.length > 0 ? (
-										<select
-											style={{
-												border: "1px solid var(--accent)",
-												borderRadius: "15px",
-												padding: "15px",
-												fontSize: "16px",
-											}}>
-											{service.requiredDocuments.map((doc) => (
-												<option key={doc._id} className='service-info'>
-													{doc.name} - {doc.description || "no desc"}
-												</option>
-											))}
-										</select>
-									) : (
-										"No documnets specified"
-									)}
-								</td>
-								<td>
-									<span
-										style={{
-											color: service.isActive ? "green" : "red",
-											fontWeight: "bold",
-										}}>
-										{service.isActive !== false ? "Active" : "Inactive"}
-									</span>
-								</td>
-								<td className='tax-btn-cont'>
-									<button
-										className='tax-service-btn'
-										onClick={() => setEditingService(service)}>
-										<i class='fa-solid fa-pencil'></i>
-									</button>
-									<button
-										className='tax-service-btn'
-										onClick={() => handleToggleServiceActivation(service._id)}
-										style={{
-											backgroundColor:
-												service.isActive !== false ? "#ff6b6b" : "#4caf50",
-											color: "white",
-										}}>
-										{service.isActive !== false ? "Deactivate" : "Activate"}
-									</button>
-									<button
-										className='serviceDelete'
-										onClick={() => handleDeleteService(service._id)}>
-										<i class='fa-solid fa-trash'></i>
-									</button>
-								</td>
-							</tr>
-						))}
+						{filteredServices.flatMap((service) => {
+							// If the service has packages, create a row for each package
+							if (service.packages && service.packages.length > 0) {
+								return service.packages.map((pkg, pkgIndex) => (
+									<tr
+										key={`${service._id}-pkg-${pkgIndex}`}
+										style={pkgIndex > 0 ? { backgroundColor: "#f9f9f9" } : {}}>
+										<td>{pkgIndex === 0 ? service._id : ""}</td>
+										<td>
+											{pkgIndex === 0 ? formatDate(service.createdAt) : ""}
+										</td>
+										<td>{pkgIndex === 0 ? service.category : ""}</td>
+										<td>{service.name}</td>
+										<td>{pkgIndex === 0 ? service.description : ""}</td>
+										<td>
+											<div
+												style={{
+													padding: "8px",
+													border: "1px solid var(--accent)",
+													borderRadius: "15px",
+													fontSize: "14px",
+												}}>
+												<strong>{pkg.name}</strong>
+												<br />
+												Price: ₹{pkg.salePrice || pkg.actualPrice}
+												<br />
+												Processing: {pkg.processingDays} days
+											</div>
+										</td>
+										<td>
+											{pkgIndex === 0 ? service.hsncode || "No HSN Code" : ""}
+										</td>
+										<td>{pkgIndex === 0 ? service.currency : ""}</td>
+										<td>
+											{pkgIndex === 0 ? (
+												service.requiredDocuments &&
+												service.requiredDocuments.length > 0 ? (
+													<select
+														style={{
+															border: "1px solid var(--accent)",
+															borderRadius: "15px",
+															padding: "15px",
+															fontSize: "16px",
+														}}>
+														{service.requiredDocuments.map((doc) => (
+															<option key={doc._id} className='service-info'>
+																{doc.name} - {doc.description || "no desc"}
+															</option>
+														))}
+													</select>
+												) : (
+													"No documnets specified"
+												)
+											) : (
+												""
+											)}
+										</td>
+										<td>
+											{pkgIndex === 0 ? (
+												<span
+													style={{
+														color: service.isActive ? "green" : "red",
+														fontWeight: "bold",
+													}}>
+													{service.isActive !== false ? "Active" : "Inactive"}
+												</span>
+											) : (
+												""
+											)}
+										</td>
+										<td className='tax-btn-cont'>
+											{pkgIndex === 0 ? (
+												<>
+													<button
+														className='tax-service-btn'
+														onClick={() => setEditingService(service)}>
+														<i className='fa-solid fa-pencil'></i>
+													</button>
+													<button
+														className='tax-service-btn'
+														onClick={() =>
+															handleToggleServiceActivation(service._id)
+														}
+														style={{
+															backgroundColor:
+																service.isActive !== false
+																	? "#ff6b6b"
+																	: "#4caf50",
+															color: "white",
+														}}>
+														{service.isActive !== false
+															? "Deactivate"
+															: "Activate"}
+													</button>
+													<button
+														className='serviceDelete'
+														onClick={() => handleDeleteService(service._id)}>
+														<i className='fa-solid fa-trash'></i>
+													</button>
+												</>
+											) : (
+												""
+											)}
+										</td>
+									</tr>
+								));
+							} else {
+								// For services without packages, create a single row
+								return (
+									<tr key={service._id}>
+										<td>{service._id}</td>
+										<td>{formatDate(service.createdAt)}</td>
+										<td>{service.category}</td>
+										<td>{service.name}</td>
+										<td>{service.description}</td>
+										<td>
+											<span style={{ color: "#666", fontStyle: "italic" }}>
+												No packages
+											</span>
+										</td>
+										<td>{service.hsncode || "No HSN Code"}</td>
+										<td>{service.currency}</td>
+										<td>
+											{service.requiredDocuments &&
+											service.requiredDocuments.length > 0 ? (
+												<select
+													style={{
+														border: "1px solid var(--accent)",
+														borderRadius: "15px",
+														padding: "15px",
+														fontSize: "16px",
+													}}>
+													{service.requiredDocuments.map((doc) => (
+														<option key={doc._id} className='service-info'>
+															{doc.name} - {doc.description || "no desc"}
+														</option>
+													))}
+												</select>
+											) : (
+												"No documnets specified"
+											)}
+										</td>
+										<td>
+											<span
+												style={{
+													color: service.isActive ? "green" : "red",
+													fontWeight: "bold",
+												}}>
+												{service.isActive !== false ? "Active" : "Inactive"}
+											</span>
+										</td>
+										<td className='tax-btn-cont'>
+											<button
+												className='tax-service-btn'
+												onClick={() => setEditingService(service)}>
+												<i className='fa-solid fa-pencil'></i>
+											</button>
+											<button
+												className='tax-service-btn'
+												onClick={() =>
+													handleToggleServiceActivation(service._id)
+												}
+												style={{
+													backgroundColor:
+														service.isActive !== false ? "#ff6b6b" : "#4caf50",
+													color: "white",
+												}}>
+												{service.isActive !== false ? "Deactivate" : "Activate"}
+											</button>
+											<button
+												className='serviceDelete'
+												onClick={() => handleDeleteService(service._id)}>
+												<i className='fa-solid fa-trash'></i>
+											</button>
+										</td>
+									</tr>
+								);
+							}
+						})}
 					</tbody>
 				</table>
 			</div>
 
 			<Dialog
 				open={showServiceForm}
-				onClose={() => setShowServiceForm(false)}
+				onClose={() => {
+					setShowServiceForm(false);
+					setCategoryInputMode(false);
+					setNewCategoryInput("");
+				}}
 				maxWidth='md'
 				fullWidth>
 				<DialogTitle>Add Service</DialogTitle>
 				<DialogContent>
-					<TextField
-						margin='dense'
-						label='Service Category'
-						fullWidth
-						value={newService.category}
-						onChange={(e) =>
-							setNewService({ ...newService, category: e.target.value })
-						}
-					/>
+					<FormControl fullWidth>
+						<InputLabel id='service-category-label'>Service Category</InputLabel>
+						<Select
+							labelId='service-category-label'
+							id='service-category'
+							value={newService?.category || ""}
+							onChange={handleCategoryChange}
+							label='Service Category'
+						>
+							{uniqueCategories.map((category) => (
+								<MenuItem key={category} value={category}>
+									{category}
+								</MenuItem>
+							))}
+							<MenuItem value='add_new_category'>Add New Category</MenuItem>
+						</Select>
+					</FormControl>
+					{categoryInputMode && (
+						<>
+							<TextField
+								margin='dense'
+								label='New Category'
+								fullWidth
+								value={newCategoryInput}
+								onChange={(e) => setNewCategoryInput(e.target.value)}
+							/>
+							<div style={{ marginTop: '10px', marginBottom: '10px' }}>
+								<button
+									className='tax-service-btn2'
+									onClick={handleSaveNewCategory}
+									style={{ marginRight: '10px' }}
+								>
+									Save
+								</button>
+								<button
+									className='tax-service-btn2'
+									onClick={handleCancelNewCategory}
+								>
+									Cancel
+								</button>
+							</div>
+						</>
+					)}
 					<TextField
 						margin='dense'
 						label='Service Name'
@@ -459,6 +679,42 @@ const ServicesSection = () => {
 					/>
 					<TextField
 						margin='dense'
+						label='Service Price'
+						type='number'
+						fullWidth
+						value={newService.actualPrice}
+						onChange={(e) =>
+							setNewService({ ...newService, actualPrice: e.target.value })
+						}
+					/>
+					<TextField
+						margin='dense'
+						label='Discounted Service Price'
+						type='number'
+						fullWidth
+						value={newService.salePrice}
+						onChange={(e) =>
+							setNewService({ ...newService, salePrice: e.target.value })
+						}
+					/>
+					<TextField
+						margin='dense'
+						label='GST Rate (%)'
+						type='number'
+						fullWidth
+						value={newService.gstRate}
+						onChange={(e) =>
+							setNewService({
+								...newService,
+								gstRate: parseFloat(e.target.value) || 0,
+							})
+						}
+						InputProps={{
+							endAdornment: <InputAdornment position='end'>%</InputAdornment>,
+						}}
+					/>
+					<TextField
+						margin='dense'
 						label='HSN Code'
 						fullWidth
 						value={newService.hsncode}
@@ -475,116 +731,184 @@ const ServicesSection = () => {
 							setNewService({ ...newService, currency: e.target.value })
 						}
 					/>
+					<TextField
+						margin='dense'
+						label='Processing Days'
+						type='number'
+						fullWidth
+						value={newService.processingDays}
+						onChange={(e) =>
+							setNewService((prev) => ({
+								...prev,
+								processingDays: parseInt(e.target.value),
+							}))
+						}
+						inputProps={{ min: 1 }}
+					/>
 
 					{/* Packages Section */}
-					<div style={{ marginTop: '20px', marginBottom: '10px' }}>
-						<h3>Packages</h3>
-						<Button
-							variant="contained"
-							color="primary"
-							onClick={addPackage}
-							style={{ marginBottom: '10px' }}
-						>
-							Add Package
-						</Button>
-						
-						{newService.packages.map((pkg, packageIndex) => (
-							<div 
-								key={packageIndex}
-								style={{ 
-									border: '1px solid #ccc', 
-									padding: '15px', 
-									marginBottom: '15px',
-									borderRadius: '5px'
-								}}
-							>
-								<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-									<h4>Package {packageIndex + 1}</h4>
-									<Button 
-										variant="outlined" 
-										color="error" 
-										onClick={() => removePackage(packageIndex)}
-									>
-										Remove Package
-									</Button>
-								</div>
-								
-								<TextField
-									margin='dense'
-									label='Package Name'
-									fullWidth
-									value={pkg.name}
-									onChange={(e) => updatePackage(packageIndex, 'name', e.target.value)}
-								/>
-								<TextField
-									margin='dense'
-									label='Package Description'
-									fullWidth
-									value={pkg.description}
-									onChange={(e) => updatePackage(packageIndex, 'description', e.target.value)}
-								/>
-								<div style={{ display: 'flex', gap: '10px' }}>
-									<TextField
-										margin='dense'
-										label='Actual Price'
-										type='number'
-										fullWidth
-										value={pkg.actualPrice}
-										onChange={(e) => updatePackage(packageIndex, 'actualPrice', e.target.value)}
-									/>
-									<TextField
-										margin='dense'
-										label='Sale Price'
-										type='number'
-										fullWidth
-										value={pkg.salePrice}
-										onChange={(e) => updatePackage(packageIndex, 'salePrice', e.target.value)}
-									/>
-								</div>
-								<TextField
-									margin='dense'
-									label='Processing Days'
-									type='number'
-									fullWidth
-									value={pkg.processingDays}
-									onChange={(e) => updatePackage(packageIndex, 'processingDays', parseInt(e.target.value))}
-									inputProps={{ min: 1 }}
-								/>
-								
-								{/* Features Section */}
-								<div style={{ marginTop: '15px' }}>
-									<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-										<h5>Features</h5>
-										<Button 
-											variant="outlined" 
-											onClick={() => addFeature(packageIndex)}
-										>
-											Add Feature
-										</Button>
-									</div>
-									
-									{pkg.features.map((feature, featureIndex) => (
-										<div key={featureIndex} style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+					<div style={{ marginTop: "20px", marginBottom: "20px" }}>
+						<h3>Service Packages</h3>
+						<p style={{ fontSize: "0.9rem", color: "#666" }}>
+							Create packages for this service (optional). Users will be able to
+							select from these packages.
+						</p>
+
+						{newService?.packages && newService.packages.length > 0 ? (
+							<>
+								{newService.packages.map((pkg, index) => (
+									<div
+										key={index}
+										style={{
+											border: "1px solid #ddd",
+											borderRadius: "8px",
+											padding: "15px",
+											marginBottom: "15px",
+											backgroundColor: "#f9f9f9",
+										}}>
+										<div
+											style={{
+												display: "flex",
+												justifyContent: "space-between",
+												alignItems: "center",
+											}}>
+											<h4>Package {index + 1}</h4>
+											{newService.packages.length > 1 && (
+												<button
+													className='tax-service-btn'
+													onClick={() => removePackage(index)}
+													style={{ backgroundColor: "#ff6b6b" }}>
+													<i className='fa-solid fa-trash'></i> Remove Package
+												</button>
+											)}
+										</div>
+
+										<TextField
+											margin='dense'
+											label='Package Name'
+											fullWidth
+											value={pkg.name}
+											onChange={(e) =>
+												updatePackage(index, "name", e.target.value)
+											}
+										/>
+										<TextField
+											margin='dense'
+											label='Package Description'
+											fullWidth
+											value={pkg.description}
+											onChange={(e) =>
+												updatePackage(index, "description", e.target.value)
+											}
+										/>
+										<div style={{ display: "flex", gap: "10px" }}>
 											<TextField
 												margin='dense'
-												label={`Feature ${featureIndex + 1}`}
+												label='Price'
+												type='number'
 												fullWidth
-												value={feature}
-												onChange={(e) => updateFeature(packageIndex, featureIndex, e.target.value)}
+												value={pkg.actualPrice}
+												onChange={(e) =>
+													updatePackage(index, "actualPrice", e.target.value)
+												}
 											/>
-											<Button 
-												variant="outlined" 
-												color="error" 
-												onClick={() => removeFeature(packageIndex, featureIndex)}
-												style={{ marginTop: '8px' }}
-											>
-												Remove
-											</Button>
+											<TextField
+												margin='dense'
+												label='Discounted Price'
+												type='number'
+												fullWidth
+												value={pkg.salePrice}
+												onChange={(e) =>
+													updatePackage(index, "salePrice", e.target.value)
+												}
+											/>
+											<TextField
+												margin='dense'
+												label='Processing Days'
+												type='number'
+												fullWidth
+												value={pkg.processingDays}
+												onChange={(e) =>
+													updatePackage(
+														index,
+														"processingDays",
+														parseInt(e.target.value) || 7
+													)
+												}
+												inputProps={{ min: 1 }}
+											/>
 										</div>
-									))}
-								</div>
+
+										{/* Features Section */}
+										<div style={{ marginTop: "15px" }}>
+											<h5>Features</h5>
+											<p style={{ fontSize: "0.8rem", color: "#666" }}>
+												Add key features for this package
+											</p>
+
+											{pkg.features.map((feature, featureIndex) => (
+												<div
+													key={featureIndex}
+													style={{
+														display: "flex",
+														gap: "10px",
+														marginBottom: "8px",
+													}}>
+													<TextField
+														size='small'
+														label={`Feature ${featureIndex + 1}`}
+														fullWidth
+														value={feature}
+														onChange={(e) =>
+															updateFeature(index, featureIndex, e.target.value)
+														}
+													/>
+													<button
+														className='tax-service-btn'
+														onClick={() => removeFeature(index, featureIndex)}
+														style={{ backgroundColor: "#ff6b6b" }}>
+														<i className='fa-solid fa-times'></i>
+													</button>
+												</div>
+											))}
+
+											<button
+												className='tax-service-btn2'
+												onClick={() => addFeature(index)}
+												style={{ marginTop: "10px" }}>
+												<i className='fa-solid fa-plus'></i> Add Feature
+											</button>
+										</div>
+									</div>
+								))}
+
+								<button
+									className='tax-service-btn2'
+									onClick={addPackage}
+									style={{ marginTop: "10px" }}>
+									<i className='fa-solid fa-plus'></i> Add Another Package
+								</button>
+							</>
+						) : (
+							<div
+								style={{
+									textAlign: "center",
+									padding: "20px",
+									border: "1px dashed #ccc",
+									borderRadius: "8px",
+								}}>
+								<p>
+									No packages added yet. You can create service without packages
+									or add packages below.
+								</p>
+								<button
+									className='tax-service-btn2'
+									onClick={addPackage}
+									style={{ marginTop: "10px" }}>
+									<i className='fa-solid fa-plus'></i> Add Package
+								</button>
 							</div>
-						))}
+						)}
 					</div>
 
 					<div>
@@ -618,28 +942,63 @@ const ServicesSection = () => {
 			{/* Edit Service Modal with MUI */}
 			<Dialog
 				open={!!editingService}
-				onClose={() => setEditingService(null)}
+				onClose={() => {
+					setEditingService(null);
+					setEditCategoryInputMode(false);
+					setEditNewCategoryInput("");
+				}}
 				maxWidth='md'
 				fullWidth>
 				<DialogTitle>Edit Service</DialogTitle>
 				<DialogContent>
 					{editingService && (
 						<>
+							<FormControl fullWidth margin="dense">
+								<InputLabel id="edit-service-category-label">Service Category</InputLabel>
+								<Select
+									labelId="edit-service-category-label"
+									id="edit-service-category"
+									value={editingService.category}
+									onChange={handleEditCategoryChange}
+									label="Service Category"
+								>
+									{uniqueCategories.map((category) => (
+										<MenuItem key={category} value={category}>
+											{category}
+										</MenuItem>
+									))}
+									<MenuItem value="add_new_category">Add New Category</MenuItem>
+								</Select>
+							</FormControl>
+							{editCategoryInputMode && (
+								<>
+									<TextField
+										margin="dense"
+										label="New Category"
+										fullWidth
+										value={editNewCategoryInput}
+										onChange={(e) => setEditNewCategoryInput(e.target.value)}
+									/>
+									<div style={{ marginTop: '10px', marginBottom: '10px' }}>
+										<button
+											className="tax-service-btn2"
+											onClick={handleSaveEditNewCategory}
+											style={{ marginRight: '10px' }}
+										>
+											Save
+										</button>
+										<button
+											className="tax-service-btn2"
+											onClick={handleCancelEditNewCategory}
+										>
+											Cancel
+										</button>
+									</div>
+								</>
+							)}
 							<TextField
-								margin='dense'
-								label='Service Category'
-								fullWidth
-								value={editingService.category}
-								onChange={(e) =>
-									setEditingService({
-										...editingService,
-										category: e.target.value,
-									})
-								}
-							/>
-							<TextField
-								margin='dense'
-								label='Service Name'
+								margin="dense"
+								label="Service Name"
 								fullWidth
 								value={editingService.name}
 								onChange={(e) =>
@@ -655,6 +1014,32 @@ const ServicesSection = () => {
 									setEditingService({
 										...editingService,
 										description: e.target.value,
+									})
+								}
+							/>
+							<TextField
+								margin='dense'
+								label='Service Price'
+								type='number'
+								fullWidth
+								value={editingService.actualPrice}
+								onChange={(e) =>
+									setEditingService({
+										...editingService,
+										actualPrice: parseFloat(e.target.value) || 0,
+									})
+								}
+							/>
+							<TextField
+								margin='dense'
+								label='Discounted Service Price'
+								type='number'
+								fullWidth
+								value={editingService.salePrice}
+								onChange={(e) =>
+									setEditingService({
+										...editingService,
+										salePrice: parseFloat(e.target.value) || 0,
 									})
 								}
 							/>
@@ -682,220 +1067,317 @@ const ServicesSection = () => {
 									})
 								}
 							/>
-							
-							{/* Packages Section for Editing */}
-							<div style={{ marginTop: '20px', marginBottom: '10px' }}>
-								<h3>Packages</h3>
-								<Button
-									variant="contained"
-									color="primary"
-									onClick={() => {
-										setEditingService({
-											...editingService,
-											packages: [
-												...(editingService.packages || []),
-												{
-													name: "",
-													description: "",
-													actualPrice: "",
-													salePrice: "",
-													features: [],
-													processingDays: 7,
-												}
-											]
-										})
-									}}
-									style={{ marginBottom: '10px' }}
-								>
-									Add Package
-								</Button>
-								
-								{(editingService.packages || []).map((pkg, packageIndex) => (
-									<div 
-										key={packageIndex}
-										style={{ 
-											border: '1px solid #ccc', 
-											padding: '15px', 
-											marginBottom: '15px',
-											borderRadius: '5px'
-										}}
-									>
-										<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-											<h4>Package {packageIndex + 1}</h4>
-											<Button 
-												variant="outlined" 
-												color="error" 
-												onClick={() => {
-													setEditingService({
-														...editingService,
-														packages: editingService.packages.filter((_, i) => i !== packageIndex)
-													})
-												}}
-											>
-												Remove Package
-											</Button>
-										</div>
-										
-										<TextField
-											margin='dense'
-											label='Package Name'
-											fullWidth
-											value={pkg.name}
-											onChange={(e) => {
-												const newPackages = [...editingService.packages];
-												newPackages[packageIndex] = {
-													...newPackages[packageIndex],
-													name: e.target.value
-												};
-												setEditingService({
-													...editingService,
-													packages: newPackages
-												})
-											}}
-										/>
-										<TextField
-											margin='dense'
-											label='Package Description'
-											fullWidth
-											value={pkg.description}
-											onChange={(e) => {
-												const newPackages = [...editingService.packages];
-												newPackages[packageIndex] = {
-													...newPackages[packageIndex],
-													description: e.target.value
-												};
-												setEditingService({
-													...editingService,
-													packages: newPackages
-												})
-											}}
-										/>
-										<div style={{ display: 'flex', gap: '10px' }}>
-											<TextField
-												margin='dense'
-												label='Actual Price'
-												type='number'
-												fullWidth
-												value={pkg.actualPrice}
-												onChange={(e) => {
-													const newPackages = [...editingService.packages];
-													newPackages[packageIndex] = {
-														...newPackages[packageIndex],
-														actualPrice: e.target.value
-													};
-													setEditingService({
-														...editingService,
-														packages: newPackages
-													})
-												}}
-											/>
-											<TextField
-												margin='dense'
-												label='Sale Price'
-												type='number'
-												fullWidth
-												value={pkg.salePrice}
-												onChange={(e) => {
-													const newPackages = [...editingService.packages];
-													newPackages[packageIndex] = {
-														...newPackages[packageIndex],
-														salePrice: e.target.value
-													};
-													setEditingService({
-														...editingService,
-														packages: newPackages
-													})
-												}}
-											/>
-										</div>
-										<TextField
-											margin='dense'
-											label='Processing Days'
-											type='number'
-											fullWidth
-											value={pkg.processingDays}
-											onChange={(e) => {
-												const newPackages = [...editingService.packages];
-												newPackages[packageIndex] = {
-													...newPackages[packageIndex],
-													processingDays: parseInt(e.target.value) || 7
-												};
-												setEditingService({
-													...editingService,
-													packages: newPackages
-												})
-											}}
-											inputProps={{ min: 1 }}
-										/>
-										
-										{/* Features Section */}
-										<div style={{ marginTop: '15px' }}>
-											<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-												<h5>Features</h5>
-												<Button 
-													variant="outlined" 
-													onClick={() => {
-														const newPackages = [...editingService.packages];
-														newPackages[packageIndex] = {
-															...newPackages[packageIndex],
-															features: [...(newPackages[packageIndex].features || []), ""]
-														};
+
+							{/* Packages Section */}
+							<div style={{ marginTop: "20px", marginBottom: "20px" }}>
+								<h3>Service Packages</h3>
+								<p style={{ fontSize: "0.9rem", color: "#666" }}>
+									Edit packages for this service (optional).
+								</p>
+
+								{editingService.packages &&
+								editingService.packages.length > 0 ? (
+									<>
+										{editingService.packages.map((pkg, index) => (
+											<div
+												key={index}
+												style={{
+													border: "1px solid #ddd",
+													borderRadius: "8px",
+													padding: "15px",
+													marginBottom: "15px",
+													backgroundColor: "#f9f9f9",
+												}}>
+												<div
+													style={{
+														display: "flex",
+														justifyContent: "space-between",
+														alignItems: "center",
+													}}>
+													<h4>Package {index + 1}</h4>
+													{editingService.packages.length > 1 && (
+														<button
+															className='tax-service-btn'
+															onClick={() => {
+																setEditingService({
+																	...editingService,
+																	packages: (
+																		editingService.packages || []
+																	).filter((_, i) => i !== index),
+																});
+															}}
+															style={{ backgroundColor: "#ff6b6b" }}>
+															<i className='fa-solid fa-trash'></i> Remove
+															Package
+														</button>
+													)}
+												</div>
+
+												<TextField
+													margin='dense'
+													label='Package Name'
+													fullWidth
+													value={pkg.name}
+													onChange={(e) => {
 														setEditingService({
 															...editingService,
-															packages: newPackages
-														})
+															packages: (editingService.packages || []).map(
+																(p, i) =>
+																	i === index
+																		? { ...p, name: e.target.value }
+																		: p
+															),
+														});
 													}}
-												>
-													Add Feature
-												</Button>
-											</div>
-											
-											{(pkg.features || []).map((feature, featureIndex) => (
-												<div key={featureIndex} style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+												/>
+												<TextField
+													margin='dense'
+													label='Package Description'
+													fullWidth
+													value={pkg.description}
+													onChange={(e) => {
+														setEditingService({
+															...editingService,
+															packages: (editingService.packages || []).map(
+																(p, i) =>
+																	i === index
+																		? { ...p, description: e.target.value }
+																		: p
+															),
+														});
+													}}
+												/>
+												<div style={{ display: "flex", gap: "10px" }}>
 													<TextField
 														margin='dense'
-														label={`Feature ${featureIndex + 1}`}
+														label='Actual Price'
+														type='number'
 														fullWidth
-														value={feature}
+														value={pkg.actualPrice}
 														onChange={(e) => {
-															const newPackages = [...editingService.packages];
-															newPackages[packageIndex] = {
-																...newPackages[packageIndex],
-																features: newPackages[packageIndex].features.map(
-																	(f, i) => i === featureIndex ? e.target.value : f
-																)
-															};
 															setEditingService({
 																...editingService,
-																packages: newPackages
-															})
+																packages: (editingService.packages || []).map(
+																	(p, i) =>
+																		i === index
+																			? { ...p, actualPrice: e.target.value }
+																			: p
+																),
+															});
 														}}
 													/>
-													<Button 
-														variant="outlined" 
-														color="error" 
-														onClick={() => {
-															const newPackages = [...editingService.packages];
-															newPackages[packageIndex] = {
-																...newPackages[packageIndex],
-																features: newPackages[packageIndex].features.filter(
-																	(_, i) => i !== featureIndex
-																)
-															};
+													<TextField
+														margin='dense'
+														label='Sale Price'
+														type='number'
+														fullWidth
+														value={pkg.salePrice}
+														onChange={(e) => {
 															setEditingService({
 																...editingService,
-																packages: newPackages
-															})
+																packages: (editingService.packages || []).map(
+																	(p, i) =>
+																		i === index
+																			? { ...p, salePrice: e.target.value }
+																			: p
+																),
+															});
 														}}
-														style={{ marginTop: '8px' }}
-													>
-														Remove
-													</Button>
+													/>
+													<TextField
+														margin='dense'
+														label='Processing Days'
+														type='number'
+														fullWidth
+														value={pkg.processingDays}
+														onChange={(e) => {
+															setEditingService({
+																...editingService,
+																packages: (editingService.packages || []).map(
+																	(p, i) =>
+																		i === index
+																			? {
+																					...p,
+																					processingDays:
+																						parseInt(e.target.value) || 7,
+																			  }
+																			: p
+																),
+															});
+														}}
+														inputProps={{ min: 1 }}
+													/>
 												</div>
-											))}
-										</div>
+
+												{/* Features Section */}
+												<div style={{ marginTop: "15px" }}>
+													<h5>Features</h5>
+													<p style={{ fontSize: "0.8rem", color: "#666" }}>
+														Edit key features for this package
+													</p>
+
+													{(pkg.features || []).map((feature, featureIndex) => (
+														<div
+															key={featureIndex}
+															style={{
+																display: "flex",
+																gap: "10px",
+																marginBottom: "8px",
+															}}>
+															<TextField
+																size='small'
+																label={`Feature ${featureIndex + 1}`}
+																fullWidth
+																value={feature}
+																onChange={(e) => {
+																	setEditingService({
+																		...editingService,
+																		packages: (
+																			editingService.packages || []
+																		).map((p, i) =>
+																			i === index
+																				? {
+																						...p,
+																						features: (p.features || []).map(
+																							(f, j) =>
+																								j === featureIndex
+																									? e.target.value
+																									: f
+																						),
+																				  }
+																				: p
+																		),
+																	});
+																}}
+															/>
+															<button
+																className='tax-service-btn'
+																onClick={() => {
+																	setEditingService({
+																		...editingService,
+																		packages: (
+																			editingService.packages || []
+																		).map((p, i) =>
+																			i === index
+																				? {
+																						...p,
+																						features: (p.features || []).filter(
+																							(_, j) => j !== featureIndex
+																						),
+																				  }
+																				: p
+																		),
+																	});
+																}}
+																style={{ backgroundColor: "#ff6b6b" }}>
+																<i className='fa-solid fa-times'></i>
+															</button>
+														</div>
+													))}
+
+													<button
+														className='tax-service-btn2'
+														onClick={() => {
+															setEditingService({
+																...editingService,
+																packages: (editingService.packages || []).map(
+																	(p, i) =>
+																		i === index
+																			? {
+																					...p,
+																					features: [...(p.features || []), ""],
+																			  }
+																			: p
+																),
+															});
+														}}
+														style={{ marginTop: "10px" }}>
+														<i className='fa-solid fa-plus'></i> Add Feature
+													</button>
+												</div>
+											</div>
+										))}
+
+										<button
+											className='tax-service-btn2'
+											onClick={() => {
+												setEditingService({
+													...editingService,
+													packages: [
+														...(editingService.packages || []),
+														{
+															name: "",
+															description: "",
+															actualPrice: "",
+															salePrice: "",
+															features: [],
+															processingDays: 7,
+														},
+													],
+												});
+											}}
+											style={{ marginTop: "10px" }}>
+											<i className='fa-solid fa-plus'></i> Add Another Package
+										</button>
+									</>
+								) : (
+									<div
+										style={{
+											textAlign: "center",
+											padding: "20px",
+											border: "1px dashed #ccc",
+											borderRadius: "8px",
+										}}>
+										<p>
+											No packages added yet. You can keep the service without
+											packages or add packages below.
+										</p>
+										<button
+											className='tax-service-btn2'
+											onClick={() => {
+												setEditingService({
+													...editingService,
+													packages: [
+														{
+															name: "",
+															description: "",
+															actualPrice: "",
+															salePrice: "",
+															features: [],
+															processingDays: 7,
+														},
+													],
+												});
+											}}
+											style={{ marginTop: "10px" }}>
+											<i className='fa-solid fa-plus'></i> Add Package
+										</button>
 									</div>
-								))}
+								)}
+							</div>
+
+							<div className='processing-days-section'>
+								<TextField
+									margin='dense'
+									label='Default Processing Days'
+									type='number'
+									fullWidth
+									value={editingService.processingDays}
+									onChange={(e) =>
+										setEditingService({
+											...editingService,
+											processingDays: parseInt(e.target.value) || 0,
+										})
+									}
+									inputProps={{ min: 1 }}
+								/>
+								{editingService.processingDays !==
+									services.find((s) => s._id === editingService._id)
+										?.processingDays && (
+									<span className='processing-days-notice'>
+										This will update processing days for all active services
+									</span>
+								)}
 							</div>
 
 							<div>

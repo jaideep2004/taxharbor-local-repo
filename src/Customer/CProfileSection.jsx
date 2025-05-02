@@ -101,11 +101,51 @@ const CProfileSection = () => {
 					type: "date",
 				},
 			],
+			bankDetails: [
+				{
+					label: "Account Number",
+					name: "accountNumber",
+					value: user.bankDetails?.accountNumber || "Not provided",
+					disabled: true,
+					sensitive: true,
+				},
+				{
+					label: "Account Holder Name",
+					name: "accountHolderName",
+					value: user.bankDetails?.accountHolderName || "Not provided",
+					disabled: true,
+				},
+				{
+					label: "Bank Name",
+					name: "bankName",
+					value: user.bankDetails?.bankName || "Not provided",
+					disabled: true,
+				},
+				{
+					label: "IFSC Code",
+					name: "ifscCode",
+					value: user.bankDetails?.ifscCode || "Not provided",
+					disabled: true,
+				},
+				{
+					label: "Account Type",
+					name: "accountType",
+					value: user.bankDetails?.accountType 
+						? user.bankDetails?.accountType.charAt(0).toUpperCase() + user.bankDetails?.accountType.slice(1)
+						: "Not provided",
+					disabled: true,
+				},
+			],
 		};
 
 		return (
 			<div className='tab-content'>
 				<h3>{tab.replace(/([A-Z])/g, " $1")}</h3>
+				{tab === 'bankDetails' && (
+					<div className="bank-info-note">
+						<p>Bank details are managed in the Wallet section. To update your bank information, please visit the Wallet tab.</p>
+					</div>
+				)}
 				{fields[tab].map((field) => (
 					<div key={field.name} className='field-row'>
 						<label htmlFor={field.name}>{field.label}:</label>
@@ -118,22 +158,24 @@ const CProfileSection = () => {
 								value={field.value ? field.value.split("T")[0] : ""}
 								onChange={handleInputChange}
 								className={editableField === field.name ? "editable" : ""}
-								disabled={editableField !== field.name}
+								disabled={field.disabled || editableField !== field.name}
 							/>
 						) : (
 							<input
 								id={field.name}
 								name={field.name}
-								value={field.value}
+								value={field.sensitive ? (field.value?.length > 0 ? field.value.replace(/\d(?=\d{4})/g, "*") : field.value) : field.value}
 								onChange={handleInputChange}
 								className={editableField === field.name ? "editable" : ""}
-								disabled={editableField !== field.name}
+								disabled={field.disabled || editableField !== field.name}
 							/>
 						)}
-						<i
-							className='fa-solid fa-pen-to-square edit-icon'
-							onClick={() => handleFieldEdit(field.name)}
-						/>
+						{!field.disabled && (
+							<i
+								className='fa-solid fa-pen-to-square edit-icon'
+								onClick={() => handleFieldEdit(field.name)}
+							/>
+						)}
 					</div>
 				))}
 			</div>
@@ -171,6 +213,11 @@ const CProfileSection = () => {
 						className={activeTab === "educationInfo" ? "selected" : ""}>
 						Education Info
 					</li>
+					<li
+						onClick={() => setActiveTab("bankDetails")}
+						className={activeTab === "bankDetails" ? "selected" : ""}>
+						Bank Details
+					</li>
 				</ul>
 			</div>
 			<div className='content'>
@@ -179,11 +226,13 @@ const CProfileSection = () => {
 					<h2>{user.name}</h2>
 				</div>
 				{renderTabContent(activeTab)}
-				<div className='save-button-container'>
-					<button className='save-button' onClick={handleSaveProfile}>
-						Save Profile
-					</button>
-				</div>
+				{activeTab !== "bankDetails" && (
+					<div className='save-button-container'>
+						<button className='save-button' onClick={handleSaveProfile}>
+							Save Profile
+						</button>
+					</div>
+				)}
 			</div>
 		</div>
 	);

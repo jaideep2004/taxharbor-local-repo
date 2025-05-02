@@ -5,6 +5,7 @@ import EmDash from "./EmDash";
 import EmAssignedCustomers from "./EmAssignedCustomers";
 import EmployeeQueries from "./EmployeeQueries";
 import EmProfile from "./EmProfile";
+import EmLeads from "./EmLeads";
 import { useNotification } from "../NotificationContext";
 import EmTopbar from "./EmTopbar";
 
@@ -22,10 +23,11 @@ const EmployeeDashboard = () => {
 				setActiveSection={setActiveSection}
 			/>
 			<div className='content1'>
-				<EmTopbar activeSection={activeSection} />
+				<EmTopbar activeSection={activeSection} setActiveSection={setActiveSection} />
 				<div className='content'>
 					{activeSection === "Dashboard" && <EmDash />}
 					{activeSection === "Orders" && <EmAssignedCustomers />}
+					{activeSection === "Leads" && <EmLeads />}
 					{activeSection === "Customer Queries" && <EmployeeQueries />}
 					{activeSection === "Profile" && <EmProfile />}
 				</div>

@@ -1,0 +1,140 @@
+/* Contact Us Page Styles */
+
+.contact-page {
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Animation classes */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 5px rgba(140, 198, 63, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(140, 198, 63, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(140, 198, 63, 0.5);
+  }
+}
+
+/* Fixed tabs styling */
+.fixed-tabs {
+  position: fixed;
+  top: 100px;
+  left: 0;
+  right: 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.active-spacer {
+  display: block !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .contact-card-container {
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .form-container {
+    padding: 20px;
+  }
+}
+
+/* Custom styling for form elements focus states */
+.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #1b321d !important;
+  border-width: 2px;
+}
+
+.MuiFormLabel-root.Mui-focused {
+  color: #1b321d !important;
+}
+
+/* Add animation to contact cards on hover */
+.animated-card:hover {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Add shimmer effect to buttons */
+@keyframes shimmer {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 100% 0;
+  }
+}
+
+.shimmer-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-button::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Map container hover effects */
+.map-hover:hover {
+  transform: scale(1.01);
+  transition: transform 0.3s ease;
+}
+
+/* Spinning icon animation */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-hover:hover {
+  animation: spin 1s ease-in-out;
+}

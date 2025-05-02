@@ -41,9 +41,9 @@ body {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 1rem 4%; /* Relative padding */
+	padding: 8px 3%; /* Relative padding */
 	width: 100%;
-	max-width: 1300px; /* Cap width for large screens */
+	max-width: 1420px; /* Cap width for large screens */
 	margin: 0 auto;
 	a {
 		text-decoration: none;

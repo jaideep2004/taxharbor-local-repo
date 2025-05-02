@@ -14,6 +14,7 @@ export const EmployeeProvider = ({ children }) => {
 	const [queries, setQueries] = useState([]);
 	const [dashboardData, setDashboardData] = useState(null);
 	const [user, setUser] = useState(null);
+	const [leads, setLeads] = useState([]);
 
 	const { showNotification, setCurrentPage } = useNotification();
 
@@ -30,8 +31,8 @@ export const EmployeeProvider = ({ children }) => {
 	useEffect(() => {
 		if (isAuthenticated) {
 			fetchAssignedCustomers();
-
 			fetchEmployeeDashboard();
+			fetchAssignedLeads();
 		}
 		setCurrentPage("employee");
 	}, [isAuthenticated, setCurrentPage]);
@@ -326,6 +327,208 @@ export const EmployeeProvider = ({ children }) => {
 		);
 	};
 
+	// Function to fetch assigned leads
+	const fetchAssignedLeads = async () => {
+		// Only show loading indicator if leads array is empty
+		const isInitialLoad = leads.length === 0;
+		if (isInitialLoad) setLoading(true);
+		setError(null);
+
+		try {
+			const response = await axios.get(
+				"https://195-35-45-82.sslip.io:8000/api/employees/assigned-leads",
+				{
+					headers: {
+						Authorization: `Bearer ${localStorage.getItem("employeeToken")}`,
+					},
+				}
+			);
+
+			if (response.data.success) {
+				setLeads(response.data.leads || []);
+			} else {
+				setLeads([]);
+			}
+		} catch (err) {
+			console.error("Error fetching assigned leads:", err);
+			setError("Failed to fetch leads.");
+			setLeads([]);
+			showNotification("Failed to fetch assigned leads", "error");
+		} finally {
+			if (isInitialLoad) setLoading(false);
+		}
+	};
+
+	// Function to approve a lead
+	const approveLead = async (leadId) => {
+		setLoading(true);
+		setError(null);
+
+		try {
+			const response = await axios.post(
+				`https://195-35-45-82.sslip.io:8000/api/employees/approve-lead/${leadId}`,
+				{},
+				{
+					headers: {
+						Authorization: `Bearer ${localStorage.getItem("employeeToken")}`,
+					},
+				}
+			);
+
+			if (response.data.success) {
+				// Update the local state to reflect the changes
+				setLeads(prevLeads => 
+					prevLeads.map(lead => 
+						lead._id === leadId 
+							? { ...lead, status: 'approved' } 
+							: lead
+					)
+				);
+				
+				showNotification("Lead approved successfully", "success");
+				// Refresh leads list
+				fetchAssignedLeads();
+				return true;
+			} else {
+				throw new Error(response.data.message || "Failed to approve lead");
+			}
+		} catch (err) {
+			console.error("Error approving lead:", err);
+			setError(err.response?.data?.message || "Failed to approve lead");
+			showNotification(err.response?.data?.message || "Failed to approve lead", "error");
+			return false;
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	// Reject a lead
+	const rejectLead = async (leadId, reason) => {
+		try {
+			setLoading(true);
+			const token = localStorage.getItem("employeeToken");
+			
+			const response = await axios.put(
+				`https://195-35-45-82.sslip.io:8000/api/employees/leads/${leadId}/reject`,
+				{ reason },
+				{
+					headers: {
+						Authorization: `Bearer ${token}`,
+					}
+				}
+			);
+			
+			// Update the lead in the UI
+			setLeads(prevLeads =>
+				prevLeads.map(lead =>
+					lead._id === leadId
+						? { ...lead, status: 'rejected', rejectReason: reason, rejectedAt: new Date() }
+						: lead
+				)
+			);
+			
+			showNotification("Lead rejected successfully", "success");
+			return true;
+		} catch (error) {
+			console.error("Error rejecting lead:", error);
+			showNotification(
+				error.response?.data?.message || "Failed to reject lead",
+				"error"
+			);
+			return false;
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	// Upload documents for a lead
+	const uploadLeadDocuments = async (leadId, files, note, paymentDetails) => {
+		try {
+			setLoading(true);
+			const token = localStorage.getItem("employeeToken");
+			
+			// Create form data
+			const formData = new FormData();
+			
+			// Add files
+			for (let i = 0; i < files.length; i++) {
+				formData.append('documents', files[i]);
+			}
+			
+			// Add note and payment details
+			if (note) formData.append('note', note);
+			if (paymentDetails) {
+				if (paymentDetails.amount) formData.append('paymentAmount', paymentDetails.amount);
+				if (paymentDetails.method) formData.append('paymentMethod', paymentDetails.method);
+				if (paymentDetails.reference) formData.append('paymentReference', paymentDetails.reference);
+			}
+			
+			const response = await axios.post(
+				`https://195-35-45-82.sslip.io:8000/api/employees/leads/${leadId}/documents`,
+				formData,
+				{
+					headers: {
+						Authorization: `Bearer ${token}`,
+						'Content-Type': 'multipart/form-data'
+					}
+				}
+			);
+			
+			// Update the lead in the UI
+			setLeads(prevLeads =>
+				prevLeads.map(lead =>
+					lead._id === leadId
+						? { 
+							...lead, 
+							documents: [...(lead.documents || []), ...response.data.lead.documents],
+							employeeNotes: [...(lead.employeeNotes || []), ...(response.data.lead.employeeNotes || [])],
+							paymentDetails: response.data.lead.paymentDetails
+						  }
+						: lead
+				)
+			);
+			
+			showNotification("Documents uploaded successfully", "success");
+			return true;
+		} catch (error) {
+			console.error("Error uploading documents:", error);
+			showNotification(
+				error.response?.data?.message || "Failed to upload documents",
+				"error"
+			);
+			return false;
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const updateServiceDelayReason = async (serviceId, delayReason, customerId) => {
+		setLoading(true);
+		try {
+			const response = await axios.post(
+				"https://195-35-45-82.sslip.io:8000/api/employees/update-delay-reason",
+				{ serviceId, delayReason, customerId },
+				{
+					headers: {
+						Authorization: `Bearer ${localStorage.getItem("employeeToken")}`,
+					},
+				}
+			);
+			
+			showNotification("Delay reason updated successfully", "success");
+			return response.data;
+		} catch (error) {
+			console.error("Error updating delay reason:", error);
+			showNotification(
+				error.response?.data?.message || "Error updating delay reason",
+				"error"
+			);
+			throw error;
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	return (
 		<EmployeeContext.Provider
 			value={{
@@ -358,6 +561,13 @@ export const EmployeeProvider = ({ children }) => {
 				fetchEmployeeDashboard,
 				logout,
 				reduceUnreadCount,
+				leads,
+				setLeads,
+				fetchAssignedLeads,
+				approveLead,
+				rejectLead,
+				uploadLeadDocuments,
+				updateServiceDelayReason,
 			}}>
 			{loading && (
 				<div

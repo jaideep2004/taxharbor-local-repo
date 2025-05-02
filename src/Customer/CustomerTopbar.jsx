@@ -7,8 +7,8 @@ const CustomerTopbar = ({ activeSection }) => {
 		switch (activeSection) {
 			case "Dashboard":
 				return "Customer Dashboard";
-			case "Service Status":
-				return "Service Status";
+			case "Order History":
+				return "Order History";
 			case "Documents Upload":
 				return "Uploaded Documents";
 			case "Payment History":
@@ -26,14 +26,19 @@ const CustomerTopbar = ({ activeSection }) => {
 	};
 	const [unreadCount, setUnreadCount] = useState(0);
 	const { user, logout, messages } = useCustomerAuth();
+	
 	useEffect(() => {
-		if (messages) {
+		if (messages && user) {
+			// Only count messages that:
+			// 1. Are not sent by the current user (senderRole is not 'customer' or sender is not the current user)
+			// 2. Are unread
 			const count = messages.filter(
-				(msg) => msg.isRead && msg.isReplied
+				(msg) => !msg.isRead && 
+				(msg.senderRole !== 'customer' || msg.sender !== user.name)
 			).length;
 			setUnreadCount(count);
 		}
-	}, [messages]);
+	}, [messages, user]);
 
 	return (
 		<div className='topbar'>

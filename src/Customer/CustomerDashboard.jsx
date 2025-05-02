@@ -71,10 +71,10 @@ const CustomerDashboard = () => {
 				setActiveSection={setActiveSection}
 			/>
 			<div className='content1'>
-				<CustomerTopbar activeSection={activeSection} />
+				{/* <CustomerTopbar activeSection={activeSection} /> */}
 				<div className='content'>
 					{activeSection === "Dashboard" && <CDashSection />}
-					{activeSection === "Service Status" && <CServiceStatus />}
+					{activeSection === "Order History" && <CServiceStatus />}
 					{activeSection === "Documents Upload" && <CDocumentUpload />}
 					{activeSection === "Payment History" && <PaymentHistory />}
 					{activeSection === "Profile" && <CProfileSection />}

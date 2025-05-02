@@ -12,6 +12,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
 
 import {
 	DialogContentText,
@@ -36,6 +37,12 @@ const DashboardSection = () => {
 	const [loading, setLoading] = useState(false);
 	const [showDocuments, setShowDocuments] = useState(false);
 	const [showDocRequirements, setShowDocRequirements] = useState(false);
+	const [uniqueCategories, setUniqueCategories] = useState([]);
+	const [newCategoryInput, setNewCategoryInput] = useState("");
+	const [categoryInputMode, setCategoryInputMode] = useState(false);
+	// Add state variables for employee form
+	const [l1ValidationError, setL1ValidationError] = useState("");
+	const [selectedL1Employees, setSelectedL1Employees] = useState([]);
 
 	const {
 		servicesCount,
@@ -66,6 +73,8 @@ const DashboardSection = () => {
 		error,
 		setError,
 		handleCreateUser,
+		userGrowthData,
+		employees,
 	} = useContext(AdminDashboardContext);
 
 	useEffect(() => {
@@ -76,8 +85,131 @@ const DashboardSection = () => {
 		}
 	}, [isAuthenticated, setError, fetchDashboardData]);
 
+	// Extract unique categories from services
+	useEffect(() => {
+		if (services && services.length > 0) {
+			const categories = [...new Set(services.map(service => service.category))];
+			setUniqueCategories(categories.filter(Boolean).sort());
+		}
+	}, [services]);
+
 	const handleToggleDocRequirements = () => {
 		setShowDocRequirements((prev) => !prev);
+	};
+
+	// Add a function to validate L+1 employee code
+	const validateL1EmpCode = (code) => {
+		if (!code) return true; // Optional field
+		const employee = employees && employees.find(emp => emp._id === code);
+		if (!employee) {
+			setL1ValidationError("Employee not found with this code");
+			return false;
+		}
+		setL1ValidationError("");
+		return true;
+	};
+
+	// Handle category selection or new category creation
+	const handleCategoryChange = (e) => {
+		const value = e.target.value;
+		if (value === "add_new_category") {
+			setCategoryInputMode(true);
+		} else {
+			setNewService({ ...newService, category: value });
+		}
+	};
+
+	// Handle saving a new category
+	const handleSaveNewCategory = () => {
+		if (newCategoryInput.trim()) {
+			setNewService({ ...newService, category: newCategoryInput.trim() });
+			setUniqueCategories([...uniqueCategories, newCategoryInput.trim()].sort());
+			setCategoryInputMode(false);
+			setNewCategoryInput("");
+		}
+	};
+
+	// Cancel adding a new category
+	const handleCancelNewCategory = () => {
+		setCategoryInputMode(false);
+		setNewCategoryInput("");
+	};
+
+	// Package Management Functions
+	const addPackage = () => {
+		setNewService((prev) => ({
+			...prev,
+			packages: [
+				...(prev.packages || []),
+				{
+					name: "",
+					description: "",
+					actualPrice: "",
+					salePrice: "",
+					features: [],
+					processingDays: 7,
+				},
+			],
+		}));
+	};
+
+	const removePackage = (index) => {
+		setNewService((prev) => ({
+			...prev,
+			packages: (prev.packages || []).filter((_, i) => i !== index),
+		}));
+	};
+
+	const updatePackage = (index, field, value) => {
+		setNewService((prev) => ({
+			...prev,
+			packages: (prev.packages || []).map((pkg, i) =>
+				i === index ? { ...pkg, [field]: value } : pkg
+			),
+		}));
+	};
+
+	const addFeature = (packageIndex) => {
+		setNewService((prev) => ({
+			...prev,
+			packages: (prev.packages || []).map((pkg, i) =>
+				i === packageIndex
+					? { ...pkg, features: [...(pkg.features || []), ""] }
+					: pkg
+			),
+		}));
+	};
+
+	const updateFeature = (packageIndex, featureIndex, value) => {
+		setNewService((prev) => ({
+			...prev,
+			packages: (prev.packages || []).map((pkg, i) =>
+				i === packageIndex
+					? {
+							...pkg,
+							features: (pkg.features || []).map((feat, j) =>
+								j === featureIndex ? value : feat
+							),
+					  }
+					: pkg
+			),
+		}));
+	};
+
+	const removeFeature = (packageIndex, featureIndex) => {
+		setNewService((prev) => ({
+			...prev,
+			packages: (prev.packages || []).map((pkg, i) =>
+				i === packageIndex
+					? {
+							...pkg,
+							features: (pkg.features || []).filter(
+								(_, j) => j !== featureIndex
+							),
+					  }
+					: pkg
+			),
+		}));
 	};
 
 	// Separate component for session expired message
@@ -123,11 +255,7 @@ const DashboardSection = () => {
 					onClick={() => setShowServiceForm(true)}>
 					Add Service
 				</button>
-				<button
-					className='tax-service-btn'
-					onClick={() => setShowManagerForm(true)}>
-					Add Manager
-				</button>
+
 				<button
 					className='tax-service-btn'
 					onClick={() => setShowEmployeeForm(true)}>
@@ -148,24 +276,64 @@ const DashboardSection = () => {
 				customersCount={customersCount}
 				services={services}
 				users={users}
+				userGrowthData={userGrowthData}
 			/>
 
+			{/* Service Form Dialog */}
 			<Dialog
 				open={showServiceForm}
-				onClose={() => setShowServiceForm(false)}
+				onClose={() => {
+					setShowServiceForm(false);
+					setCategoryInputMode(false);
+					setNewCategoryInput("");
+				}}
 				maxWidth='md'
 				fullWidth>
 				<DialogTitle>Add Service</DialogTitle>
 				<DialogContent>
-					<TextField
-						margin='dense'
-						label='Service Category'
-						fullWidth
-						value={newService.category}
-						onChange={(e) =>
-							setNewService({ ...newService, category: e.target.value })
-						}
-					/>
+					<FormControl fullWidth>
+						<InputLabel id='service-category-label'>Service Category</InputLabel>
+						<Select
+							labelId='service-category-label'
+							id='service-category'
+							value={newService.category}
+							onChange={handleCategoryChange}
+							label='Service Category'
+						>
+							{uniqueCategories.map((category) => (
+								<MenuItem key={category} value={category}>
+									{category}
+								</MenuItem>
+							))}
+							<MenuItem value='add_new_category'>Add New Category</MenuItem>
+						</Select>
+					</FormControl>
+					{categoryInputMode && (
+						<>
+							<TextField
+								margin='dense'
+								label='New Category'
+								fullWidth
+								value={newCategoryInput}
+								onChange={(e) => setNewCategoryInput(e.target.value)}
+							/>
+							<div style={{ marginTop: '10px', marginBottom: '10px' }}>
+								<button
+									className='tax-service-btn2'
+									onClick={handleSaveNewCategory}
+									style={{ marginRight: '10px' }}
+								>
+									Save
+								</button>
+								<button
+									className='tax-service-btn2'
+									onClick={handleCancelNewCategory}
+								>
+									Cancel
+								</button>
+							</div>
+						</>
+					)}
 					<TextField
 						margin='dense'
 						label='Service Name'
@@ -206,11 +374,36 @@ const DashboardSection = () => {
 					/>
 					<TextField
 						margin='dense'
+						label='GST Rate (%)'
+						type='number'
+						fullWidth
+						value={newService.gstRate}
+						onChange={(e) =>
+							setNewService({
+								...newService,
+								gstRate: parseFloat(e.target.value) || 0,
+							})
+						}
+						InputProps={{
+							endAdornment: <InputAdornment position='end'>%</InputAdornment>,
+						}}
+					/>
+					<TextField
+						margin='dense'
 						label='HSN Code'
 						fullWidth
 						value={newService.hsncode}
 						onChange={(e) =>
 							setNewService({ ...newService, hsncode: e.target.value })
+						}
+					/>
+					<TextField
+						margin='dense'
+						label='Currency'
+						fullWidth
+						value={newService.currency}
+						onChange={(e) =>
+							setNewService({ ...newService, currency: e.target.value })
 						}
 					/>
 					<TextField
@@ -227,6 +420,171 @@ const DashboardSection = () => {
 						}
 						inputProps={{ min: 1 }}
 					/>
+
+					{/* Packages Section */}
+					<div style={{ marginTop: "20px", marginBottom: "20px" }}>
+						<h3>Service Packages</h3>
+						<p style={{ fontSize: "0.9rem", color: "#666" }}>
+							Create packages for this service (optional). Users will be able to
+							select from these packages.
+						</p>
+
+						{newService.packages && newService.packages.length > 0 ? (
+							<>
+								{newService.packages.map((pkg, index) => (
+									<div
+										key={index}
+										style={{
+											border: "1px solid #ddd",
+											borderRadius: "8px",
+											padding: "15px",
+											marginBottom: "15px",
+											backgroundColor: "#f9f9f9",
+										}}>
+										<div
+											style={{
+												display: "flex",
+												justifyContent: "space-between",
+												alignItems: "center",
+											}}>
+											<h4>Package {index + 1}</h4>
+											{newService.packages.length > 1 && (
+												<button
+													className='tax-service-btn'
+													onClick={() => removePackage(index)}
+													style={{ backgroundColor: "#ff6b6b" }}>
+													<i className='fa-solid fa-trash'></i> Remove Package
+												</button>
+											)}
+										</div>
+
+										<TextField
+											margin='dense'
+											label='Package Name'
+											fullWidth
+											value={pkg.name}
+											onChange={(e) =>
+												updatePackage(index, "name", e.target.value)
+											}
+										/>
+										<TextField
+											margin='dense'
+											label='Package Description'
+											fullWidth
+											value={pkg.description}
+											onChange={(e) =>
+												updatePackage(index, "description", e.target.value)
+											}
+										/>
+										<div style={{ display: "flex", gap: "10px" }}>
+											<TextField
+												margin='dense'
+												label='Price'
+												type='number'
+												fullWidth
+												value={pkg.actualPrice}
+												onChange={(e) =>
+													updatePackage(index, "actualPrice", e.target.value)
+												}
+											/>
+											<TextField
+												margin='dense'
+												label='Discounted Price'
+												type='number'
+												fullWidth
+												value={pkg.salePrice}
+												onChange={(e) =>
+													updatePackage(index, "salePrice", e.target.value)
+												}
+											/>
+											<TextField
+												margin='dense'
+												label='Processing Days'
+												type='number'
+												fullWidth
+												value={pkg.processingDays}
+												onChange={(e) =>
+													updatePackage(
+														index,
+														"processingDays",
+														parseInt(e.target.value) || 7
+													)
+												}
+												inputProps={{ min: 1 }}
+											/>
+										</div>
+
+										{/* Features Section */}
+										<div style={{ marginTop: "15px" }}>
+											<h5>Features</h5>
+											<p style={{ fontSize: "0.8rem", color: "#666" }}>
+												Add key features for this package
+											</p>
+
+											{pkg.features && pkg.features.map((feature, featureIndex) => (
+												<div
+													key={featureIndex}
+													style={{
+														display: "flex",
+														gap: "10px",
+														marginBottom: "8px",
+													}}>
+													<TextField
+														size='small'
+														label={`Feature ${featureIndex + 1}`}
+														fullWidth
+														value={feature}
+														onChange={(e) =>
+															updateFeature(index, featureIndex, e.target.value)
+														}
+													/>
+													<button
+														className='tax-service-btn'
+														onClick={() => removeFeature(index, featureIndex)}
+														style={{ backgroundColor: "#ff6b6b" }}>
+														<i className='fa-solid fa-times'></i>
+													</button>
+												</div>
+											))}
+
+											<button
+												className='tax-service-btn2'
+												onClick={() => addFeature(index)}
+												style={{ marginTop: "10px" }}>
+												<i className='fa-solid fa-plus'></i> Add Feature
+											</button>
+										</div>
+									</div>
+								))}
+
+								<button
+									className='tax-service-btn2'
+									onClick={addPackage}
+									style={{ marginTop: "10px" }}>
+									<i className='fa-solid fa-plus'></i> Add Another Package
+								</button>
+							</>
+						) : (
+							<div
+								style={{
+									textAlign: "center",
+									padding: "20px",
+									border: "1px dashed #ccc",
+									borderRadius: "8px",
+								}}>
+								<p>
+									No packages added yet. You can create service without packages
+									or add packages below.
+								</p>
+								<button
+									className='tax-service-btn2'
+									onClick={addPackage}
+									style={{ marginTop: "10px" }}>
+									<i className='fa-solid fa-plus'></i> Add Package
+								</button>
+							</div>
+						)}
+					</div>
 
 					<div>
 						<button
@@ -251,130 +609,27 @@ const DashboardSection = () => {
 					</div>
 				</DialogContent>
 				<DialogActions>
-					<Button onClick={handleCreateService}>Create</Button>
+					<Button 
+						onClick={() => {
+							handleCreateService();
+							setShowServiceForm(false);
+						}}
+					>
+						Create
+					</Button>
 					<Button onClick={() => setShowServiceForm(false)}>Cancel</Button>
 				</DialogActions>
 			</Dialog>
 
-			<Dialog
-				open={showUserForm}
-				onClose={() => setShowUserForm(false)}
-				maxWidth='md'
-				fullWidth>
-				<DialogTitle>Add Customer</DialogTitle>
-				<DialogContent>
-					<TextField
-						margin='dense'
-						label='Full Name'
-						fullWidth
-						value={newUser.name || ""}
-						onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-					/>
-					<TextField
-						margin='dense'
-						label='Email'
-						type='email'
-						fullWidth
-						value={newUser.email || ""}
-						onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-					/>
-					<TextField
-						margin='dense'
-						label='Password'
-						type='password'
-						fullWidth
-						value={newUser.password || ""}
-						onChange={(e) =>
-							setNewUser({ ...newUser, password: e.target.value })
-						}
-					/>
-					{/* <TextField
-						margin='dense'
-						label='Mobile Number'
-						fullWidth
-						value={newUser.mobile || ''}
-						onChange={(e) =>
-							setNewUser({ ...newUser, mobile: e.target.value })
-						}
-					/> */}
-					<TextField
-						margin='dense'
-						label='Username'
-						fullWidth
-						value={newUser.username || ""}
-						onChange={(e) =>
-							setNewUser({ ...newUser, username: e.target.value })
-						}
-					/>
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={() => setShowUserForm(false)}>Cancel</Button>
-					<Button
-						onClick={() => {
-							handleCreateUser();
-							setShowUserForm(false);
-						}}>
-						Add Customer
-					</Button>
-				</DialogActions>
-			</Dialog>
-
-			<Dialog
-				open={showManagerForm}
-				onClose={() => setShowManagerForm(false)}
-				maxWidth='sm'
-				fullWidth>
-				<DialogTitle>Add Manager</DialogTitle>
-				<DialogContent>
-					<TextField
-						margin='dense'
-						label='Manager Name'
-						fullWidth
-						value={newManager.name}
-						onChange={(e) =>
-							setNewManager({ ...newManager, name: e.target.value })
-						}
-					/>
-					<TextField
-						margin='dense'
-						label='Manager Email'
-						type='email'
-						fullWidth
-						value={newManager.email}
-						onChange={(e) =>
-							setNewManager({ ...newManager, email: e.target.value })
-						}
-					/>
-					<TextField
-						margin='dense'
-						label='Username'
-						fullWidth
-						value={newManager.username}
-						onChange={(e) =>
-							setNewManager({ ...newManager, username: e.target.value })
-						}
-					/>
-					<TextField
-						margin='dense'
-						label='Password'
-						type='password'
-						fullWidth
-						value={newManager.password}
-						onChange={(e) =>
-							setNewManager({ ...newManager, password: e.target.value })
-						}
-					/>
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={handleCreateManager}>Create</Button>
-					<Button onClick={() => setShowManagerForm(false)}>Cancel</Button>
-				</DialogActions>
-			</Dialog>
-
+			{/* Employee Form Dialog - Updated from EmployeesSection.jsx */}
 			<Dialog
 				open={showEmployeeForm}
-				onClose={() => setShowEmployeeForm(false)}
-				maxWidth='sm'
+				onClose={() => {
+					setShowEmployeeForm(false);
+					setSelectedL1Employees([]);
+					setL1ValidationError("");
+				}}
+				maxWidth='md'
 				fullWidth>
 				<DialogTitle>Add Employee</DialogTitle>
 				<DialogContent>
@@ -450,28 +705,155 @@ const DashboardSection = () => {
 							setNewEmployee({ ...newEmployee, password: e.target.value })
 						}
 					/>
+					<FormControl fullWidth margin='dense'>
+						<InputLabel id="lminus1-employee-label">L-1 Employees (Optional)</InputLabel>
+						<Select
+							labelId="lminus1-employee-label"
+							multiple
+							value={selectedL1Employees}
+							onChange={(e) => {
+								const selectedValues = e.target.value;
+								setSelectedL1Employees(selectedValues);
+								setNewEmployee({ 
+									...newEmployee, 
+									Lminus1code: selectedValues.join(',')
+								});
+							}}
+							renderValue={(selected) => {
+								if (selected.length === 0) {
+									return <em>Select L-1 Employees</em>;
+								}
+								
+								return selected.map(id => {
+									const emp = employees?.find(e => e._id === id);
+									return emp ? emp.name : id;
+								}).join(', ');
+							}}
+						>
+							{employees?.map((emp) => (
+								<MenuItem key={emp._id} value={emp._id}>
+									<Checkbox checked={selectedL1Employees.indexOf(emp._id) > -1} />
+									<ListItemText primary={`${emp.name} (${emp._id})`} />
+								</MenuItem>
+							)) || []}
+						</Select>
+					</FormControl>
+					<FormControl fullWidth margin='dense'>
+						<InputLabel id="l1-employee-label">L+1 Employee</InputLabel>
+						<Select
+							labelId="l1-employee-label"
+							value={newEmployee.L1EmpCode || ''}
+							onChange={(e) => {
+								const selectedEmp = employees?.find(emp => emp._id === e.target.value);
+								setNewEmployee({ 
+									...newEmployee, 
+									L1EmpCode: e.target.value,
+									L1Name: selectedEmp ? selectedEmp.name : ''
+								});
+								setL1ValidationError("");
+							}}
+							error={!!l1ValidationError}
+						>
+							<MenuItem value="">
+								<em>None</em>
+							</MenuItem>
+							{employees?.map((emp) => (
+								<MenuItem key={emp._id} value={emp._id}>
+									{emp.name} ({emp._id})
+								</MenuItem>
+							)) || []}
+						</Select>
+						{l1ValidationError && (
+							<FormHelperText error>{l1ValidationError}</FormHelperText>
+						)}
+					</FormControl>
+					
 					<TextField
 						margin='dense'
-						label='L-1 Code'
+						label='Designation'
 						fullWidth
-						value={newEmployee.Lminus1code}
+						value={newEmployee.designation || ''}
 						onChange={(e) =>
-							setNewEmployee({ ...newEmployee, Lminus1code: e.target.value })
-						}
-					/>
-					<TextField
-						margin='dense'
-						label='L+1 Code'
-						fullWidth
-						value={newEmployee.L1EmpCode}
-						onChange={(e) =>
-							setNewEmployee({ ...newEmployee, L1EmpCode: e.target.value })
+							setNewEmployee({ ...newEmployee, designation: e.target.value })
 						}
 					/>
 				</DialogContent>
 				<DialogActions>
-					<Button onClick={handleCreateEmployee}>Create</Button>
-					<Button onClick={() => setShowEmployeeForm(false)}>Cancel</Button>
+					<Button 
+						onClick={() => {
+							if (validateL1EmpCode(newEmployee.L1EmpCode)) {
+								handleCreateEmployee();
+								setShowEmployeeForm(false);
+								setSelectedL1Employees([]);
+							}
+						}}
+					>
+						Create
+					</Button>
+					<Button 
+						onClick={() => {
+							setShowEmployeeForm(false);
+							setSelectedL1Employees([]);
+							setL1ValidationError("");
+						}}
+					>
+						Cancel
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			{/* User Form Dialog */}
+			<Dialog
+				open={showUserForm}
+				onClose={() => setShowUserForm(false)}
+				maxWidth='md'
+				fullWidth>
+				<DialogTitle>Add User</DialogTitle>
+				<DialogContent>
+					<TextField
+						margin='dense'
+						label='Full Name'
+						fullWidth
+						value={newUser.name || ""}
+						onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+					/>
+					<TextField
+						margin='dense'
+						label='Email'
+						type='email'
+						fullWidth
+						value={newUser.email || ""}
+						onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+					/>
+					<TextField
+						margin='dense'
+						label='Password'
+						type='password'
+						fullWidth
+						value={newUser.password || ""}
+						onChange={(e) =>
+							setNewUser({ ...newUser, password: e.target.value })
+						}
+					/>
+					<TextField
+						margin='dense'
+						label='Username'
+						fullWidth
+						value={newUser.username || ""}
+						onChange={(e) =>
+							setNewUser({ ...newUser, username: e.target.value })
+						}
+					/>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setShowUserForm(false)}>Cancel</Button>
+					<Button
+						onClick={() => {
+							handleCreateUser();
+							setShowUserForm(false);
+						}}>
+						Add User
+					</Button>
 				</DialogActions>
 			</Dialog>
 		</div>

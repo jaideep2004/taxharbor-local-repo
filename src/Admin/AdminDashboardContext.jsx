@@ -13,6 +13,7 @@ const AdminDashboardProvider = ({ children }) => {
 	const [managersCount, setManagersCount] = useState(0);
 	const [employeesCount, setEmployeesCount] = useState(0);
 	const [customersCount, setCustomersCount] = useState(0);
+	const [userGrowthData, setUserGrowthData] = useState([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState(null);
 	const [services, setServices] = useState([]);
@@ -48,16 +49,7 @@ const AdminDashboardProvider = ({ children }) => {
 		description: "",
 		hsncode: "",
 		currency: "INR",
-		packages: [
-			{
-				name: "",
-				description: "",
-				actualPrice: "",
-				salePrice: "",
-				features: [],
-				processingDays: 7,
-			},
-		],
+		packages: [],
 		requiredDocuments: [],
 	});
 
@@ -117,6 +109,54 @@ const AdminDashboardProvider = ({ children }) => {
 		fetchAllOrders();
 	}, []);
 
+	// Function to process user growth data based on creation dates
+	const processUserGrowthData = (users) => {
+		// Get the current date and go back 6 months
+		const now = new Date();
+		const months = [];
+		const monthData = {};
+		
+		// Get the last 6 months (including current)
+		for (let i = 0; i < 6; i++) {
+			const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+			const monthName = monthDate.toLocaleString('default', { month: 'short' });
+			const monthKey = `${monthName} ${monthDate.getFullYear()}`;
+			months.unshift({ monthKey, monthDate });
+			monthData[monthKey] = 0;
+		}
+		
+		// Sort users by creation date
+		const sortedUsers = [...users].sort((a, b) => 
+			new Date(a.createdAt) - new Date(b.createdAt)
+		);
+		
+		// Initialize with total users at the beginning of the period
+		let runningTotal = sortedUsers.filter(user => 
+			new Date(user.createdAt) < months[0].monthDate
+		).length;
+		
+		// For each month, count users created in that month
+		months.forEach(({ monthKey, monthDate }, index) => {
+			const nextMonthDate = index < months.length - 1 
+				? months[index + 1].monthDate 
+				: new Date(now.getFullYear(), now.getMonth() + 1, 1);
+			
+			const newUsers = sortedUsers.filter(user => {
+				const userDate = new Date(user.createdAt);
+				return userDate >= monthDate && userDate < nextMonthDate;
+			}).length;
+			
+			runningTotal += newUsers;
+			monthData[monthKey] = runningTotal;
+		});
+		
+		// Transform to array for the chart
+		return months.map(({ monthKey }) => ({
+			month: monthKey.split(' ')[0], // Only show month name in the chart
+			users: monthData[monthKey]
+		}));
+	};
+
 	const fetchDashboardData = async () => {
 		const token = localStorage.getItem("adminToken");
 		if (!token) {
@@ -155,15 +195,19 @@ const AdminDashboardProvider = ({ children }) => {
 			);
 			setManagersCount(users.filter((user) => user.role === "manager").length);
 
-			// Only show success notification on the first load
-			// if (isInitialLoad.current) {
-			showNotification(
-				"Admin Dashboard loaded successfully.",
-				"success",
-				"admin"
-			);
+			// Process user growth data
+			const growthData = processUserGrowthData(users);
+			setUserGrowthData(growthData);
 
-			// }
+			// Only show success notification on the first load
+			if (isInitialLoad.current) {
+			// showNotification(
+			// 	"Admin Dashboard loaded successfully.",
+			// 	"success",
+			// 	"admin"
+			// );
+
+			}
 		} catch (err) {
 			console.error("Dashboard fetch error:", err);
 			const errorMessage =
@@ -256,17 +300,8 @@ const AdminDashboardProvider = ({ children }) => {
 			return;
 		}
 
-		// Packages validation - only validate the packages that are provided
-		if (packages && packages.length > 0) {
-			for (let i = 0; i < packages.length; i++) {
-				const pkg = packages[i];
-				if (!pkg.name) {
-					showNotification(`Package ${i + 1} must have a name.`, "error");
-					setLoading(false);
-					return;
-				}
-			}
-		}
+		// Packages are now optional
+		// No validation needed for packages
 
 		try {
 			const token = localStorage.getItem("adminToken");
@@ -294,16 +329,7 @@ const AdminDashboardProvider = ({ children }) => {
 				description: "",
 				hsncode: "",
 				currency: "INR",
-				packages: [
-					{
-						name: "",
-						description: "",
-						actualPrice: "",
-						salePrice: "",
-						features: [],
-						processingDays: 7,
-					},
-				],
+				packages: [],
 				requiredDocuments: [],
 			});
 		} catch (err) {
@@ -901,8 +927,28 @@ const AdminDashboardProvider = ({ children }) => {
 				}
 			);
 
-			setLeads(data.leads);
-			console.log("Leads:", data.leads);
+			// Process the leads to include order assignment information
+			const processedLeads = data.leads.map(lead => {
+				// If lead is converted and has an order ID, we need to get the order assignee
+				if (lead.status === 'converted' && lead.convertedToOrderId) {
+					// Try to find the corresponding order in the orders list
+					const correspondingOrder = orders.find(order => 
+						order.orderId === lead.convertedToOrderId
+					);
+					
+					// If we found the order and it has an assigned employee, add it to the lead
+					if (correspondingOrder && correspondingOrder.employeeId) {
+						return {
+							...lead,
+							orderAssignedEmployee: correspondingOrder.employeeId
+						};
+					}
+				}
+				return lead;
+			});
+
+			setLeads(processedLeads);
+			console.log("Processed Leads:", processedLeads);
 		} catch (error) {
 			console.error("Error fetching leads:", error);
 			showNotification(
@@ -963,6 +1009,10 @@ const AdminDashboardProvider = ({ children }) => {
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);
 			
+			// Get the lead that's being converted to determine assigned employee
+			const leadToConvert = leads.find(lead => lead._id === leadId);
+			const assignedEmployee = leadToConvert ? leadToConvert.assignedToEmployee : null;
+			
 			// Update local state
 			setLeads(prevLeads => 
 				prevLeads.map(lead => 
@@ -971,7 +1021,8 @@ const AdminDashboardProvider = ({ children }) => {
 							...lead, 
 							status: "converted",
 							convertedToOrderId: response.data.orderId,
-							convertedAt: new Date()
+							convertedAt: new Date(),
+							orderAssignedEmployee: assignedEmployee // Initially assign the same employee
 						} 
 						: lead
 				)
@@ -980,6 +1031,7 @@ const AdminDashboardProvider = ({ children }) => {
 			// Fetch updated data
 			fetchAllLeads();
 			fetchDashboardData();
+			fetchAllOrders(); // Make sure to fetch updated orders to get the order assignment
 			
 			showNotification("Lead converted to customer order successfully", "success");
 			setLoading(false);
@@ -995,11 +1047,74 @@ const AdminDashboardProvider = ({ children }) => {
 		}
 	};
 	
+	// Add a function to send leads back to employees
+	const handleSendLeadBack = async (leadId, message) => {
+		try {
+			setLoading(true);
+			const token = localStorage.getItem("adminToken");
+			
+			const response = await axios.post(
+				"https://195-35-45-82.sslip.io:8000/api/admin/leads/send-back",
+				{ leadId, message },
+				{
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				}
+			);
+			
+			// Update the lead status in the local state
+			setLeads(prevLeads =>
+				prevLeads.map(lead =>
+					lead._id === leadId
+						? { ...lead, status: 'assigned', adminNote: message, sentBackAt: new Date() }
+						: lead
+				)
+			);
+			
+			showNotification("Lead sent back to employee successfully", "success");
+			return true;
+		} catch (error) {
+			console.error("Error sending lead back:", error);
+			showNotification(
+				error.response?.data?.message || "Error sending lead back",
+				"error"
+			);
+			return false;
+		} finally {
+			setLoading(false);
+		}
+	};
+	
 	useEffect(() => {
 		if (isAuthenticated) {
 			fetchAllLeads();
 		}
 	}, [isAuthenticated]);
+
+	// Add a new effect to update leads data when orders change
+	useEffect(() => {
+		if (orders.length > 0 && leads.length > 0) {
+			// Process leads again to update order assignment information
+			const updatedLeads = leads.map(lead => {
+				if (lead.status === 'converted' && lead.convertedToOrderId) {
+					const correspondingOrder = orders.find(order => 
+						order.orderId === lead.convertedToOrderId
+					);
+					
+					if (correspondingOrder && correspondingOrder.employeeId) {
+						return {
+							...lead,
+							orderAssignedEmployee: correspondingOrder.employeeId
+						};
+					}
+				}
+				return lead;
+			});
+			
+			setLeads(updatedLeads);
+		}
+	}, [orders]);
 
 	return (
 		<AdminDashboardContext.Provider
@@ -1079,6 +1194,8 @@ const AdminDashboardProvider = ({ children }) => {
 				fetchAllLeads,
 				handleAssignLead,
 				handleConvertLead,
+				handleSendLeadBack,
+				userGrowthData,
 			}}>
 			{loading && (
 				<div

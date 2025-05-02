@@ -131,25 +131,83 @@ export const CustomerAuthProvider = ({ children }) => {
 			console.log("user", data.user);
 
 			// Add the formatted services mapping
-			const formattedServices = data.user.services.map((service) => ({
-				orderId: service.orderId,
-				serviceId: service.serviceId,
-				serviceName: service.serviceName || service.name,
-				serviceDescription: service.description || "N/A", // Include description
-				purchasedAt: service.purchasedAt || null,
-				dueDate: service.dueDate || null,
-				status: service.status || "N/A",
-				activationStatus: service.activated ? "Active" : "Inactive", // Include activation status
-				managedBy: service.managedBy || "Not Assigned", // Include managedBy
-				requiredDocuments:
-					service.serviceId?.requiredDocuments ||
-					service.requiredDocuments ||
-					[],
-				documents: service.documents || [],
-			}));
+			const formattedServices = data.user.services.map((service) => {
+				// Check if feedback data directly comes from backend
+				const serviceFeedback = service.feedback && service.feedback.length > 0 
+					? service.feedback[0] 
+					: null;
+				
+				// Extract tax information
+				const igst = parseFloat(service.igst || 0);
+				const cgst = parseFloat(service.cgst || 0);
+				const sgst = parseFloat(service.sgst || 0);
+				const price = parseFloat(service.price || 0);
+				const discount = parseFloat(service.discount || 0);
+				const paymentAmount = parseFloat(service.paymentAmount || price || 0);
+				
+				// Employee info should now come directly from the backend
+				const employeeName = service.employeeName || null;
+				
+				console.log('Service details:', {
+					id: service.orderId,
+					employeeId: service.employeeId,
+					employeeName: service.employeeName,
+					feedback: service.feedback,
+					igst, 
+					cgst, 
+					sgst,
+					price,
+					paymentAmount,
+					totalTax: igst + cgst + sgst,
+					totalWithTax: price + igst + cgst + sgst
+				});
+				
+				return {
+					orderId: service.orderId,
+					serviceId: service.serviceId,
+					serviceName: service.serviceName,
+					packageName: service.packageName || null,
+					price: price,
+					serviceDescription: service.serviceDescription || "N/A",
+					purchasedAt: service.purchasedAt || null,
+					dueDate: service.dueDate || null,
+					status: service.status || "N/A",
+					activationStatus: service.activationStatus || "Inactive",
+					
+					// Employee information - use values directly from backend
+					managedBy: service.managedBy || "Not Assigned",
+					employeeId: service.employeeId || null, 
+					employeeName: employeeName,
+					
+					requiredDocuments: service.requiredDocuments || [],
+					documents: service.documents || [],
+					
+					// Tax information
+					igst: igst,
+					cgst: cgst,
+					sgst: sgst,
+					
+					// Payment information
+					paymentAmount: paymentAmount,
+					paymentMethod: service.paymentMethod || "N/A",
+					paymentReference: service.paymentReference || "N/A",
+					
+					// Discount information
+					discount: discount,
+					
+					// Completion date
+					completionDate: service.completionDate || null,
+					
+					// Feedback information - get directly from service object
+					feedback: service.feedback || [],
+					hasRating: serviceFeedback ? true : false,
+					rating: serviceFeedback ? serviceFeedback.rating : null,
+					feedbackText: serviceFeedback ? serviceFeedback.feedback : null
+				};
+			});
 
 			setServices(formattedServices);
-			console.log("servcies", formattedServices);
+			console.log("Processed services with tax and feedback:", formattedServices);
 			setFormData((prev) => ({
 				...prev,
 				pan: data.user.pan || "",
@@ -436,6 +494,46 @@ export const CustomerAuthProvider = ({ children }) => {
 		}
 	};
 
+	// Add function to update bank details
+	const updateBankDetails = async (bankDetails) => {
+		const token = localStorage.getItem("customerToken");
+		if (!token) {
+			showNotification("Session expired. Please log in again.", "error");
+			return { success: false };
+		}
+
+		try {
+			setLoading(true);
+			const response = await axios.post(
+				"https://195-35-45-82.sslip.io:8000/api/customers/update-bank-details",
+				{
+					bankDetails,
+					userId: user._id,
+				},
+				{ headers: { Authorization: `Bearer ${token}` } }
+			);
+
+			if (response.data) {
+				// Update user state with the new bank details
+				setUser(prev => ({
+					...prev,
+					bankDetails: bankDetails
+				}));
+				
+				showNotification("Bank details updated successfully", "success");
+				return { success: true };
+			} else {
+				showNotification("Failed to update bank details", "error");
+				return { success: false };
+			}
+		} catch (error) {
+			handleErrorResponse(error, "Failed to update bank details");
+			return { success: false };
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	return (
 		<CustomerAuthContext.Provider
 			value={{
@@ -513,6 +611,7 @@ export const CustomerAuthProvider = ({ children }) => {
 						setLoading(false);
 					}
 				},
+				updateBankDetails,
 			}}>
 			{loading && (
 				<div

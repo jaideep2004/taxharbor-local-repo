@@ -9,19 +9,28 @@ const PaymentHistory = () => {
 		return date.toLocaleDateString("en-GB", options).replace(/ /g, " ");
 	};
 
-	const { user, paymentHistory, loading } = useCustomerAuth();
+	const { user, loading } = useCustomerAuth();
 
+	// Calculate total payments from payment history
 	const totalPayments =
 		user?.paymentHistory?.reduce(
 			(total, payment) => total + payment.amount,
 			0
 		) || 0;
 
+	// Check if there's payment history data
+	const hasPaymentHistory =
+		user?.paymentHistory && user.paymentHistory.length > 0;
+
 	return (
 		<div className='tax-dashboard-services'>
 			<div>
-				<div>
-					{user?.paymentHistory?.length > 0 ? (
+				<div style={{ paddingTop: "50px" }}>
+					<p>Total Payments: ₹{totalPayments.toFixed(2)}</p>
+
+					{loading ? (
+						<p>Loading payment data...</p>
+					) : hasPaymentHistory ? (
 						<table className='payment-history-table'>
 							<thead>
 								<tr>
@@ -35,9 +44,7 @@ const PaymentHistory = () => {
 							<tbody>
 								{user.paymentHistory.map((payment, index) => (
 									<tr key={index}>
-										<td>
-											{formatDate(new Date(payment.date).toLocaleDateString())}
-										</td>
+										<td>{formatDate(payment.date)}</td>
 										<td>{payment.paymentId}</td>
 										<td>₹{payment.amount}</td>
 										<td>{payment.paymentMethod}</td>
@@ -47,7 +54,7 @@ const PaymentHistory = () => {
 							</tbody>
 						</table>
 					) : (
-						<p>No recent activity</p>
+						<p>No payment history available</p>
 					)}
 				</div>
 			</div>

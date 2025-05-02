@@ -22,12 +22,15 @@ const Section3 = () => {
 					className='tax-section3-card rotate-up'
 					data-aos='fade-up'
 					data-aos-duration='850'>
-					<img src='./images/Individualtax.jpeg' alt='' />
+					<img src='./images/i2.jpg' alt='' />
 					<div className='tax3-card-desc'>
-						<h2>Individual Tax</h2>
+						<h2>Funding</h2>
 						<p>
-							Lorem ipsum dolor sit amet, consectetur adipisicing elit. Lorem
-							ipsum dolor sit amet, consectetur adipisicing elit.{" "}
+							FinShelter offers tailored loan solutions for personal and
+							business needs. From personal loans and home financing to business
+							and vehicle loans, we provide quick approvals, flexible terms, and
+							competitive rates, ensuring a seamless borrowing experience with
+							expert guidance at every step to meet your financial goals
 						</p>
 						<a href=''>
 							View Detail <i class='fa-solid fa-circle-arrow-right fa-xl'></i>{" "}
@@ -38,12 +41,16 @@ const Section3 = () => {
 					className='tax-section3-card rotate-up2'
 					data-aos='fade-up'
 					data-aos-duration='850'>
-					<img src='./images/business2.jpeg' alt='' />
+					<img src='./images/i3.jpg' alt='' />
 					<div className='tax3-card-desc'>
-						<h2>Business Tax</h2>
+						<h2>Mutual Funds</h2>
 						<p>
-							Lorem ipsum dolor sit amet, consectetur adipisicing elit. Lorem
-							ipsum dolor sit amet, consectetur adipisicing elit.{" "}
+							FinShelter provides expert mutual fund distribution services to
+							achieve your financial goals. With personalized recommendations
+							and access to diverse investment options, we ensure your funds are
+							managed professionally with transparency, maximizing growth
+							potential through strategic planning and reliable support tailored
+							to your unique needs.
 						</p>
 						<a href=''>
 							View Detail <i class='fa-solid fa-circle-arrow-right fa-xl'></i>{" "}
@@ -54,12 +61,16 @@ const Section3 = () => {
 					className='tax-section3-card rotate-up'
 					data-aos='fade-up'
 					data-aos-duration='900'>
-					<img src='./images/accounting.jpeg' alt='' />
+					<img src='./images/i4.jpg' alt='' />
 					<div className='tax3-card-desc'>
-						<h2>Accounting</h2>
+						<h2>Taxation</h2>
 						<p>
-							Lorem ipsum dolor sit amet, consectetur adipisicing elit. Lorem
-							ipsum dolor sit amet, consectetur adipisicing elit.{" "}
+							FinShelter offers reliable taxation solutions, including ITR
+							filing, GST compliance, and ROC services. We simplify complex
+							processes, ensure accuracy, and provide expert guidance for a
+							hassle-free experience, helping you meet regulatory requirements
+							with confidence and efficiency while supporting your financial and
+							business objectives.
 						</p>
 						<a href=''>
 							View Detail <i class='fa-solid fa-circle-arrow-right fa-xl'></i>{" "}
@@ -70,12 +81,15 @@ const Section3 = () => {
 					className='tax-section3-card rotate-up2'
 					data-aos='fade-up'
 					data-aos-duration='900'>
-					<img src='./images/taxincorporation.jpeg' alt='' />
+					<img src='./images/i1.jpg' alt='' />
 					<div className='tax3-card-desc'>
-						<h2>Incorporation</h2>
+						<h2>Insurance</h2>
 						<p>
-							Lorem ipsum dolor sit amet, consectetur adipisicing elit. Lorem
-							ipsum dolor sit amet, consectetur adipisicing elit.{" "}
+							FinShelter provides comprehensive insurance solutions to secure
+							your future. From life and health to property and vehicle
+							coverage, we offer trusted advice and tailored plans to protect
+							what matters most, ensuring peace of mind with reliable,
+							customized options designed for your personal and business needs.
 						</p>
 						<a href=''>
 							View Detail <i class='fa-solid fa-circle-arrow-right fa-xl'></i>{" "}

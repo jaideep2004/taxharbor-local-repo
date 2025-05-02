@@ -130,7 +130,8 @@
 			padding: 16px;
 			font-size: 17px;
 			border-radius: 10px;
-			min-height: 115px;
+			max-height: 108px;
+			min-height: 75px;
 		}
 		select {
 			border-radius: 10px;

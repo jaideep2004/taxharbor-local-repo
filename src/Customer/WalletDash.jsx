@@ -188,6 +188,7 @@ const WalletDash = () => {
 		referralStats,
 		fetchReferralStats,
 		user,
+		updateBankDetails,
 	} = useCustomerAuth();
 
 	const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -222,22 +223,16 @@ const WalletDash = () => {
 	};
 
 	const handleBankDetailsSubmit = async (bankDetails) => {
-		const token = localStorage.getItem("customerToken");
 		setLoading(true);
 		try {
-			await axios.post(
-				"https://195-35-45-82.sslip.io:8000/api/customers/update-bank-details",
-				{
-					bankDetails,
-					userId: user._id,
-				},
-				{ headers: { Authorization: `Bearer ${token}` } }
-			);
+			const result = await updateBankDetails(bankDetails);
 
-			await requestWithdrawal(Number(withdrawAmount));
-			setWithdrawAmount("");
-			await fetchWalletDetails();
-			setShowBankDetails(false);
+			if (result.success) {
+				await requestWithdrawal(Number(withdrawAmount));
+				setWithdrawAmount("");
+				await fetchWalletDetails();
+				setShowBankDetails(false);
+			}
 		} catch (error) {
 			console.error("Withdrawal error:", error);
 			alert(error.response?.data?.message || "Failed to process withdrawal");
@@ -273,7 +268,7 @@ const WalletDash = () => {
 	};
 
 	return (
-		<Container maxWidth='lg'>
+		<Container maxWidth='lg' style={{ paddingTop: "45px" }}>
 			<Grid container spacing={3}>
 				{/* Balance Card */}
 				<Grid item xs={12}>

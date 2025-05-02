@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "./header.css";
-import { NavLink, useLocation } from "react-router-dom";
-import DropDownMenu from "./DropDownMenu";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import DropDownMenu, { DropdownContext } from "./DropDownMenu";
+import CalculatorDropdown, { CalcDropdownContext } from "./CalculatorDropdown";
 import {
 	AppBar,
 	Box,
@@ -14,9 +15,19 @@ import {
 	useMediaQuery,
 	Collapse,
 	styled,
+	Avatar,
+	Badge,
+	Popover,
+	Typography,
+	Button,
+	Divider,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import ExpandMore from "@mui/icons-material/ExpandMore";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import LogoutIcon from "@mui/icons-material/Logout";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import { useCustomerAuth } from "../../Customer/CustomerAuthContext";
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
 	backgroundColor: "var(--primary)",
@@ -39,10 +50,41 @@ const Header = () => {
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+	const [isCalcDropdownVisible, setIsCalcDropdownVisible] = useState(false);
 	const [isScrolled, setIsScrolled] = useState(false);
 	const location = useLocation();
+	const navigate = useNavigate();
 	const isHomePage = location.pathname === "/";
+	
+	// Safely access customer auth context with fallback values
+	let isLoggedIn = false;
+	let user = null;
+	let logout = () => {};
+	let messages = [];
+	let unreadMessages = 0;
+	
+	try {
+		const customerAuth = useCustomerAuth();
+		isLoggedIn = customerAuth?.isLoggedIn || false;
+		user = customerAuth?.user || null;
+		logout = customerAuth?.logout || (() => {});
+		messages = customerAuth?.messages || [];
+		// Count only unread messages that were not sent by the customer
+		unreadMessages = messages ? messages.filter(msg => 
+			!msg.isRead && 
+			(msg.senderRole !== 'customer' || msg.sender !== user?.name)
+		).length : 0;
+	} catch (error) {
+		console.log("Not in customer context");
+	}
+	
+	const isCustomerDashboard = location.pathname.includes("/customers/dashboard");
 	let dropdownTimeout;
+	let calcDropdownTimeout;
+
+	// User menu state
+	const [anchorEl, setAnchorEl] = useState(null);
+	const openUserMenu = Boolean(anchorEl);
 
 	useEffect(() => {
 		const handleScroll = () => {
@@ -64,6 +106,34 @@ const Header = () => {
 		dropdownTimeout = setTimeout(() => setIsDropdownVisible(false), 300);
 	};
 
+	const handleCalcMouseEnter = () => {
+		clearTimeout(calcDropdownTimeout);
+		calcDropdownTimeout = setTimeout(() => setIsCalcDropdownVisible(true), 200);
+	};
+
+	const handleCalcMouseLeave = () => {
+		clearTimeout(calcDropdownTimeout);
+		calcDropdownTimeout = setTimeout(
+			() => setIsCalcDropdownVisible(false),
+			300
+		);
+	};
+
+	// User menu handlers
+	const handleUserClick = (event) => {
+		setAnchorEl(event.currentTarget);
+	};
+
+	const handleUserMenuClose = () => {
+		setAnchorEl(null);
+	};
+
+	const handleLogout = () => {
+		logout();
+		handleUserMenuClose();
+		navigate('/');
+	};
+
 	const drawerContent = (
 		<Box
 			sx={{
@@ -72,6 +142,23 @@ const Header = () => {
 				height: "100%",
 				color: "var(--secondary)",
 			}}>
+			<Box 
+				sx={{ 
+					display: 'flex', 
+					alignItems: 'center', 
+					padding: '16px', 
+					borderBottom: '1px solid rgba(255,255,255,0.1)' 
+				}}
+			>
+				<img
+					src='/images/newlogofinshelter.png'
+					alt='FinShelter Logo'
+					style={{ width: "40px", marginRight: "10px" }}
+				/>
+				<Box sx={{ color: "white", fontFamily: "Agbalumo", fontSize: "18px" }}>
+					FinShelter
+				</Box>
+			</Box>
 			<List>
 				<ListItem
 					component={NavLink}
@@ -83,15 +170,21 @@ const Header = () => {
 					<ListItemText primary='Services' style={{ color: "white" }} />
 					<ExpandMore />
 				</ListItem>
-				<Collapse in={isDropdownVisible}>
-					<DropDownMenu />
+				<Collapse in={isDropdownVisible} sx={{ position: 'relative', zIndex: isDropdownVisible ? 20 : 1 }}>
+					<DropdownContext.Provider value={setIsDropdownVisible}>
+						<DropDownMenu />
+					</DropdownContext.Provider>
 				</Collapse>
 				<ListItem
-					component={NavLink}
-					to='/resources'
-					onClick={() => setMobileOpen(false)}>
+					onClick={() => setIsCalcDropdownVisible(!isCalcDropdownVisible)}>
 					<ListItemText primary='Resources' style={{ color: "white" }} />
+					<ExpandMore />
 				</ListItem>
+				<Collapse in={isCalcDropdownVisible} sx={{ position: 'relative', zIndex: isCalcDropdownVisible ? 20 : 1 }}>
+					<CalcDropdownContext.Provider value={setIsCalcDropdownVisible}>
+						<CalculatorDropdown />
+					</CalcDropdownContext.Provider>
+				</Collapse>
 
 				<ListItem
 					component={NavLink}
@@ -100,13 +193,54 @@ const Header = () => {
 					<ListItemText primary='Our Story' style={{ color: "white" }} />
 				</ListItem>
 			</List>
-			<NavLink to='/register' style={{ width: "85%" }}>
-				<div className='tax-header-btn'>
-					<button className='tax5-btn'>
-						Register Today <i className='fa-solid fa-arrow-right'></i>
-					</button>
-				</div>
-			</NavLink>
+			{isLoggedIn ? (
+				<Box sx={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+					<Box sx={{ display: 'flex', alignItems: 'center', color: 'white', mb: 1 }}>
+						<Badge badgeContent={unreadMessages} color="error">
+							<Avatar sx={{ bgcolor: 'white', color: 'var(--primary)', mr: 1 }}>
+								{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+							</Avatar>
+						</Badge>
+						<Typography sx={{ color: 'white' }}>
+							{user?.name || 'User'}
+						</Typography>
+					</Box>
+					{unreadMessages > 0 && (
+						<Typography variant="body2" sx={{ color: 'white', mb: 1, display: 'flex', alignItems: 'center' }}>
+							<NotificationsIcon sx={{ mr: 1, color: 'error.main' }} fontSize="small" />
+							{unreadMessages} new message{unreadMessages !== 1 ? 's' : ''}
+						</Typography>
+					)}
+					<Button 
+						component={NavLink}
+						to={user?.email ? `/customers/dashboard/${user.email}` : '/customers/login'}
+						variant="contained" 
+						color="primary" 
+						startIcon={<AccountCircleIcon />}
+						onClick={() => setMobileOpen(false)}
+						sx={{ width: '80%', mb: 1 }}
+					>
+						Dashboard
+					</Button>
+					<Button 
+						variant="contained" 
+						color="warning" 
+						startIcon={<LogoutIcon />}
+						onClick={handleLogout}
+						sx={{ width: '80%' }}
+					>
+						Logout
+					</Button>
+				</Box>
+			) : (
+				<NavLink to='/register' style={{ width: "85%" }}>
+					<div className='tax-header-btn'>
+						<button className='tax5-btn'>
+							Register Today <i className='fa-solid fa-arrow-right'></i>
+						</button>
+					</div>
+				</NavLink>
+			)}
 		</Box>
 	);
 
@@ -127,11 +261,13 @@ const Header = () => {
 					<Box
 						component={NavLink}
 						to='/'
-						sx={{ color: "var(--secondary)", textDecoration: "none" }}>
-						<i
-							className='fa-solid fa-money-bills'
-							style={{ marginRight: "10px" }}></i>
-						TAXHARBOR
+						sx={{ color: "var(--secondary)", textDecoration: "none", display: "flex", alignItems: "center" }}>
+						<img
+							src='/images/newlogofinshelter.png'
+							alt='FinShelter Logo'
+							style={{ width: "40px", marginRight: "10px" }}
+						/>
+						FINSHELTER
 					</Box>
 					<IconButton
 						color='inherit'
@@ -174,9 +310,14 @@ const Header = () => {
 												? "var(--primary)"
 												: "var(--secondary)"
 											: "var(--primary)",
+										fontFamily: "Agbalumo",
 									}}>
-									<i className='fa-solid fa-money-bills'></i>
-									TAX
+									<img
+										src='/images/newlogofinshelter.png'
+										alt='FinShelter Logo'
+										style={{ width: "80px" }}
+									/>
+									FinShelter
 									<span
 										style={{
 											color: isHomePage
@@ -184,9 +325,7 @@ const Header = () => {
 													? "var(--primary)"
 													: "var(--secondary)"
 												: "var(--primary)",
-										}}>
-										HARBOR
-									</span>
+										}}></span>
 								</div>
 							</div>
 						</NavLink>
@@ -208,7 +347,7 @@ const Header = () => {
 									Home
 								</NavLink>
 								<NavLink
-									to='/services'
+									to='#'
 									className={({ isActive }) =>
 										`nav-link ${isActive ? "active" : ""}`
 									}
@@ -227,7 +366,9 @@ const Header = () => {
 										<div
 											onMouseEnter={() => clearTimeout(dropdownTimeout)}
 											onMouseLeave={handleMouseLeave}>
-											<DropDownMenu />
+											<DropdownContext.Provider value={setIsDropdownVisible}>
+												<DropDownMenu />
+											</DropdownContext.Provider>
 										</div>
 									)}
 								</NavLink>
@@ -242,12 +383,23 @@ const Header = () => {
 												? "var(--primary)"
 												: "var(--secondary)"
 											: "var(--primary)",
-									}}>
+									}}
+									onMouseEnter={handleCalcMouseEnter}
+									onMouseLeave={handleCalcMouseLeave}>
 									Resources
 									<i className='fa-solid fa-caret-down'></i>
+									{isCalcDropdownVisible && (
+										<div
+											onMouseEnter={() => clearTimeout(calcDropdownTimeout)}
+											onMouseLeave={handleCalcMouseLeave}>
+											<CalcDropdownContext.Provider value={setIsCalcDropdownVisible}>
+												<CalculatorDropdown />
+											</CalcDropdownContext.Provider>
+										</div>
+									)}
 								</NavLink>
 								<NavLink
-									to='/our-story'
+									to='/contact'
 									className={({ isActive }) =>
 										`nav-link ${isActive ? "active" : ""}`
 									}
@@ -258,18 +410,102 @@ const Header = () => {
 												: "var(--secondary)"
 											: "var(--primary)",
 									}}>
-									Our Story
+									Contact Us
 								</NavLink>
 							</nav>
 						</div>
 
-						<NavLink to='/register'>
-							<div className='tax-header-btn'>
-								<button className='tax5-btn'>
-									Register Today <i className='fa-solid fa-arrow-right'></i>
-								</button>
-							</div>
-						</NavLink>
+						{isLoggedIn ? (
+							<Box sx={{ display: 'flex', alignItems: 'center' }}>
+								<IconButton 
+									onClick={handleUserClick}
+									sx={{ 
+										border: '2px solid',
+										borderColor: isHomePage && !isScrolled ? 'white' : 'var(--primary)',
+										marginRight: '8px',
+										padding: '8px'
+									}}
+								>
+									<Badge badgeContent={unreadMessages} color="error">
+										<Avatar 
+											sx={{ 
+												bgcolor: isHomePage && !isScrolled ? 'white' : 'var(--primary)',
+												color: isHomePage && !isScrolled ? 'var(--primary)' : 'white',
+												width: 32, 
+												height: 32 
+											}}
+										>
+											{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+										</Avatar>
+									</Badge>
+								</IconButton>
+								<Popover
+									open={openUserMenu}
+									anchorEl={anchorEl}
+									onClose={handleUserMenuClose}
+									anchorOrigin={{
+										vertical: 'bottom',
+										horizontal: 'right',
+									}}
+									transformOrigin={{
+										vertical: 'top',
+										horizontal: 'right',
+									}}
+								>
+									<Box sx={{ p: 2, width: 250 }}>
+										<Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+											<Avatar sx={{ bgcolor: 'var(--primary)', mr: 1 }}>
+												{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+											</Avatar>
+											<Typography variant="body1" fontWeight="bold">
+												{user?.name || 'User'}
+											</Typography>
+										</Box>
+										<Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+											{user?.email || ''}
+										</Typography>
+										
+										<Divider sx={{ my: 1 }} />
+										
+										{unreadMessages > 0 && (
+											<Typography variant="body2" sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+												<NotificationsIcon sx={{ mr: 1, color: 'error.main' }} fontSize="small" />
+												You have {unreadMessages} new message{unreadMessages !== 1 ? 's' : ''}
+											</Typography>
+										)}
+										
+										<Box sx={{ display: 'flex', flexDirection: 'column', mt: 1 }}>
+											<Button 
+												variant="outlined" 
+												component={NavLink}
+												to={user?.email ? `/customers/dashboard/${user.email}` : '/customers/login'} 
+												startIcon={<AccountCircleIcon />}
+												sx={{ mb: 1 }}
+												onClick={handleUserMenuClose}
+											>
+												Dashboard
+											</Button>
+											<Button 
+												variant="contained" 
+												color="error"
+												startIcon={<LogoutIcon />}
+												onClick={handleLogout}
+											>
+												Logout
+											</Button>
+										</Box>
+									</Box>
+								</Popover>
+							</Box>
+						) : (
+							<NavLink to='/register'>
+								<div className='tax-header-btn'>
+									<button className='tax5-btn'>
+										Register Today <i className='fa-solid fa-arrow-right'></i>
+									</button>
+								</div>
+							</NavLink>
+						)}
 					</div>
 				</header>
 			</DesktopNav>

@@ -94,7 +94,7 @@ const Orders = () => {
 
 	// Export functions
 	const handleDownloadCSV = () => {
-		const csvData = orders.map((order) => ({
+		const csvData = filteredOrders.map((order) => ({
 			"Order ID": order["Order ID"],
 			"Order Date": formatDate(order["Order Date"]),
 			"Customer ID": order["Customer ID"],
@@ -107,7 +107,7 @@ const Orders = () => {
 			"L1 Employee Name": order["Employee Assigned"],
 			"Service Name": order["Service Name"],
 			"Service Price": order["Service Price"],
-			Discounts: order["Discounts"],
+			"Discount Amount": order["Discounts"],
 			"IGST Amount": order["IGST Amount"],
 			"CGST Amount": order["CGST Amount"],
 			"SGST Amount": order["SGST Amount"],
@@ -116,7 +116,7 @@ const Orders = () => {
 			"Order Completion Date": formatDate(order["Order Date"]),
 			"Days Delayed": order["Days Delayed"] || 0,
 			"Payment Status": order["Payment Status"],
-			Rating: order["Rating"] || "N/A",
+			"Rating": order["Rating"] || "N/A",
 			"Payment Method": order["Payment Method"] || "N/A",
 		}));
 

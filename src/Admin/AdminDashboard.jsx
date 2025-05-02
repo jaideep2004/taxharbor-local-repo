@@ -6,7 +6,7 @@ import DashboardSection from "./DashboardSection";
 import ServicesSection from "./ServicesSection";
 import EmployeesSection from "./EmployeesSection";
 import UsersSection from "./UsersSection";
-import ManagersSection from "./ManagersSection";
+// import ManagersSection from "./ManagersSection";
 import AdminMessageCenter from "./AdminMessageCenter";
 import LeadsSection from "./LeadsSection";
 import "./admin.css";
@@ -119,20 +119,7 @@ const AdminDashboard = () => {
 							handleDeleteService={handleDeleteService}
 						/>
 					)}
-					{activeSection === "Managers" && (
-						<ManagersSection
-							services={services}
-							users={users}
-							newManager={newManager}
-							setNewManager={setNewManager}
-							showManagerForm={showManagerForm}
-							setShowManagerForm={setShowManagerForm}
-							handleCreateManager={handleCreateManager}
-							handleActivateUser={handleActivateUser}
-							handleDeactivateUser={handleDeactivateUser}
-							handleDeleteUser={handleDeleteUser}
-						/>
-					)}
+					
 					{activeSection === "Employees" && (
 						<EmployeesSection
 							newUser={newUser}

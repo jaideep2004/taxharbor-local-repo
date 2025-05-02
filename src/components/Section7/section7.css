@@ -10,6 +10,7 @@
 	display: flex;
 	justify-content: center;
 	width: 90%;
+	gap: 20px;
 }
 
 .tax7-left {
@@ -25,9 +26,6 @@
 		img {
 			width: 290px;
 		}
-		div {
-			width: 230px;
-		}
 	}
 }
 
@@ -35,6 +33,7 @@
 	margin: 0;
 	background-color: var(--background);
 	div {
+		width: 50%;
 		background-image: none;
 		i {
 			color: var(--primary);
@@ -94,6 +93,10 @@
 	li {
 		min-width: 250px;
 		list-style: none;
+
+		h4 {
+			font-size: 17px;
+		}
 	}
 	i {
 		margin-right: 5px;
@@ -112,7 +115,6 @@
 .slider-container {
 	position: relative;
 	width: 80%;
-	max-width: 400px;
 }
 
 .slider {
@@ -136,8 +138,8 @@
 
 .slider-label {
 	position: absolute;
-	top: 0px;
-	left: 50%;
+	top: -14px;
+	left: 106%;
 	transform: translateX(-50%);
 	font-size: 14px;
 	font-weight: bold;
@@ -170,7 +172,7 @@
 				display: none;
 			}
 			div {
-				width: 100%;
+				width: 100% !important;
 			}
 		}
 	}

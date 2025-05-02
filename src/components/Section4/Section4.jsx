@@ -74,7 +74,7 @@ const Section4 = () => {
 				<div data-aos='fade-down' data-aos-duration='800'>
 					<p className='p-tag2'>WHY US</p>
 					<h1>
-						Why Should You Choose <br /> TaxHarbor
+						Why Should You Choose <br /> FinShelter
 					</h1>
 				</div>
 

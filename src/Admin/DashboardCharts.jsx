@@ -34,11 +34,12 @@ const ChartTitle = styled(Typography)(({ theme }) => ({
 const DashboardCharts = ({
 	servicesCount,
 	usersCount,
-	managersCount,
+
 	employeesCount,
 	customersCount,
 	services,
 	users,
+	userGrowthData,
 }) => {
 	// Theme colors
 	const colors = {
@@ -51,7 +52,6 @@ const DashboardCharts = ({
 
 	// Prepare data for user distribution pie chart
 	const userDistributionData = [
-		{ name: "Managers", value: managersCount },
 		{ name: "Employees", value: employeesCount },
 		{ name: "Customers", value: customersCount },
 	];
@@ -68,16 +68,18 @@ const DashboardCharts = ({
 		}));
 	}, [services]);
 
-	// Prepare monthly user growth data
-	const monthlyGrowthData = useMemo(() => {
-		const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
-		let currentUsers = usersCount - 20;
+	// Prepare monthly user growth data - use the dynamic data passed in props
+	const monthlyGrowthData =
+		userGrowthData ||
+		useMemo(() => {
+			const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+			let currentUsers = usersCount - 20;
 
-		return months.map((month) => ({
-			month,
-			users: (currentUsers += Math.floor(Math.random() * 8) + 2),
-		}));
-	}, [usersCount]);
+			return months.map((month) => ({
+				month,
+				users: (currentUsers += Math.floor(Math.random() * 8) + 2),
+			}));
+		}, [usersCount]);
 
 	return (
 		<Box sx={{ p: 3 }}>
@@ -163,6 +165,7 @@ const DashboardCharts = ({
 										stroke={colors.primary}
 										strokeWidth={2}
 										dot={{ fill: colors.primary }}
+										name='Total Users'
 									/>
 								</LineChart>
 							</ResponsiveContainer>

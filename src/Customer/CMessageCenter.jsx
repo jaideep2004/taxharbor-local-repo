@@ -131,7 +131,7 @@ const CustomerMessageCenter = () => {
 	};
 
 	return (
-		<div className='admin-chat-container'>
+		<div className='admin-chat-container' style={{ paddingTop: "40px" }}>
 			{/* WhatsApp-style Sidebar */}
 			<div className='chat-sidebar'>
 				<div className='sidebar-header'>

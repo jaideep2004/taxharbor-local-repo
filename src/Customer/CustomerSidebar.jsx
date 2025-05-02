@@ -5,21 +5,21 @@ import { Link } from "react-router-dom";
 const Sidebar = ({ activeSection, setActiveSection }) => {
 	const sections = [
 		"Dashboard",
-		"Service Status",
+		"Order History",
 		"Documents Upload",
 		"Payment History",
 		"Profile",
 		"Message Center",
-		"Wallet"
+		"Wallet",
 	];
 	const { user, logout } = useCustomerAuth();
 	return (
 		<div className='csidebar'>
-			<center>
+			{/* <center>
 				<Link to='/' id='side-home'>
 					<div>Go to Home</div>
 				</Link>
-			</center>
+			</center> */}
 			<ul>
 				{sections.map((section) => (
 					<li

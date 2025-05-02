@@ -1,11 +1,26 @@
 import React, { useState, useEffect } from "react";
 import axios from "../Admin/utils/axiosConfig";
 import { useCustomerAuth } from "./CustomerAuthContext";
+import {
+	Dialog,
+	DialogTitle,
+	DialogContent,
+	DialogActions,
+	Button,
+	TextField,
+	Typography,
+	IconButton,
+	Grid,
+	Box,
+	Rating,
+	CircularProgress,
+	Alert
+} from "@mui/material";
+import { Close, Send, Star } from "@mui/icons-material";
 
-const FeedbackModal = ({ service, onClose }) => {
+const FeedbackModal = ({ service, onClose, open }) => {
 	const [feedback, setFeedback] = useState("");
 	const [rating, setRating] = useState(0);
-	const [hoverRating, setHoverRating] = useState(0); // For hover effect
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState(null);
 	const { user } = useCustomerAuth();
@@ -62,61 +77,72 @@ const FeedbackModal = ({ service, onClose }) => {
 		}
 	};
 
-	const handleStarClick = (index) => {
-		setRating(index);
-	};
-
-	const handleStarHover = (index) => {
-		setHoverRating(index);
-	};
-
-	const handleStarLeave = () => {
-		setHoverRating(0);
-	};
-
 	return (
-		<div className='cquerymodalwrap'>
-			<div className='cquerymodal'>
-				<h2>Feedback for {service.serviceName}</h2>
-				<div className='stars'>
-					{[1, 2, 3, 4, 5].map((index) => (
-						<i
-							key={index}
-							className={`fa-solid fa-star ${
-								index <= (hoverRating || rating) ? "highlighted" : ""
-							}`}
-							onClick={() => handleStarClick(index)}
-							onMouseEnter={() => handleStarHover(index)}
-							onMouseLeave={handleStarLeave}
-							style={{ cursor: "pointer" }}
-						/>
-					))}
-				</div>
-				<p>
-					Selected Rating: {rating} star{rating > 1 && "s"}
-				</p>
-				<form>
-					<textarea
-						value={feedback}
-						onChange={(e) => setFeedback(e.target.value)}
-						placeholder='Write your feedback here...'
-						className='cquerytext'
+		<Dialog open={open} onClose={() => !loading && onClose()} fullWidth maxWidth="sm">
+			<DialogTitle>
+				<Grid container justifyContent="space-between" alignItems="center">
+					<Typography variant="h6">
+						Feedback for {service.serviceName}
+					</Typography>
+					<IconButton onClick={onClose} size="small" disabled={loading}>
+						<Close />
+					</IconButton>
+				</Grid>
+			</DialogTitle>
+			
+			<DialogContent dividers>
+				<Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", my: 2 }}>
+					<Typography component="legend" gutterBottom>
+						Your Rating
+					</Typography>
+					<Rating
+						name="feedback-rating"
+						value={rating}
+						onChange={(event, newValue) => {
+							setRating(newValue);
+						}}
+						precision={1}
+						size="large"
+						icon={<Star fontSize="inherit" />}
 					/>
-					{error && <p style={{ color: "red" }}>{error}</p>}
-					<div className='btnqcont'>
-						<button onClick={onClose} className='cqueryclose'>
-							Close
-						</button>
-						<button
-							onClick={handleSubmit}
-							disabled={loading}
-							className='cquerysubmit'>
-							{loading ? "Submitting..." : "Submit"}
-						</button>
-					</div>
-				</form>
-			</div>
-		</div>
+					<Typography variant="body2" sx={{ mt: 1 }}>
+						{rating > 0 ? `${rating} star${rating > 1 ? 's' : ''}` : 'Select a rating'}
+					</Typography>
+				</Box>
+				
+				<TextField
+					fullWidth
+					multiline
+					rows={4}
+					value={feedback}
+					onChange={(e) => setFeedback(e.target.value)}
+					placeholder="Write your feedback here..."
+					variant="outlined"
+					margin="normal"
+				/>
+				
+				{error && (
+					<Alert severity="error" sx={{ mt: 2 }}>
+						{error}
+					</Alert>
+				)}
+			</DialogContent>
+			
+			<DialogActions>
+				<Button onClick={onClose} color="primary" disabled={loading}>
+					Cancel
+				</Button>
+				<Button
+					onClick={handleSubmit}
+					color="primary"
+					variant="contained"
+					disabled={loading}
+					startIcon={loading ? <CircularProgress size={20} /> : <Send />}
+				>
+					{loading ? "Submitting..." : "Submit"}
+				</Button>
+			</DialogActions>
+		</Dialog>
 	);
 };
 

@@ -11,6 +11,8 @@ const CServiceStatus = () => {
 	const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+	const [isDocPreviewModalOpen, setIsDocPreviewModalOpen] = useState(false);
+	const [selectedDocuments, setSelectedDocuments] = useState([]);
 	const [files, setFiles] = useState({});
 	const [uploadProgress, setUploadProgress] = useState(0);
 	const [uploadedDocuments, setUploadedDocuments] = useState([]);
@@ -86,6 +88,16 @@ const CServiceStatus = () => {
 		setIsFeedbackModalOpen(false);
 	};
 
+	const openDocPreviewModal = (documents) => {
+		setSelectedDocuments(documents);
+		setIsDocPreviewModalOpen(true);
+	};
+
+	const closeDocPreviewModal = () => {
+		setSelectedDocuments([]);
+		setIsDocPreviewModalOpen(false);
+	};
+
 	const handleFileChange = (docName, e) => {
 		const file = e.target.files[0];
 		setFiles((prev) => ({
@@ -130,6 +142,30 @@ const CServiceStatus = () => {
 		}
 	};
 
+	const formatCurrency = (amount) => {
+		console.log("Formatting currency:", amount, typeof amount);
+		
+		// If amount is undefined or null, return N/A
+		if (amount === undefined || amount === null) return "N/A";
+		
+		// Convert to number if it's a string
+		let numericAmount;
+		if (typeof amount === 'string') {
+			numericAmount = parseFloat(amount);
+		} else {
+			numericAmount = amount;
+		}
+		
+		// Check if it's a valid number after conversion
+		if (isNaN(numericAmount)) {
+			console.warn("Invalid amount for formatting:", amount);
+			return "₹0.00";
+		}
+		
+		// Format with Indian Rupee symbol and 2 decimal places
+		return `₹${numericAmount.toFixed(2)}`;
+	};
+
 	const formatDate = (dateStr) => {
 		if (!dateStr) return "N/A";
 		const date = new Date(dateStr);
@@ -157,6 +193,20 @@ const CServiceStatus = () => {
 	const [selectedServiceName, setSelectedServiceName] = useState("");
 	useEffect(() => {
 		if (services && services.length > 0) {
+			console.log("Services loaded:", services);
+			// Log tax information for debugging
+			services.forEach(service => {
+				console.log(`Service ${service.serviceName || service._id} tax details:`, {
+					igst: service.igst,
+					cgst: service.cgst,
+					sgst: service.sgst,
+					discount: service.discount,
+					paymentAmount: service.paymentAmount,
+					price: service.price,
+					totalTax: (service.igst || 0) + (service.cgst || 0) + (service.sgst || 0),
+					totalValue: service.price + (service.igst || 0) + (service.cgst || 0) + (service.sgst || 0)
+				});
+			});
 			setSelectedServiceName(services[0].serviceName);
 			setUploadedDocuments(services[0].documents || []);
 		}
@@ -177,11 +227,21 @@ const CServiceStatus = () => {
 						<thead>
 							<tr>
 								<th>Order ID</th>
+								<th>Date</th>
 								<th>Service Name</th>
-								<th>Purchased At</th>
-								<th>Status</th>
+								<th>Package</th>
+								<th>Discounts</th>
+								<th>IGST Amount</th>
+								<th>CGST Amount</th>
+								<th>SGST Amount</th>
+								<th>Total Order Value</th>
+								<th>Order Status</th>
+								<th>Completion Date</th>
 								<th>Managed By</th>
 								<th>Due Date</th>
+								<th>Feedback</th>
+								<th>Rating</th>
+								<th>Payment Status</th>
 								<th>Actions</th>
 								<th>Uploaded Documents</th>
 							</tr>
@@ -192,11 +252,67 @@ const CServiceStatus = () => {
 									<React.Fragment key={index}>
 										<tr>
 											<td>{service.orderId || service._id || "N/A"}</td>
-											<td>{service.serviceName || service.name}</td>
 											<td>{formatDate(service.purchasedAt)}</td>
-											<td>{service.status || "Pending"}</td>
-											<td>{service.managedBy || "Unassigned"}</td>
+											<td>{service.serviceName || service.name}</td>
+											<td>
+												{service.packageName ? (
+													<div>
+														<strong>{service.packageName}</strong>
+														{service.price && <div>₹{service.price}</div>}
+													</div>
+												) : (
+													<span style={{ color: '#666', fontStyle: 'italic' }}>No package</span>
+												)}
+											</td>
+											<td>{formatCurrency(service.discount || 0)}</td>
+											<td>{formatCurrency(service.igst || 0)}</td>
+											<td>{formatCurrency(service.cgst || 0)}</td>
+											<td>{formatCurrency(service.sgst || 0)}</td>
+											<td>{formatCurrency(service.paymentAmount || service.price || 0)}</td>
+											<td>
+												<span style={{ 
+													fontWeight: 'bold',
+													color: service.status === 'completed' ? 'green' : 
+														service.status === 'In Process' ? 'blue' : 'orange'
+												}}>
+													{service.status || "Pending"}
+												</span>
+											</td>
+											<td>{formatDate(service.completionDate)}</td>
+											<td>
+												{service.employeeId ? (
+													<span>{service.employeeName || "Assigned"}</span>
+												) : (
+													<span style={{ color: '#666', fontStyle: 'italic' }}>Not assigned</span>
+												)}
+											</td>
 											<td>{formatDate(service.dueDate)}</td>
+											<td>
+												{service.feedbackText ? (
+													<div style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+														{service.feedbackText}
+													</div>
+												) : (
+													<span style={{ color: '#666', fontStyle: 'italic' }}>No feedback given</span>
+												)}
+											</td>
+											<td>
+												{service.hasRating ? (
+													<div style={{ color: 'gold', fontWeight: 'bold' }}>
+														{service.rating} <span style={{ color: 'gold' }}>★</span>
+													</div>
+												) : (
+													<span style={{ color: '#666', fontStyle: 'italic' }}>Not rated</span>
+												)}
+											</td>
+											<td>
+												<span style={{ 
+													fontWeight: 'bold',
+													color: service.paymentAmount > 0 ? 'green' : 'orange'
+												}}>
+													{service.paymentAmount > 0 ? "Paid" : "Pending"}
+												</span>
+											</td>
 											<td className='tax-btn-cont'>
 												<button
 													className='tax-service-btn'
@@ -224,7 +340,7 @@ const CServiceStatus = () => {
 											</td>
 										</tr>
 										<tr>
-											<td colSpan='7' className='p-4'>
+											<td colSpan='17' className='p-4'>
 												<div className='w-full'>
 													<h4 className='text-lg font-semibold mb-2'>
 														Service Progress
@@ -237,15 +353,18 @@ const CServiceStatus = () => {
 											</td>
 											<td>
 												{service.documents && service.documents.length > 0 ? (
-													service.documents.map((doc, index) => (
-														<div key={index} className='document-item'>
-															<span className='document-name'>
-																{doc.originalName}
-															</span>
-														</div>
-													))
+													<div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+														<span>{service.documents.length} document(s)</span>
+														<button
+															className='tax-service-btn'
+															onClick={() => openDocPreviewModal(service.documents)}
+															style={{ padding: '2px 8px', fontSize: '12px' }}
+														>
+															View
+														</button>
+													</div>
 												) : (
-													<span>No documents uploaded</span>
+													<span style={{ color: '#666', fontStyle: 'italic' }}>No documents uploaded</span>
 												)}
 											</td>
 										</tr>
@@ -253,7 +372,7 @@ const CServiceStatus = () => {
 								))
 							) : (
 								<tr>
-									<td colSpan='7' className='text-center'>
+									<td colSpan='18' className='text-center'>
 										No services found.
 									</td>
 								</tr>
@@ -263,21 +382,21 @@ const CServiceStatus = () => {
 				</div>
 			</div>
 
-			{/* Modals remain unchanged */}
-			{isModalOpen && (
-				<QueryModal service={selectedService} onClose={closeModal} />
-			)}
-
-			{isFeedbackModalOpen && (
-				<FeedbackModal
-					service={selectedService}
-					onClose={closeFeedbackModal}
-					onFeedbackSubmit={() =>
-						handleFeedbackSubmit(
-							selectedService.serviceId || selectedService._id
-						)
-					}
-				/>
+			{/* Use 'open' prop for MUI Dialog components */}
+			{selectedService && (
+				<>
+					<QueryModal
+						service={selectedService}
+						onClose={closeModal}
+						open={isModalOpen}
+					/>
+					
+					<FeedbackModal
+						service={selectedService}
+						onClose={closeFeedbackModal}
+						open={isFeedbackModalOpen}
+					/>
+				</>
 			)}
 
 			{isUploadModalOpen && selectedService && (
@@ -329,6 +448,68 @@ const CServiceStatus = () => {
 							</button>
 							<button className='cqueryclose' onClick={closeUploadModal}>
 								Cancel
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Document Preview Modal */}
+			{isDocPreviewModalOpen && (
+				<div className='cquerymodalwrap'>
+					<div className='cquerymodal'>
+						<h2>Uploaded Documents</h2>
+						
+						{selectedDocuments.length > 0 ? (
+							<div className='document-list'>
+								{selectedDocuments.map((doc, index) => (
+									<div key={index} className='document-item' style={{ 
+										margin: '10px 0', 
+										padding: '10px', 
+										border: '1px solid #eee',
+										borderRadius: '4px'
+									}}>
+										<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+											<span style={{ fontWeight: 'bold' }}>{doc.originalName}</span>
+											<small>{new Date(doc.uploadedAt).toLocaleDateString()}</small>
+										</div>
+										<div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+											<span style={{ fontSize: '12px', color: '#666' }}>
+												Size: {Math.round(doc.size / 1024)} KB
+											</span>
+											<span style={{ fontSize: '12px', color: '#666' }}>
+												Type: {doc.mimetype}
+											</span>
+										</div>
+										{doc.path && (
+											<a 
+												href={`https://195-35-45-82.sslip.io:8000${doc.path}`} 
+												target="_blank" 
+												rel="noopener noreferrer"
+												style={{
+													display: 'inline-block',
+													marginTop: '8px',
+													padding: '4px 12px',
+													background: '#1b321d',
+													color: 'white',
+													borderRadius: '4px',
+													textDecoration: 'none',
+													fontSize: '12px'
+												}}
+											>
+												View Document
+											</a>
+										)}
+									</div>
+								))}
+							</div>
+						) : (
+							<p>No documents available.</p>
+						)}
+						
+						<div className='btnqcont'>
+							<button className='cqueryclose' onClick={closeDocPreviewModal}>
+								Close
 							</button>
 						</div>
 					</div>

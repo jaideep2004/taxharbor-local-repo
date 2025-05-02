@@ -1,8 +1,38 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useCustomerAuth } from "./CustomerAuthContext";
 import "./customer.css";
+import {
+	Dialog,
+	DialogTitle,
+	DialogContent,
+	DialogActions,
+	Button,
+	TextField,
+	Typography,
+	IconButton,
+	Grid,
+	Chip,
+	Divider,
+	Box,
+	Paper,
+	Accordion,
+	AccordionSummary,
+	AccordionDetails,
+	CircularProgress,
+	List,
+	ListItem,
+	ListItemText,
+} from "@mui/material";
+import { 
+	Close, 
+	AttachFile, 
+	ExpandMore, 
+	Send,
+	History,
+	Delete,
+} from "@mui/icons-material";
 
-const QueryModal = ({ service, onClose }) => {
+const QueryModal = ({ service, onClose, open }) => {
 	const [query, setQuery] = useState("");
 	const [files, setFiles] = useState([]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,155 +97,183 @@ const QueryModal = ({ service, onClose }) => {
 
 		if (file.mimetype?.startsWith("image/")) {
 			return (
-				<img
-					src={filePath}
-					alt={file.originalName}
-					style={{ maxWidth: "100px" }}
-				/>
+				<Box sx={{ maxWidth: "100px", maxHeight: "100px", overflow: "hidden" }}>
+					<img
+						src={filePath}
+						alt={file.originalName}
+						style={{ width: "100%", height: "auto" }}
+					/>
+				</Box>
 			);
 		}
 		// For PDFs and other files
 		return (
-			<div className='file-icon'>
-				<a href={filePath} target='_blank' rel='noopener noreferrer'>
-					{file.originalName}
-				</a>
-			</div>
+			<Chip 
+				icon={<AttachFile />} 
+				label={file.originalName}
+				component="a"
+				href={filePath}
+				target="_blank"
+				rel="noopener noreferrer"
+				clickable
+				variant="outlined"
+			/>
 		);
 	};
-	return (
-		<div className='cquerymodalwrap'>
-			<div className='cquerymodal'>
-				<h2>Submit a Query for {service.serviceName}</h2>
 
-				<button
-					className='historybtn'
-					onClick={() => setShowHistory(!showHistory)}>
+	return (
+		<Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+			<DialogTitle>
+				<Grid container justifyContent="space-between" alignItems="center">
+					<Typography variant="h6">
+						Submit a Query for {service.serviceName}
+					</Typography>
+					<IconButton onClick={onClose} size="small">
+						<Close />
+					</IconButton>
+				</Grid>
+			</DialogTitle>
+			
+			<DialogContent dividers>
+				<Button
+					variant="outlined"
+					startIcon={<History />}
+					onClick={() => setShowHistory(!showHistory)}
+					sx={{ mb: 2 }}
+				>
 					{showHistory ? "Hide History" : "Show History"}
-				</button>
+				</Button>
 
 				{showHistory && (
-					<div className='queryreplycont'>
+					<Box sx={{ mt: 2, mb: 3 }}>
 						{queryHistory.length > 0 ? (
 							queryHistory.map((q, index) => (
-								<div key={index}>
-									<div className='cquerycustside'>
-										<p>
-											<strong>Query:</strong> {q.query}
-										</p>
-										<p>
-											<strong>Status:</strong> {q.status}
-										</p>
-									</div>
-									{/* File Attachments */}
-									{q.attachments && q.attachments.length > 0 && (
-										<div>
-											<strong>Attachments:</strong>
-											<div
-												style={{
-													display: "flex",
-													gap: "10px",
-													marginTop: "5px",
-												}}>
-												{q.attachments.map((file, i) => (
-													<div key={i}>
-														{renderFilePreview(file)}
-														<div>{file.originalName}</div>
-													</div>
-												))}
-											</div>
-										</div>
-									)}
-
-									{/* Replies */}
-									{q.replies &&
-										Array.isArray(q.replies) &&
-										q.replies.length > 0 && (
-											<div className='custQueryReply'>
-												<strong>Replies:</strong>
-												<ul>
-													{q.replies.map((reply, i) => (
-														<li key={i}>
-															<p>
-																<strong>Response:</strong> {reply.message}
-															</p>
-															<p>
-																<strong>By:</strong> {reply.responder}
-															</p>
-															<p>
-																<strong>On:</strong>{" "}
-																{new Date(reply.timestamp).toLocaleString()}
-															</p>
-														</li>
+								<Accordion key={index} sx={{ mb: 1 }}>
+									<AccordionSummary expandIcon={<ExpandMore />}>
+										<Typography>
+											{q.query.length > 50 ? `${q.query.substring(0, 50)}...` : q.query}
+										</Typography>
+									</AccordionSummary>
+									<AccordionDetails>
+										<Box sx={{ mb: 2 }}>
+											<Typography variant="body1"><strong>Query:</strong> {q.query}</Typography>
+											<Typography variant="body2" color="textSecondary">
+												<strong>Status:</strong> {q.status}
+											</Typography>
+										</Box>
+										
+										{/* File Attachments */}
+										{q.attachments && q.attachments.length > 0 && (
+											<Box sx={{ mb: 2 }}>
+												<Typography variant="subtitle2"><strong>Attachments:</strong></Typography>
+												<Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
+													{q.attachments.map((file, i) => (
+														<Box key={i}>
+															{renderFilePreview(file)}
+														</Box>
 													))}
-												</ul>
-											</div>
+												</Box>
+											</Box>
 										)}
-									<hr />
-								</div>
+
+										{/* Replies */}
+										{q.replies && Array.isArray(q.replies) && q.replies.length > 0 && (
+											<Box sx={{ mt: 2, bgcolor: "#f5f5f5", p: 2, borderRadius: 1 }}>
+												<Typography variant="subtitle2"><strong>Replies:</strong></Typography>
+												<List>
+													{q.replies.map((reply, i) => (
+														<ListItem key={i} divider={i < q.replies.length - 1}>
+															<ListItemText
+																primary={reply.message}
+																secondary={
+																	<>
+																		<Typography variant="body2" component="span">
+																			By: {reply.responder}
+																		</Typography>
+																		<br />
+																		<Typography variant="caption" component="span">
+																			{new Date(reply.timestamp).toLocaleString()}
+																		</Typography>
+																	</>
+																}
+															/>
+														</ListItem>
+													))}
+												</List>
+											</Box>
+										)}
+									</AccordionDetails>
+								</Accordion>
 							))
 						) : (
-							<p>No queries found for this service.</p>
+							<Typography color="textSecondary">No queries found for this service.</Typography>
 						)}
-					</div>
+					</Box>
 				)}
 
 				<form onSubmit={handleSubmit}>
-					<textarea
-						className='cquerytext'
+					<TextField
+						fullWidth
+						multiline
+						rows={4}
 						value={query}
 						onChange={(e) => setQuery(e.target.value)}
-						placeholder='Enter your query here'
+						placeholder="Enter your query here"
+						variant="outlined"
+						sx={{ mb: 2 }}
 					/>
 
-					<div style={{ marginBottom: "10px" }}>
-						<div className='attachment-container'>
-							<label htmlFor='file-upload' className='attachment-icon'>
-								📎
-							</label>
-							<input
-								id='file-upload'
-								type='file'
-								ref={fileInputRef}
-								onChange={handleFileChange}
-								multiple
-								accept='image/*,application/pdf'
-								style={{ display: "none" }}
-							/>
-						</div>
+					<Box sx={{ mb: 2 }}>
+						<Button
+							variant="outlined"
+							startIcon={<AttachFile />}
+							onClick={() => fileInputRef.current.click()}
+							sx={{ mb: 1 }}
+						>
+							Attach Files
+						</Button>
+						
+						<input
+							type="file"
+							ref={fileInputRef}
+							onChange={handleFileChange}
+							multiple
+							accept="image/*,application/pdf"
+							style={{ display: "none" }}
+						/>
 
 						{files.length > 0 && (
-							<div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+							<Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
 								{files.map((file, index) => (
-									<div key={index} className='file-preview'>
-										<div>{file.name}</div>
-										<button
-											type='button'
-											onClick={() =>
-												setFiles(files.filter((_, i) => i !== index))
-											}>
-											Remove
-										</button>
-									</div>
+									<Chip
+										key={index}
+										label={file.name}
+										onDelete={() => setFiles(files.filter((_, i) => i !== index))}
+										variant="outlined"
+										sx={{ mb: 1 }}
+									/>
 								))}
-							</div>
+							</Box>
 						)}
-					</div>
-
-					<div className='btnqcont'>
-						<button className='cqueryclose' type='button' onClick={onClose}>
-							Close
-						</button>
-						<button
-							className='cquerysubmit'
-							type='submit'
-							disabled={isSubmitting || (!query.trim() && files.length === 0)}>
-							{isSubmitting ? "Submitting..." : "Submit"}
-						</button>
-					</div>
+					</Box>
 				</form>
-			</div>
-		</div>
+			</DialogContent>
+
+			<DialogActions>
+				<Button onClick={onClose} color="primary">
+					Cancel
+				</Button>
+				<Button
+					onClick={handleSubmit}
+					color="primary"
+					variant="contained"
+					disabled={isSubmitting || (!query.trim() && files.length === 0)}
+					startIcon={isSubmitting ? <CircularProgress size={20} /> : <Send />}
+				>
+					{isSubmitting ? "Submitting..." : "Submit"}
+				</Button>
+			</DialogActions>
+		</Dialog>
 	);
 };
 

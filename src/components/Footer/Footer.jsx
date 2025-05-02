@@ -8,34 +8,41 @@ const Footer = () => {
 			{/* Footer Columns */}
 			<div className='footer-columns'>
 				<div className='footer-column' id='first-f-col'>
-					<h3>TAXHARBOR</h3>
+					<h3 style={{ fontFamily: "Agbalumo" }}>FinShelter</h3>
 					<p>
-						Lorem ipsum dolor sit amet consectetur adipisicing elit. Dignissimos
-						optio officia accusantium officiis facere
+						Taxation is the cornerstone of a functioning society, enabling
+						governments to fund essential services.
 					</p>
-					<p>123, ABC street</p>
-					<p>admin@taxharbor.in</p>
+
+					<a href='mailto:Info@thefinshelter.com'>
+						<p>Info@thefinshelter.com</p>
+					</a>
 					<div className='footer-social'>
-						<i class='fa-brands fa-instagram fa-2xl'></i>
-						<i class='fa-brands fa-facebook fa-2xl'></i>
-						<i class='fa-brands fa-whatsapp fa-2xl'></i>
-						<i class='fa-brands fa-x-twitter fa-2xl'></i>
+						<a href='https://www.instagram.com/finshelter/'>
+							<i class='fa-brands fa-instagram fa-2xl'> </i>
+						</a>
+						<a href='https://www.facebook.com/profile.php?id=61575009025557'>
+							<i class='fa-brands fa-facebook fa-2xl'></i>
+						</a>
+						<a href='https://wa.me/919537601955'>
+							<i class='fa-brands fa-whatsapp fa-2xl'></i>
+						</a>
 					</div>
 				</div>
 				<div className='footer-column'>
-					<h4>Support</h4>
+					<h4>Legal</h4>
 					<ul>
 						<li>
-							<a href='#contact'>Contact Us</a>
+							<NavLink to='/terms-conditions'>Terms & Conditions</NavLink>
 						</li>
 						<li>
-							<a href='#faq'>FAQ</a>
+							<NavLink to='/privacy-policy'>Privacy Policy</NavLink>
 						</li>
 						<li>
-							<a href='#support'>Support Center</a>
+							<NavLink to='/refund-policy'>Refund Policy</NavLink>
 						</li>
 						<li>
-							<a href='#feedback'>Feedback</a>
+							<NavLink to='/contact-us'>Contact Us</NavLink>
 						</li>
 					</ul>
 				</div>
@@ -78,33 +85,46 @@ const Footer = () => {
 
 			{/* Social Icons Row */}
 			<div className='footer-social-icons'>
-				<h3 style={{ color: "white" }}>TAXHARBOR</h3>
-				<a
-					href='https://facebook.com'
-					target='_blank'
-					rel='noopener noreferrer'>
-					<i className='fab fa-facebook-f'></i>
-				</a>
-				<a href='https://twitter.com' target='_blank' rel='noopener noreferrer'>
-					<i className='fab fa-twitter'></i>
-				</a>
-				<a
-					href='https://instagram.com'
-					target='_blank'
-					rel='noopener noreferrer'>
-					<i className='fab fa-instagram'></i>
-				</a>
-				<a
-					href='https://linkedin.com'
-					target='_blank'
-					rel='noopener noreferrer'>
-					<i className='fab fa-linkedin-in'></i>
-				</a>
+				<div style={{ display: "flex", flexDirection: "column" }}>
+					<h3 style={{ color: "white", fontSize: "28px" }}>FinShelter</h3>
+					<div
+						style={{
+							display: "flex",
+							flexDirection: "row",
+							marginTop: "10px",
+						}}>
+						<a
+							href='https://www.facebook.com/profile.php?id=61575009025557'
+							target='_blank'
+							rel='noopener noreferrer'>
+							<i className='fab fa-facebook-f fa-xl'></i>
+						</a>
+
+						<a
+							href='https://www.instagram.com/finshelter/'
+							target='_blank'
+							rel='noopener noreferrer'>
+							<i className='fab fa-instagram fa-xl'></i>
+						</a>
+						{/* <a
+							href='https://linkedin.com'
+							target='_blank'
+							rel='noopener noreferrer'>
+							<i className='fab fa-linkedin-in'></i>
+						</a> */}
+						<a
+							href='https://wa.me/919537601955'
+							target='_blank'
+							rel='noopener noreferrer'>
+							<i className='fab fa-whatsapp fa-xl'></i>
+						</a>
+					</div>
+				</div>
 			</div>
 
 			{/* Copyright Row */}
 			<div className='footer-copyright'>
-				&copy; {new Date().getFullYear()} TAXHARBOR. All rights reserved.
+				&copy; {new Date().getFullYear()} FINSHELTER. All rights reserved.
 			</div>
 		</footer>
 	);

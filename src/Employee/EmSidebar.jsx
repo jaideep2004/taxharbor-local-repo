@@ -4,7 +4,7 @@ import "./employee.css";
 import { useNavigate } from "react-router-dom";
 
 const EmSidebar = ({ activeSection, setActiveSection }) => {
-	const sections = ["Dashboard", "Orders", "Customer Queries", "Profile"];
+	const sections = ["Dashboard", "Orders", "Leads", "Customer Queries", "Profile"];
 
 	const { logout, isAuthenticated } = useContext(EmployeeContext);
 	const navigate = useNavigate();

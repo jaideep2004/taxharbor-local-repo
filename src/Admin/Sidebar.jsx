@@ -7,12 +7,12 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
 		"Dashboard",
 		"Services",
 		"Customers",
-		// "Managers",
+		
 		"Employees",
 		"Orders",
-		"Leads",
+		"Leads",     
 		"Message Center",
-		"Withdrawal Requests",
+		"Withdrawal Requests", 
 	];
 	const { logout, isAuthenticated } = useContext(AdminDashboardContext);
 	const navigate = useNavigate();
