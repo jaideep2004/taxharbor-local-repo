@@ -164,11 +164,11 @@ const StaticServiceTemplate = ({
 							backgroundImage: `url(${serviceHero})`,
 							backgroundSize: "cover",
 							backgroundPosition: "center",
-							minHeight: "500px", // Slightly shorter
+							minHeight: { xs: "400px", md: "500px" }, // Shorter on mobile
 							color: "white",
 							display: "flex",
 							alignItems: "center",
-							paddingTop: "100px",
+							paddingTop: { xs: "80px", md: "100px" }, // Less padding on mobile
 							"&::before": {
 								content: '""',
 								position: "absolute",
@@ -176,7 +176,8 @@ const StaticServiceTemplate = ({
 								left: 0,
 								right: 0,
 								bottom: 0,
-								background: "linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(27,50,29,0.85) 100%)", // Simpler overlay like ITR Filing
+								background:
+									"linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(27,50,29,0.85) 100%)", // Simpler overlay like ITR Filing
 								zIndex: 1,
 							},
 						}}>
@@ -185,18 +186,18 @@ const StaticServiceTemplate = ({
 							sx={{
 								position: "relative",
 								zIndex: 2,
-								py: { xs: 8, md: 12 },
+								py: { xs: 6, md: 12 }, // Less padding on mobile
 							}}>
-							<Grid container spacing={4} alignItems='center'>
+							<Grid container spacing={{ xs: 2, md: 4 }} alignItems='center'>
 								<Grid item xs={12} md={7}>
 									<Box>
 										<Typography
 											variant='overline'
 											sx={{
-												letterSpacing: 2,
+												letterSpacing: { xs: 1.5, md: 2 },
 												opacity: 0.9,
-												fontSize: "1rem",
-												mb: 2,
+												fontSize: { xs: "0.85rem", md: "1rem" },
+												mb: { xs: 1, md: 2 },
 												display: "block",
 											}}>
 											Professional Services
@@ -206,9 +207,9 @@ const StaticServiceTemplate = ({
 											gutterBottom
 											sx={{
 												fontWeight: 700,
-												fontSize: { xs: "2.5rem", sm: "3rem", md: "3.5rem" },
+												fontSize: { xs: "2rem", sm: "2.5rem", md: "3.5rem" },
 												lineHeight: 1.2,
-												mb: 3,
+												mb: { xs: 2, md: 3 },
 												color: "white",
 											}}>
 											{serviceName}
@@ -217,7 +218,7 @@ const StaticServiceTemplate = ({
 										<Typography
 											variant='h5'
 											sx={{
-												mb: 4,
+												mb: { xs: 3, md: 4 },
 												opacity: 0.9,
 												lineHeight: 1.6,
 												maxWidth: "90%",
@@ -227,11 +228,19 @@ const StaticServiceTemplate = ({
 												overflow: "hidden",
 												textOverflow: "ellipsis",
 												color: "white",
+												fontSize: { xs: "1rem", md: "1.25rem" },
 											}}>
 											{serviceDescription}
 										</Typography>
 										<Box
-											sx={{ display: "flex", flexWrap: "wrap", gap: 2, mt: 5 }}>
+											sx={{ 
+												display: "flex", 
+												flexWrap: "wrap", 
+												gap: { xs: 1.5, md: 2 }, 
+												mt: { xs: 4, md: 5 },
+												flexDirection: { xs: "column", sm: "row" },
+												alignItems: { xs: "stretch", sm: "flex-start" }
+											}}>
 											<Button
 												variant='contained'
 												color='primary'
@@ -242,10 +251,10 @@ const StaticServiceTemplate = ({
 														: scrollToPackages
 												}
 												sx={{
-													py: 1.5,
-													px: 4,
+													py: { xs: 1.2, md: 1.5 },
+													px: { xs: 3, md: 4 },
 													borderRadius: "30px",
-													fontSize: "1.1rem",
+													fontSize: { xs: "0.95rem", md: "1.1rem" },
 													fontWeight: 600,
 													boxShadow: "0 8px 15px rgba(0,0,0,0.1)",
 													transition: "transform 0.2s",
@@ -253,6 +262,7 @@ const StaticServiceTemplate = ({
 														transform: "translateY(-3px)",
 														boxShadow: "0 12px 20px rgba(0,0,0,0.15)",
 													},
+													width: { xs: "100%", sm: "auto" }, 
 												}}
 												style={{ backgroundColor: "#1b321d" }}
 												endIcon={
@@ -269,8 +279,8 @@ const StaticServiceTemplate = ({
 												size='large'
 												onClick={() => navigate("/contact")}
 												sx={{
-													py: 1.5,
-													px: 4,
+													py: { xs: 1.2, md: 1.5 },
+													px: { xs: 3, md: 4 },
 													borderRadius: "30px",
 													fontWeight: 600,
 													borderWidth: 2,
@@ -281,6 +291,7 @@ const StaticServiceTemplate = ({
 														borderColor: "white",
 														backgroundColor: "rgba(255,255,255,0.1)",
 													},
+													width: { xs: "100%", sm: "auto" },
 												}}>
 												Contact Us
 											</Button>
@@ -292,8 +303,8 @@ const StaticServiceTemplate = ({
 					</Box>
 
 					{/* Benefits Section with enhanced styling - Added the full service description here */}
-					<Container maxWidth='lg' sx={{ py: { xs: 6, md: 8 } }}>
-						<Box sx={{ mb: 6, textAlign: "center" }}>
+					<Container maxWidth='lg' sx={{ py: { xs: 5, md: 8 } }}>
+						<Box sx={{ mb: { xs: 4, md: 6 }, textAlign: "center" }}>
 							<Typography
 								variant='h2'
 								gutterBottom
@@ -302,11 +313,12 @@ const StaticServiceTemplate = ({
 									position: "relative",
 									display: "inline-block",
 									pb: 2,
+									fontSize: { xs: "1.8rem", sm: "2.2rem", md: "2.5rem" },
 									"&::after": {
 										content: '""',
 										position: "absolute",
-										width: "80px",
-										height: "4px",
+										width: { xs: "60px", md: "80px" },
+										height: { xs: "3px", md: "4px" },
 										backgroundColor: styles.primaryColor,
 										bottom: 0,
 										left: "50%",
@@ -315,25 +327,26 @@ const StaticServiceTemplate = ({
 								}}>
 								Why Choose Our {serviceName}
 							</Typography>
-							
+
 							{/* Full service description added here instead of in hero section */}
 							<Typography
 								variant='subtitle1'
 								sx={{
-									mt: 2,
-									mb: 4,
+									mt: { xs: 1.5, md: 2 },
+									mb: { xs: 3, md: 4 },
 									maxWidth: 800,
 									mx: "auto",
-									fontSize: "1.1rem",
-									color: "text.secondary",
+									fontSize: { xs: "16px", md: "18px" },
+									color: "black",
+									px: { xs: 2, md: 0 },
 								}}>
 								{serviceDescription}
 							</Typography>
 						</Box>
 
-						<Grid container spacing={4}>
+						<Grid container spacing={{ xs: 5, md: 4 }}>
 							{benefits.map((benefit, index) => (
-								<Grid item xs={12} sm={6} md={4} key={index}>
+								<Grid item xs={12} sm={6} md={4} key={index} sx={{ mb: { xs: 6, md: 0 } }}>
 									<Card
 										elevation={2}
 										sx={{
@@ -347,7 +360,7 @@ const StaticServiceTemplate = ({
 										<CardContent
 											sx={{
 												flexGrow: 1,
-												p: 4,
+												p: { xs: 3, md: 4 },
 												display: "flex",
 												flexDirection: "column",
 												alignItems: "flex-start",
@@ -369,10 +382,18 @@ const StaticServiceTemplate = ({
 												variant='h5'
 												component='h2'
 												gutterBottom
-												sx={{ fontWeight: 600, mb: 2 }}>
+												sx={{ 
+													fontWeight: 600, 
+													mb: 2,
+													fontSize: { xs: "1.25rem", md: "1.5rem" } 
+												}}>
 												{benefit.title}
 											</Typography>
-											<Typography sx={{ color: "text.secondary" }}>
+											<Typography sx={{ 
+												color: "black",
+												fontSize: { xs: "0.95rem", md: "1rem" },
+												lineHeight: { xs: 1.5, md: 1.6 },
+											}}>
 												{benefit.description}
 											</Typography>
 										</CardContent>
@@ -383,8 +404,8 @@ const StaticServiceTemplate = ({
 					</Container>
 
 					{/* Features Section with enhanced styling */}
-					<Container maxWidth='lg' sx={{ py: { xs: 6, md: 8 } }}>
-						<Box sx={{ mb: 6, textAlign: "center" }}>
+					<Container maxWidth='lg' sx={{ py: { xs: 5, md: 8 } }}>
+						<Box sx={{ mb: { xs: 4, md: 6 }, textAlign: "center" }}>
 							<Typography
 								variant='h2'
 								gutterBottom
@@ -393,11 +414,12 @@ const StaticServiceTemplate = ({
 									position: "relative",
 									display: "inline-block",
 									pb: 2,
+									fontSize: { xs: "1.8rem", sm: "2.2rem", md: "2.5rem" },
 									"&::after": {
 										content: '""',
 										position: "absolute",
-										width: "80px",
-										height: "4px",
+										width: { xs: "60px", md: "80px" },
+										height: { xs: "3px", md: "4px" },
 										backgroundColor: styles.primaryColor,
 										bottom: 0,
 										left: "50%",
@@ -409,26 +431,22 @@ const StaticServiceTemplate = ({
 							<Typography
 								variant='subtitle1'
 								sx={{
-									mt: 2,
-									mb: 4,
+									mt: { xs: 1.5, md: 2 },
+									mb: { xs: 3, md: 4 },
 									maxWidth: 800,
 									mx: "auto",
-									fontSize: "1.1rem",
+									fontSize: { xs: "0.95rem", md: "1.1rem" },
 									color: "text.secondary",
+									px: { xs: 2, md: 0 },
 								}}>
 								Discover what makes our {serviceName.toLowerCase()} service
 								stand out from the rest
 							</Typography>
 						</Box>
 
-						<Grid container spacing={4}>
+						<Grid container spacing={{ xs: 5, md: 4 }}>
 							{features.map((feature, index) => (
-								<Grid
-									item
-									xs={12}
-									sm={6}
-									md={4}
-									key={index}>
+								<Grid item xs={12} sm={6} md={4} key={index} sx={{ mb: { xs: 6, md: 0 } }}>
 									<Card
 										sx={{
 											height: "100%",
@@ -451,16 +469,31 @@ const StaticServiceTemplate = ({
 												}, ${alpha(styles.primaryColor, 0.7)})`,
 											}}
 										/>
-										<CardContent sx={{ flexGrow: 1, p: 4 }}>
+										<CardContent sx={{ 
+											flexGrow: 1, 
+											p: { xs: 2.5, md: 4 },
+										}}>
 											<Typography
 												variant='h5'
 												component='h3'
 												gutterBottom
 												color='#1b321d'
-												sx={{ fontWeight: 600, mb: 2 }}>
+												sx={{ 
+													fontWeight: 600, 
+													mb: 2,
+													fontSize: { xs: "1.25rem", md: "1.5rem" },
+													lineHeight: 1.3,
+												}}>
 												{feature.title}
 											</Typography>
-											<Typography variant='body1' color='text.secondary'>
+											<Typography 
+												variant='body1' 
+												color='black'
+												sx={{
+													fontSize: { xs: "0.95rem", md: "1rem" },
+													lineHeight: { xs: 1.5, md: 1.6 },
+												}}
+											>
 												{feature.description}
 											</Typography>
 										</CardContent>
@@ -478,12 +511,12 @@ const StaticServiceTemplate = ({
 									key={`custom-section-${index}`}
 									maxWidth='lg'
 									sx={{
-										padding: section.styles?.padding || "60px 0",
+										padding: section.styles?.padding || { xs: "40px 0", md: "60px 0" },
 										backgroundColor:
 											section.styles?.backgroundColor || "#ffffff",
 										position: "relative",
 									}}>
-									<Box sx={{ textAlign: "center", mb: 5 }}>
+									<Box sx={{ textAlign: "center", mb: { xs: 4, md: 5 } }}>
 										<Box>
 											<Typography
 												variant='h2'
@@ -491,9 +524,11 @@ const StaticServiceTemplate = ({
 													section.styles?.heading || {
 														fontFamily: "'Poppins', sans-serif",
 														fontWeight: 700,
-														fontSize: { xs: "2.5rem", md: "3.2rem" },
+														fontSize: { xs: "1.8rem", sm: "2.2rem", md: "3.2rem" },
 														color: "#1b321d",
-														marginBottom: "15px",
+														marginBottom: { xs: "10px", md: "15px" },
+														paddingLeft: { xs: "15px", md: 0 },
+														paddingRight: { xs: "15px", md: 0 },
 													}
 												}>
 												{section.title}
@@ -506,11 +541,14 @@ const StaticServiceTemplate = ({
 													variant='subtitle1'
 													sx={
 														section.styles?.subtitle || {
-															fontSize: "1.1rem",
+															fontSize: { xs: "1rem", md: "1.1rem" },
 															color: "#4a6350",
 															maxWidth: "700px",
-															margin: "0 auto 40px",
+															margin: "0 auto",
+															marginBottom: { xs: "30px", md: "40px" },
 															lineHeight: 1.6,
+															paddingLeft: { xs: "15px", md: 0 },
+															paddingRight: { xs: "15px", md: 0 },
 														}
 													}>
 													{section.subtitle}
@@ -519,16 +557,18 @@ const StaticServiceTemplate = ({
 										)}
 									</Box>
 
-									<Grid container spacing={2} justifyContent='center'>
+									<Grid container spacing={{ xs: 6, md: 2 }} justifyContent='center'>
 										{section.steps.map((step, stepIndex) => (
 											<Grid
 												item
 												xs={12}
 												sm={6}
 												md={12 / section.steps.length}
-												key={`step-${stepIndex}`}>
+												key={`step-${stepIndex}`}
+												sx={{ mb: { xs: 5, md: 0 } }}
+											>
 												<Box sx={{ position: "relative" }}>
-													{/* Horizontal connector line */}
+													{/* Horizontal connector line - visible only on desktop */}
 													{stepIndex < section.steps.length - 1 && (
 														<Box
 															sx={{
@@ -554,21 +594,21 @@ const StaticServiceTemplate = ({
 																	textAlign: "center",
 																	position: "relative",
 																	zIndex: 2,
-																	padding: "0 10px",
+																	padding: { xs: "0 15px", md: "0 10px" },
 																}
 															}>
 															<Box
 																sx={
 																	section.styles?.stepNumber || {
-																		width: "60px",
-																		height: "60px",
+																		width: { xs: "50px", md: "60px" },
+																		height: { xs: "50px", md: "60px" },
 																		borderRadius: "50%",
 																		backgroundColor: "#1b321d",
 																		color: "#ffffff",
 																		display: "flex",
 																		alignItems: "center",
 																		justifyContent: "center",
-																		fontSize: "1.5rem",
+																		fontSize: { xs: "1.25rem", md: "1.5rem" },
 																		fontWeight: 700,
 																		marginBottom: "20px",
 																		boxShadow: "0 4px 8px rgba(27,50,29,0.15)",
@@ -582,7 +622,7 @@ const StaticServiceTemplate = ({
 																<Box
 																	sx={
 																		section.styles?.stepIcon || {
-																			fontSize: "2rem",
+																			fontSize: { xs: "1.75rem", md: "2rem" },
 																			color: "#95b8a2",
 																			marginBottom: "10px",
 																		}
@@ -596,7 +636,7 @@ const StaticServiceTemplate = ({
 																	section.styles?.stepTitle || {
 																		fontFamily: "'Poppins', sans-serif",
 																		fontWeight: 600,
-																		fontSize: "1.2rem",
+																		fontSize: { xs: "1.1rem", md: "1.2rem" },
 																		color: "#1b321d",
 																		marginBottom: "8px",
 																	}
@@ -607,10 +647,10 @@ const StaticServiceTemplate = ({
 																variant='body2'
 																sx={
 																	section.styles?.stepDescription || {
-																		fontSize: "0.9rem",
+																		fontSize: { xs: "0.85rem", md: "0.9rem" },
 																		color: "#4a6350",
 																		lineHeight: 1.5,
-																		maxWidth: "250px",
+																		maxWidth: { xs: "90%", md: "250px" },
 																		margin: "0 auto",
 																	}
 																}>
@@ -633,7 +673,7 @@ const StaticServiceTemplate = ({
 									key={section.id}
 									sx={
 										styles.eligibilitySection || {
-											padding: "80px 0",
+											padding: { xs: "60px 0", md: "80px 0" },
 											backgroundColor: "#f9fbf9",
 											borderTop: "1px solid rgba(0,0,0,0.05)",
 											borderBottom: "1px solid rgba(0,0,0,0.05)",
@@ -645,10 +685,12 @@ const StaticServiceTemplate = ({
 											sx={
 												styles.eligibilityHeading || {
 													fontWeight: 700,
-													fontSize: { xs: "2.2rem", md: "2.8rem" },
+													fontSize: { xs: "1.8rem", sm: "2.2rem", md: "2.8rem" },
 													color: styles.primaryColor,
 													textAlign: "center",
-													marginBottom: "20px",
+													marginBottom: { xs: "15px", md: "20px" },
+													paddingLeft: { xs: "15px", md: 0 },
+													paddingRight: { xs: "15px", md: 0 },
 												}
 											}>
 											{section.title}
@@ -660,18 +702,21 @@ const StaticServiceTemplate = ({
 												sx={{
 													textAlign: "center",
 													maxWidth: "800px",
-													margin: "0 auto 50px",
+													margin: "0 auto",
+													marginBottom: { xs: "30px", md: "50px" },
 													color: "text.secondary",
-													fontSize: "1.1rem",
+													fontSize: { xs: "1rem", md: "1.1rem" },
+													paddingLeft: { xs: "15px", md: 0 },
+													paddingRight: { xs: "15px", md: 0 },
 												}}>
-													{section.subtitle}
-												</Typography>
-											)}
+												{section.subtitle}
+											</Typography>
+										)}
 
-										<Grid container spacing={4}>
+										<Grid container spacing={{ xs: 6, md: 4 }}>
 											{section.criteria &&
 												section.criteria.map((criteria, index) => (
-													<Grid item xs={12} md={4} key={index}>
+													<Grid item xs={12} md={4} key={index} sx={{ mb: { xs: 6, md: 0 } }}>
 														<Paper
 															elevation={0}
 															sx={
@@ -679,7 +724,7 @@ const StaticServiceTemplate = ({
 																	backgroundColor: "#ffffff",
 																	borderRadius: "12px",
 																	boxShadow: "0 8px 24px rgba(0,0,0,0.07)",
-																	padding: "30px",
+																	padding: { xs: "25px", md: "30px" },
 																	height: "100%",
 																	transition: "transform 0.3s ease",
 																	"&:hover": {
@@ -692,7 +737,7 @@ const StaticServiceTemplate = ({
 																sx={
 																	styles.eligibilityCardTitle || {
 																		fontWeight: 600,
-																		fontSize: "1.2rem",
+																		fontSize: { xs: "1.1rem", md: "1.2rem" },
 																		color: styles.primaryColor,
 																		marginBottom: "15px",
 																		display: "flex",
@@ -706,7 +751,7 @@ const StaticServiceTemplate = ({
 																			styles.eligibilityCardIcon || {
 																				color: alpha(styles.primaryColor, 0.7),
 																				marginRight: "10px",
-																				fontSize: "1.5rem",
+																				fontSize: { xs: "1.3rem", md: "1.5rem" },
 																			}
 																		}>
 																		{criteria.icon}
@@ -720,8 +765,9 @@ const StaticServiceTemplate = ({
 																	component='ul'
 																	sx={
 																		styles.eligibilityList || {
-																			paddingLeft: "10px",
+																			paddingLeft: { xs: "5px", md: "10px" },
 																			listStyleType: "none",
+																			margin: 0,
 																		}
 																	}>
 																	{criteria.items.map((item, itemIndex) => (
@@ -730,9 +776,11 @@ const StaticServiceTemplate = ({
 																			key={itemIndex}
 																			sx={
 																				styles.eligibilityListItem || {
-																					marginBottom: "10px",
+																					marginBottom: { xs: "12px", md: "10px" },
 																					paddingLeft: "15px",
 																					position: "relative",
+																					fontSize: { xs: "0.9rem", md: "1rem" },
+																					lineHeight: { xs: 1.4, md: 1.5 },
 																					"&::before": {
 																						content: '""',
 																						position: "absolute",
@@ -769,7 +817,7 @@ const StaticServiceTemplate = ({
 									key={section.id}
 									sx={
 										styles.taxTipsSection || {
-											padding: "90px 0",
+											padding: { xs: "60px 0", md: "90px 0" },
 											backgroundColor: "#f5f9f6",
 											backgroundImage:
 												"linear-gradient(135deg, #f5f9f6 0%, #ffffff 100%)",
@@ -781,10 +829,12 @@ const StaticServiceTemplate = ({
 											sx={
 												styles.taxTipsHeading || {
 													fontWeight: 700,
-													fontSize: { xs: "2.2rem", md: "2.8rem" },
+													fontSize: { xs: "1.8rem", sm: "2.2rem", md: "2.8rem" },
 													color: styles.primaryColor,
 													textAlign: "center",
-													marginBottom: "20px",
+													marginBottom: { xs: "20px", md: "50px" },
+													paddingLeft: { xs: "15px", md: 0 },
+													paddingRight: { xs: "15px", md: 0 },
 												}
 											}>
 											{section.title}
@@ -796,15 +846,18 @@ const StaticServiceTemplate = ({
 												sx={{
 													textAlign: "center",
 													maxWidth: "800px",
-													margin: "0 auto 50px",
+													margin: "0 auto",
+													marginBottom: { xs: "30px", md: "50px" },
 													color: "text.secondary",
-													fontSize: "1.1rem",
+													fontSize: { xs: "1rem", md: "1.1rem" },
+													paddingLeft: { xs: "15px", md: 0 },
+													paddingRight: { xs: "15px", md: 0 },
 												}}>
-													{section.subtitle}
-												</Typography>
-											)}
+												{section.subtitle}
+											</Typography>
+										)}
 
-										<Grid container spacing={4}>
+										<Grid container spacing={{ xs: 6, md: 4 }}>
 											{section.tips &&
 												section.tips.map((tip, index) => (
 													<Grid
@@ -812,7 +865,9 @@ const StaticServiceTemplate = ({
 														xs={12}
 														sm={6}
 														md={index === 4 ? 12 : 6}
-														key={index}>
+														key={index}
+														sx={{ mb: { xs: 6, md: 0 } }}
+													>
 														<Paper
 															elevation={0}
 															sx={
@@ -834,7 +889,7 @@ const StaticServiceTemplate = ({
 																	styles.taxTipCardHeader || {
 																		backgroundColor: styles.primaryColor,
 																		color: "#ffffff",
-																		padding: "15px 20px",
+																		padding: { xs: "12px 15px", md: "15px 20px" },
 																	}
 																}>
 																<Typography
@@ -842,7 +897,7 @@ const StaticServiceTemplate = ({
 																	sx={
 																		styles.taxTipCardTitle || {
 																			fontWeight: 600,
-																			fontSize: "1.2rem",
+																			fontSize: { xs: "1.1rem", md: "1.2rem" },
 																			color: "#ffffff",
 																			display: "flex",
 																			alignItems: "center",
@@ -854,6 +909,7 @@ const StaticServiceTemplate = ({
 																			sx={
 																				styles.taxTipCardIcon || {
 																					marginRight: "10px",
+																					fontSize: { xs: "1.2rem", md: "1.4rem" },
 																				}
 																			}>
 																			{tip.icon}
@@ -866,16 +922,16 @@ const StaticServiceTemplate = ({
 															<Box
 																sx={
 																	styles.taxTipCardContent || {
-																		padding: "25px",
+																		padding: { xs: "20px", md: "25px" },
 																	}
 																}>
 																<Typography
 																	variant='body2'
 																	sx={
 																		styles.taxTipCardDescription || {
-																			fontSize: "1rem",
+																			fontSize: { xs: "0.9rem", md: "1rem" },
 																			color: "text.secondary",
-																			lineHeight: 1.6,
+																			lineHeight: { xs: 1.5, md: 1.6 },
 																		}
 																	}>
 																	{tip.description}
@@ -898,8 +954,8 @@ const StaticServiceTemplate = ({
 					<Container
 						id='packages-section'
 						maxWidth='lg'
-						sx={{ py: { xs: 8, md: 12 } }}>
-						<Box sx={{ mb: 8, textAlign: "center" }}>
+						sx={{ py: { xs: 6, md: 12 } }}>
+						<Box sx={{ mb: { xs: 5, md: 8 }, textAlign: "center" }}>
 							<Typography
 								variant='h2'
 								gutterBottom
@@ -908,11 +964,12 @@ const StaticServiceTemplate = ({
 									position: "relative",
 									display: "inline-block",
 									pb: 2,
+									fontSize: { xs: "1.8rem", sm: "2.2rem", md: "2.5rem" },
 									"&::after": {
 										content: '""',
 										position: "absolute",
-										width: "80px",
-										height: "4px",
+										width: { xs: "60px", md: "80px" },
+										height: { xs: "3px", md: "4px" },
 										backgroundColor: styles.primaryColor,
 										bottom: 0,
 										left: "50%",
@@ -924,30 +981,26 @@ const StaticServiceTemplate = ({
 							<Typography
 								variant='subtitle1'
 								sx={{
-									mt: 2,
-									mb: 6,
+									mt: { xs: 1.5, md: 2 },
+									mb: { xs: 4, md: 6 },
 									maxWidth: 800,
 									mx: "auto",
-									fontSize: "1.1rem",
+									fontSize: { xs: "0.95rem", md: "1.1rem" },
 									color: "text.secondary",
+									px: { xs: 2, md: 0 },
 								}}>
 								Choose the perfect package for your needs
 							</Typography>
 						</Box>
 
 						{service && service.packages && service.packages.length > 0 ? (
-							<Grid container spacing={4}>
+							<Grid container spacing={{ xs: 5, md: 4 }}>
 								{service.packages.map((pkg, index) => (
-									<Grid
-										item
-										xs={12}
-										sm={6}
-										md={4}
-										key={index}>
+									<Grid item xs={12} sm={6} md={4} key={index} sx={{ mb: { xs: 7, md: 0 } }}>
 										<Paper
 											elevation={3}
 											sx={{
-												p: 4,
+												p: { xs: 3, md: 4 },
 												height: "100%",
 												display: "flex",
 												flexDirection: "column",
@@ -986,38 +1039,56 @@ const StaticServiceTemplate = ({
 												variant='h5'
 												gutterBottom
 												color='#1b321d'
-												sx={{ fontWeight: 700, mb: 2 }}>
+												sx={{ 
+													fontWeight: 700, 
+													mb: 2,
+													fontSize: { xs: "1.25rem", md: "1.5rem" },
+												}}>
 												{pkg.name}
 											</Typography>
 
 											<Typography
 												variant='body2'
 												paragraph
-												sx={{ mb: 3, flexGrow: 1, color: "text.secondary" }}>
+												sx={{ 
+													mb: 3, 
+													flexGrow: 1, 
+													color: "text.secondary",
+													fontSize: { xs: "0.9rem", md: "1rem" },
+												}}>
 												{pkg.description ||
 													"Comprehensive package for your needs"}
 											</Typography>
 
 											<Box
-												sx={{ display: "flex", alignItems: "baseline", mb: 3 }}>
-												<Typography
-													variant='h3'
-													component='span'
-													sx={{ fontWeight: 700, color: styles.primaryColor }}>
-													₹{pkg.salePrice}
-												</Typography>
+												sx={{
+													display: "flex",
+													flexDirection: "column",
+													alignItems: "baseline",
+													mb: 3,
+												}}>
 												{pkg.actualPrice && pkg.actualPrice > pkg.salePrice && (
 													<Typography
 														component='span'
 														sx={{
 															textDecoration: "line-through",
 															color: "text.secondary",
-															fontSize: "1rem",
+															fontSize: { xs: "1.5rem", md: "1.8rem" },
 															ml: 1,
 														}}>
 														₹{pkg.actualPrice}
 													</Typography>
 												)}
+												<Typography
+													variant='h3'
+													component='span'
+													sx={{ 
+														fontWeight: 700, 
+														color: styles.primaryColor,
+														fontSize: { xs: "2rem", md: "2.5rem" },
+													}}>
+													₹{pkg.salePrice} <span style={{fontSize: { xs: "0.9rem", md: "1rem" }}}>+GST</span>
+												</Typography>
 											</Box>
 
 											<Divider sx={{ my: 2 }} />
@@ -1036,7 +1107,10 @@ const StaticServiceTemplate = ({
 															</ListItemIcon>
 															<ListItemText
 																primary={feature}
-																primaryTypographyProps={{ variant: "body2" }}
+																primaryTypographyProps={{ 
+																	variant: "body2",
+																	sx: { fontSize: { xs: "0.9rem", md: "1rem" } }
+																}}
 															/>
 														</ListItem>
 													))}
@@ -1050,7 +1124,7 @@ const StaticServiceTemplate = ({
 												onClick={() => handlePackageSelect(pkg)}
 												sx={{
 													mt: "auto",
-													py: 1.5,
+													py: { xs: 1.2, md: 1.5 },
 													borderRadius: "30px",
 													fontWeight: 600,
 													boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
@@ -1058,6 +1132,7 @@ const StaticServiceTemplate = ({
 														boxShadow: "0 6px 15px rgba(0,0,0,0.2)",
 													},
 													backgroundColor: styles.primaryColor,
+													fontSize: { xs: "0.9rem", md: "1rem" },
 												}}>
 												{packageButtonText}
 											</Button>
@@ -1069,11 +1144,14 @@ const StaticServiceTemplate = ({
 							<Box
 								sx={{
 									textAlign: "center",
-									p: 6,
+									p: { xs: 4, md: 6 },
 									borderRadius: "16px",
 									backgroundColor: alpha(styles.primaryColor, 0.05),
 								}}>
-								<Typography paragraph sx={{ fontSize: "1.1rem", mb: 3 }}>
+								<Typography paragraph sx={{ 
+									fontSize: { xs: "1rem", md: "1.1rem" }, 
+									mb: { xs: 2, md: 3 } 
+								}}>
 									Contact us for custom pricing tailored to your specific needs.
 								</Typography>
 								<Button
@@ -1082,10 +1160,11 @@ const StaticServiceTemplate = ({
 									size='large'
 									onClick={handleRegisterInterest}
 									sx={{
-										py: 1.5,
-										px: 4,
+										py: { xs: 1.2, md: 1.5 },
+										px: { xs: 3, md: 4 },
 										borderRadius: "30px",
 										fontWeight: 600,
+										fontSize: { xs: "0.9rem", md: "1rem" },
 									}}>
 									{leadButtonText}
 								</Button>
@@ -1097,11 +1176,11 @@ const StaticServiceTemplate = ({
 					<Box
 						sx={{
 							bgcolor: styles.accentColor,
-							py: { xs: 6, md: 8 },
+							py: { xs: 5, md: 8 },
 							position: "relative",
 						}}>
 						<Container maxWidth='lg'>
-							<Box sx={{ mb: 6, textAlign: "center" }}>
+							<Box sx={{ mb: { xs: 4, md: 6 }, textAlign: "center" }}>
 								<Typography
 									variant='h2'
 									gutterBottom
@@ -1110,11 +1189,12 @@ const StaticServiceTemplate = ({
 										position: "relative",
 										display: "inline-block",
 										pb: 2,
+										fontSize: { xs: "1.8rem", sm: "2.2rem", md: "2.5rem" },
 										"&::after": {
 											content: '""',
 											position: "absolute",
-											width: "80px",
-											height: "4px",
+											width: { xs: "60px", md: "80px" },
+											height: { xs: "3px", md: "4px" },
 											backgroundColor: styles.primaryColor,
 											bottom: 0,
 											left: "50%",
@@ -1126,112 +1206,157 @@ const StaticServiceTemplate = ({
 								<Typography
 									variant='subtitle1'
 									sx={{
-										mt: 2,
-										mb: 4,
+										mt: { xs: 1.5, md: 2 },
+										mb: { xs: 3, md: 4 },
 										maxWidth: 800,
 										mx: "auto",
-										fontSize: "1.1rem",
+										fontSize: { xs: "0.95rem", md: "1.1rem" },
 										color: "text.secondary",
+										px: { xs: 2, md: 0 },
 									}}>
 									Find answers to common questions about our{" "}
 									{serviceName.toLowerCase()}
 								</Typography>
 							</Box>
 
-							{/* Modified FAQ section to display in two columns with equal height */}
-							<Grid container spacing={3}>
+							{/* Modified FAQ section with better mobile layout */}
+							<Grid container spacing={{ xs: 4, md: 3 }}>
 								<Grid item xs={12} md={6}>
-									<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-										{faqs.slice(0, Math.ceil(faqs.length / 2)).map((faq, index) => (
-											<Accordion
-												key={index}
-												sx={{
-													mb: 2,
-													boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-													borderRadius: "12px !important",
-													overflow: "hidden",
-													"&:before": {
-														display: "none", // Remove the default divider
-													},
-												}}
-												disableGutters
-												elevation={0}>
-												<AccordionSummary
-													expandIcon={
-														<ExpandMore sx={{ color: styles.primaryColor }} />
-													}
+									<Box
+										sx={{
+											height: "100%",
+											display: "flex",
+											flexDirection: "column",
+											justifyContent: "space-between",
+										}}>
+										{faqs
+											.slice(0, Math.ceil(faqs.length / 2))
+											.map((faq, index) => (
+												<Accordion
+													key={index}
 													sx={{
-														px: 3,
-														backgroundColor: "white",
-														"&:hover": {
-															backgroundColor: alpha(styles.primaryColor, 0.02),
+														mb: { xs: 4, md: 2 },
+														boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+														borderRadius: "12px !important",
+														overflow: "hidden",
+														"&:before": {
+															display: "none", // Remove the default divider
 														},
-													}}>
-													<Typography
-														variant='h6'
-														sx={{ fontWeight: 600, fontSize: "1.1rem" }}>
-														{faq.question}
-													</Typography>
-												</AccordionSummary>
-												<AccordionDetails
-													sx={{
-														px: 3,
-														py: 2,
-														backgroundColor: alpha(styles.primaryColor, 0.02),
-													}}>
-													<Typography sx={{ color: "text.secondary" }}>
-														{faq.answer}
-													</Typography>
-												</AccordionDetails>
-											</Accordion>
-										))}
+													}}
+													disableGutters
+													elevation={0}>
+													<AccordionSummary
+														expandIcon={
+															<ExpandMore sx={{ color: styles.primaryColor }} />
+														}
+														sx={{
+															px: { xs: 2, md: 3 },
+															py: { xs: 1, md: 1.5 },
+															backgroundColor: "white",
+															"&:hover": {
+																backgroundColor: alpha(
+																	styles.primaryColor,
+																	0.02
+																),
+															},
+														}}>
+														<Typography
+															variant='h6'
+															sx={{ 
+																fontWeight: 600, 
+																fontSize: { xs: "1rem", md: "1.2rem" },
+																lineHeight: 1.4,
+															}}>
+															{faq.question}
+														</Typography>
+													</AccordionSummary>
+													<AccordionDetails
+														sx={{
+															px: { xs: 2, md: 3 },
+															py: { xs: 1.5, md: 2 },
+															backgroundColor: alpha(styles.primaryColor, 0.02),
+														}}>
+														<Typography 
+															sx={{ 
+																color: "black",
+																whiteSpace: "pre-line",
+																fontSize: { xs: "0.9rem", md: "1rem" },
+																lineHeight: { xs: 1.5, md: 1.6 },
+															}}>
+															{faq.answer}
+														</Typography>
+													</AccordionDetails>
+												</Accordion>
+											))}
 									</Box>
 								</Grid>
 								<Grid item xs={12} md={6}>
-									<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-										{faqs.slice(Math.ceil(faqs.length / 2)).map((faq, index) => (
-											<Accordion
-												key={index + Math.ceil(faqs.length / 2)}
-												sx={{
-													mb: 2,
-													boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-													borderRadius: "12px !important",
-													overflow: "hidden",
-													"&:before": {
-														display: "none", // Remove the default divider
-													},
-												}}
-												disableGutters
-												elevation={0}>
-												<AccordionSummary
-													expandIcon={
-														<ExpandMore sx={{ color: styles.primaryColor }} />
-													}
+									<Box
+										sx={{
+											height: "100%",
+											display: "flex",
+											flexDirection: "column",
+											justifyContent: "space-between",
+										}}>
+										{faqs
+											.slice(Math.ceil(faqs.length / 2))
+											.map((faq, index) => (
+												<Accordion
+													key={index + Math.ceil(faqs.length / 2)}
 													sx={{
-														px: 3,
-														backgroundColor: "white",
-														"&:hover": {
-															backgroundColor: alpha(styles.primaryColor, 0.02),
+														mb: { xs: 4, md: 2 },
+														boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+														borderRadius: "12px !important",
+														overflow: "hidden",
+														"&:before": {
+															display: "none", // Remove the default divider
 														},
-													}}>
-													<Typography
-														variant='h6'
-														sx={{ fontWeight: 600, fontSize: "1.1rem" }}>
-														{faq.question}
-													</Typography>
-												</AccordionSummary>
-												<AccordionDetails
-													sx={{
-														px: 3,
-														py: 2,
-														backgroundColor: alpha(styles.primaryColor, 0.02),
-													}}>
-													<Typography sx={{ color: "text.secondary" }}>
-														{faq.answer}
-													</Typography>
-												</AccordionDetails>
-											</Accordion>
-										))}
+													}}
+													disableGutters
+													elevation={0}>
+													<AccordionSummary
+														expandIcon={
+															<ExpandMore sx={{ color: styles.primaryColor }} />
+														}
+														sx={{
+															px: { xs: 2, md: 3 },
+															py: { xs: 1, md: 1.5 },
+															backgroundColor: "white",
+															"&:hover": {
+																backgroundColor: alpha(
+																	styles.primaryColor,
+																	0.02
+																),
+															},
+														}}>
+														<Typography
+															variant='h6'
+															sx={{ 
+																fontWeight: 600, 
+																fontSize: { xs: "1rem", md: "1.2rem" },
+																lineHeight: 1.4,
+															}}>
+															{faq.question}
+														</Typography>
+													</AccordionSummary>
+													<AccordionDetails
+														sx={{
+															px: { xs: 2, md: 3 },
+															py: { xs: 1.5, md: 2 },
+															backgroundColor: alpha(styles.primaryColor, 0.02),
+														}}>
+														<Typography 
+															sx={{ 
+																color: "black",
+																whiteSpace: "pre-line",
+																fontSize: { xs: "0.9rem", md: "1rem" },
+																lineHeight: { xs: 1.5, md: 1.6 },
+															}}>
+															{faq.answer}
+														</Typography>
+													</AccordionDetails>
+												</Accordion>
+											))}
 									</Box>
 								</Grid>
 							</Grid>
@@ -1244,9 +1369,9 @@ const StaticServiceTemplate = ({
 							position: "relative",
 							bgcolor: styles.primaryColor,
 							color: "white",
-							py: { xs: 6, md: 8 },
+							py: { xs: 5, md: 8 },
 							textAlign: "center",
-							overflow: "hidden",
+							overflow: "hidden", 
 							"&::before": {
 								content: '""',
 								position: "absolute",
@@ -1262,7 +1387,7 @@ const StaticServiceTemplate = ({
 								position: "absolute",
 								left: "-50px",
 								top: "-50px",
-								width: "200px",
+								width: "200px", 
 								height: "200px",
 								borderRadius: "50%",
 								backgroundColor: alpha("#ffffff", 0.05),
@@ -1274,7 +1399,9 @@ const StaticServiceTemplate = ({
 								gutterBottom
 								sx={{
 									fontWeight: 700,
-									mb: 3,
+									mb: { xs: 2, md: 3 },
+									fontSize: { xs: "1.8rem", sm: "2.2rem", md: "2.5rem" },
+									px: { xs: 2, md: 0 },
 								}}
 								style={{ color: "white" }}>
 								Ready to Get Started?
@@ -1282,11 +1409,12 @@ const StaticServiceTemplate = ({
 							<Typography
 								paragraph
 								sx={{
-									mb: 5,
+									mb: { xs: 4, md: 5 },
 									maxWidth: 700,
 									mx: "auto",
-									fontSize: "1.25rem",
+									fontSize: { xs: "1.1rem", md: "1.25rem" },
 									opacity: 0.9,
+									px: { xs: 2, md: 0 },
 								}}>
 								Join thousands of satisfied customers who have already benefited
 								from our services.
@@ -1295,8 +1423,11 @@ const StaticServiceTemplate = ({
 								sx={{
 									display: "flex",
 									flexWrap: "wrap",
+									flexDirection: { xs: "column", sm: "row" },
 									justifyContent: "center",
-									gap: 3,
+									alignItems: { xs: "stretch", sm: "center" },
+									gap: { xs: 2, md: 3 },
+									px: { xs: 3, md: 0 },
 								}}>
 								<Button
 									variant='contained'
@@ -1307,11 +1438,13 @@ const StaticServiceTemplate = ({
 										"&:hover": {
 											bgcolor: "rgba(255,255,255,0.9)",
 										},
-										py: 1.5,
-										px: 4,
+										py: { xs: 1.2, md: 1.5 },
+										px: { xs: 3, md: 4 },
 										borderRadius: "30px",
 										fontWeight: 600,
 										boxShadow: "0 8px 15px rgba(0,0,0,0.1)",
+										width: { xs: "100%", sm: "auto" },
+										fontSize: { xs: "0.95rem", md: "1rem" },
 									}}
 									onClick={
 										isLeadService ? handleRegisterInterest : scrollToPackages
@@ -1330,10 +1463,12 @@ const StaticServiceTemplate = ({
 											borderWidth: 2,
 											bgcolor: "rgba(255,255,255,0.1)",
 										},
-										py: 1.5,
-										px: 4,
+										py: { xs: 1.2, md: 1.5 },
+										px: { xs: 3, md: 4 },
 										borderRadius: "30px",
 										fontWeight: 600,
+										width: { xs: "100%", sm: "auto" },
+										fontSize: { xs: "0.95rem", md: "1rem" },
 									}}
 									onClick={() => navigate("/contact")}>
 									Contact Us

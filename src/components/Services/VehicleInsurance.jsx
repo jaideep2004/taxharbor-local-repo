@@ -411,10 +411,24 @@ const VehicleInsurancePage = () => {
 		annualPremium: 0,
 	});
 
-	// For sticky sidebar tracking with a threshold that allows smoother transition
+	// Enhanced sticky sidebar behavior 
+	const [sidebarPosition, setSidebarPosition] = useState({
+		isSticky: false,
+		shouldStop: false
+	});
+	
+	// Store sidebar height
+	const [sidebarHeight, setSidebarHeight] = useState(0);
+	
+	// Container refs for tracking positions
+	const contentRef = React.useRef(null);
+	const sidebarRef = React.useRef(null);
+	const sidebarContainerRef = React.useRef(null);
+
+	// For sticky sidebar tracking with a threshold of 109px
 	const scrollTrigger = useScrollTrigger({
 		disableHysteresis: true,
-		threshold: 300,
+		threshold: 109, // Changed to 109px as specified
 	});
 
 	// Service data from backend
@@ -481,6 +495,71 @@ const VehicleInsurancePage = () => {
 
 		fetchServiceData();
 	}, [SERVICE_ID, showNotification]);
+	
+	// Measure sidebar height after it renders
+	useEffect(() => {
+		if (sidebarRef.current) {
+			setSidebarHeight(sidebarRef.current.clientHeight);
+		}
+	}, [service]); // Re-measure when service data changes
+
+	// Enhanced scroll handler to control sidebar behavior
+	useEffect(() => {
+		const handleScroll = () => {
+			if (!contentRef.current || !sidebarRef.current || !sidebarContainerRef.current) return;
+			
+			const scrollPosition = window.scrollY;
+			const topThreshold = 109; // Specified threshold
+			
+			// Get the content and sidebar boundaries
+			const contentTop = contentRef.current.getBoundingClientRect().top + window.scrollY;
+			const contentBottom = contentRef.current.getBoundingClientRect().bottom + window.scrollY;
+			const sidebarContainerTop = sidebarContainerRef.current.offsetTop;
+			const sidebarContainerHeight = sidebarContainerRef.current.offsetHeight;
+			const sidebarHeight = sidebarRef.current.clientHeight;
+			const windowHeight = window.innerHeight;
+			
+			// Determine if sidebar should be sticky - only when content has scrolled to threshold
+			const isSticky = scrollPosition > topThreshold && scrollPosition > sidebarContainerTop - topThreshold;
+			
+			// Calculate where the sidebar should stop (at the bottom of the main content)
+			const stopPoint = contentBottom - sidebarHeight - 30; // 30px buffer from bottom
+			
+			// Should sidebar stop following and anchor to bottom?
+			const shouldStop = scrollPosition + topThreshold + sidebarHeight > contentBottom - 30;
+			
+			setSidebarPosition({
+				isSticky,
+				shouldStop
+			});
+			
+			// Set active section
+			const activeSetionPos = scrollPosition + 200;
+			for (const section of sections) {
+				const element = section.ref.current;
+				if (element) {
+					const offsetTop = element.offsetTop;
+					const offsetBottom = offsetTop + element.offsetHeight;
+
+					if (activeSetionPos >= offsetTop && activeSetionPos < offsetBottom) {
+						setActiveSection(section.id);
+						break;
+					}
+				}
+			}
+		};
+
+		window.addEventListener("scroll", handleScroll);
+		handleScroll(); // Run once immediately to set initial state
+		
+		// Call on window resize too
+		window.addEventListener("resize", handleScroll);
+		
+		return () => {
+			window.removeEventListener("scroll", handleScroll);
+			window.removeEventListener("resize", handleScroll);
+		};
+	}, [sections, sidebarHeight]);
 
 	// Handle scrolling to section - improved for smoother scrolling
 	const scrollToSection = (sectionRef) => {
@@ -499,29 +578,6 @@ const VehicleInsurancePage = () => {
 			}
 		}
 	};
-
-	// Update active section based on scroll position
-	useEffect(() => {
-		const handleScroll = () => {
-			const scrollPosition = window.scrollY + 200;
-
-			for (const section of sections) {
-				const element = section.ref.current;
-				if (element) {
-					const offsetTop = element.offsetTop;
-					const offsetBottom = offsetTop + element.offsetHeight;
-
-					if (scrollPosition >= offsetTop && scrollPosition < offsetBottom) {
-						setActiveSection(section.id);
-						break;
-					}
-				}
-			}
-		};
-
-		window.addEventListener("scroll", handleScroll);
-		return () => window.removeEventListener("scroll", handleScroll);
-	}, [sections]);
 
 	const handleAccordionChange = (panel) => (event, isExpanded) => {
 		setExpanded(isExpanded ? panel : false);
@@ -624,7 +680,7 @@ const VehicleInsurancePage = () => {
 
 	return (
 		<ThemeProvider theme={theme}>
-			<Box sx={{ backgroundColor: "background.default", minHeight: "80vh" }}>
+			<Box sx={{ backgroundColor: "background.default", minHeight: "80vh" }} ref={contentRef}>
 				{/* Hero Banner */}
 				<HeroSection>
 					<Container maxWidth='xl' sx={{ mt: { xs: "80px", md: "160px" } }}>
@@ -729,9 +785,40 @@ const VehicleInsurancePage = () => {
 				<Container maxWidth='xl' sx={{ py: { xs: 4, md: 8 } }}>
 					<Grid container spacing={4}>
 						{/* Sticky Sidebar Navigation - Desktop Only */}
-						<Grid item xs={12} md={3} lg={2.5}>
+						<Grid item xs={12} md={3} lg={2.5} ref={sidebarContainerRef}>
 							<Hidden mdDown>
-								<StickyNav trigger={scrollTrigger}>
+								<Box 
+									ref={sidebarRef}
+									sx={{
+										width: "300px",
+										transition: "all 0.3s ease",
+										position: sidebarPosition.isSticky ? 
+											(sidebarPosition.shouldStop ? "absolute" : "fixed") :
+											"static",
+										top: sidebarPosition.isSticky && !sidebarPosition.shouldStop ? "130px" : "auto",
+										bottom: sidebarPosition.shouldStop ? "30px" : "auto",
+										maxHeight: "80vh",
+										overflow: "auto",
+										// Custom scrollbar styles
+										"&::-webkit-scrollbar": {
+											width: "4px",
+										},
+										"&::-webkit-scrollbar-track": {
+											background: "#f1f1f1",
+											borderRadius: "10px",
+										},
+										"&::-webkit-scrollbar-thumb": {
+											background: "#95b8a2",
+											borderRadius: "10px",
+										},
+										"&::-webkit-scrollbar-thumb:hover": {
+											background: "#1b321d",
+										},
+										// Firefox scrollbar
+										scrollbarWidth: "thin",
+										scrollbarColor: "#95b8a2 #f1f1f1",
+									}}
+								>
 									<NavList component='nav'>
 										{sections.map((section) => (
 											<NavItem
@@ -848,7 +935,7 @@ const VehicleInsurancePage = () => {
 											</Button>
 										)}
 									</Box>
-								</StickyNav>
+								</Box>
 							</Hidden>
 						</Grid>
 
@@ -868,14 +955,14 @@ const VehicleInsurancePage = () => {
 
 							{/* Overview Section */}
 							<section ref={overviewRef} id='overview'>
-								<SectionBox id='overview-section'>
+								<SectionBox id='overview-section' style={{ paddingBottom: "90px" }}>
 									<Typography
 										variant='h3'
 										color='primary'
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -935,14 +1022,16 @@ const VehicleInsurancePage = () => {
 												sx={{
 													backgroundColor: "accent.main" + "15",
 													borderRadius: "12px",
-													p: 3,
+													p: { xs: 3, md: 3 },
 													height: "100%",
 													boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
 													border: "1px solid",
 													borderColor: "accent.main" + "30",
 													position: "relative",
 													overflow: "hidden",
-													marginTop: { xs: 0, md: "-70px" },
+													marginTop: { xs: 3, md: "-70px" },
+													marginBottom: { xs: 4, md: 0 },
+													paddingBottom: { xs: 5, md: 3 },
 													"&:after": {
 														content: '""',
 														position: "absolute",
@@ -1024,7 +1113,7 @@ const VehicleInsurancePage = () => {
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1041,7 +1130,7 @@ const VehicleInsurancePage = () => {
 										Our Vehicle Insurance Plans
 									</Typography>
 
-									<Grid container spacing={2} sx={{ mx: -1 }}>
+									<Grid container spacing={{ xs: 4, md: 2 }} sx={{ mx: -1 }}>
 										{[
 											{
 												title: "Comprehensive Insurance",
@@ -1084,11 +1173,11 @@ const VehicleInsurancePage = () => {
 												),
 											},
 										].map((item, index) => (
-											<Grid item xs={12} sm={6} key={index} marginBottom='60px'>
+											<Grid item xs={12} sm={6} key={index} sx={{ mb: { xs: "40px", md: "60px" } }}>
 												<Card
 													sx={{
 														height: "100%",
-														p: 3,
+														p: { xs: 2.5, md: 3 },
 														border: "1px solid rgba(0,0,0,0.08)",
 														boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
 														transition:
@@ -1109,13 +1198,20 @@ const VehicleInsurancePage = () => {
 														<Typography
 															variant='h5'
 															color='primary'
-															sx={{ fontWeight: 600 }}>
+															sx={{
+																fontWeight: 600,
+																fontSize: { xs: "1.2rem", md: "1.5rem" },
+															}}>
 															{item.title}
 														</Typography>
 													</Box>
 													<Typography
 														variant='body1'
-														sx={{ color: "text.secondary", lineHeight: 1.7 }}>
+														sx={{
+															color: "text.secondary",
+															lineHeight: 1.7,
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}>
 														{item.description}
 													</Typography>
 												</Card>
@@ -1138,7 +1234,7 @@ const VehicleInsurancePage = () => {
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1158,41 +1254,45 @@ const VehicleInsurancePage = () => {
 									<Typography
 										variant='body1'
 										paragraph
-										sx={{ mb: 4, maxWidth: "850px" }}>
+										sx={{
+											mb: 4,
+											maxWidth: "850px",
+											fontSize: { xs: "0.95rem", md: "1rem" },
+										}}>
 										Enhance your vehicle insurance policy with these additional
 										protections:
 									</Typography>
 
-									<Grid container spacing={3}>
+									<Grid container spacing={{ xs: 4, md: 3 }}>
 										{[
 											{
 												title: "Roadside Assistance",
 												description:
 													"Get help when stranded due to breakdowns or emergencies.",
-												icon: <SupportAgentIcon />,
+													icon: <SupportAgentIcon />,
 											},
 											{
 												title: "Zero Depreciation Cover",
 												description:
 													"Ensures full claim without factoring in depreciation value.",
-												icon: <CalculateIcon />,
+													icon: <CalculateIcon />,
 											},
 											{
 												title: "Engine Protection",
-												description:
+													description:
 													"Covers damages to your vehicle's engine due to unforeseen circumstances.",
-												icon: <SecurityIcon />,
+													icon: <SecurityIcon />,
 											},
 											{
 												title: "Return to Invoice",
-												description:
+													description:
 													"Covers the gap between the insured declared value (IDV) and the invoice price in case of total loss or theft.",
-												icon: <DescriptionIcon />,
+													icon: <DescriptionIcon />,
 											},
 										].map((offering, index) => (
-											<Grid item xs={12} sm={6} md={3} key={index}>
-												<Card sx={{ height: "100%" }}>
-													<CardContent sx={{ p: 3 }}>
+											<Grid item xs={12} sm={6} md={3} key={index} sx={{ mb: { xs: 5, md: 0 } }}>
+												<Card sx={{ height: "100%", pb: { xs: 2, md: 0 } }}>
+													<CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
 														<Box
 															sx={{
 																mb: 2,
@@ -1210,13 +1310,20 @@ const VehicleInsurancePage = () => {
 															<Typography
 																variant='h5'
 																color='primary'
-																sx={{ fontWeight: 600 }}>
+																sx={{
+																	fontWeight: 600,
+																	fontSize: { xs: "1.1rem", md: "1.25rem" },
+																}}>
 																{offering.title}
 															</Typography>
 														</Box>
 														<Typography
 															variant='body2'
-															sx={{ color: "text.secondary" }}>
+															sx={{
+																color: "text.secondary",
+																fontSize: { xs: "0.85rem", md: "0.9rem" },
+																lineHeight: 1.6,
+															}}>
 															{offering.description}
 														</Typography>
 													</CardContent>
@@ -1236,7 +1343,7 @@ const VehicleInsurancePage = () => {
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1368,7 +1475,7 @@ const VehicleInsurancePage = () => {
 														<ListItem
 															key={index}
 															sx={{
-																py: 0,
+																py: 1.5,
 																px: 0,
 																borderBottom:
 																	index !== 4 ? "1px solid #e0e0e0" : "none",
@@ -1428,7 +1535,7 @@ const VehicleInsurancePage = () => {
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1448,7 +1555,11 @@ const VehicleInsurancePage = () => {
 									<Typography
 										variant='body1'
 										paragraph
-										sx={{ mb: 4, maxWidth: "850px" }}>
+										sx={{
+											mb: 4,
+											maxWidth: "850px",
+											fontSize: { xs: "0.95rem", md: "1rem" },
+										}}>
 										We follow a simple and streamlined process to ensure you get
 										the right coverage effortlessly:
 									</Typography>
@@ -1511,12 +1622,17 @@ const VehicleInsurancePage = () => {
 															<Typography
 																variant='h5'
 																color='primary'
-																sx={{ fontWeight: 600, mb: 1 }}>
+																sx={{
+																	fontWeight: 600,
+																	mb: 1,
+																	fontSize: { xs: "1.1rem", md: "1.25rem" },
+																}}>
 																Consult with Experts
 															</Typography>
 															<Typography
 																variant='body1'
-																color='text.secondary'>
+																color='text.secondary'
+																sx={{ fontSize: { xs: "0.9rem", md: "1rem" } }}>
 																Our team assesses your financial goals, current
 																commitments, and future aspirations to
 																understand your needs fully.
@@ -1551,16 +1667,21 @@ const VehicleInsurancePage = () => {
 															<Typography
 																variant='h5'
 																color='primary'
-																sx={{ fontWeight: 600, mb: 1 }}>
+																sx={{
+																	fontWeight: 600,
+																	mb: 1,
+																	fontSize: { xs: "1.1rem", md: "1.25rem" },
+																}}>
 																Choose the Right Plan
 															</Typography>
 															<Typography
-																variant='body1'
-																color='text.secondary'>
-																We offer personalized recommendations and help
-																you compare options to select a policy that best
-																fits your requirements.
-															</Typography>
+																	variant='body1'
+																	color='text.secondary'
+																	sx={{ fontSize: { xs: "0.9rem", md: "1rem" } }}>
+																	We offer personalized recommendations and help
+																	you compare options to select a policy that best
+																	fits your requirements.
+																</Typography>
 														</Box>
 													</Box>
 
@@ -1591,16 +1712,21 @@ const VehicleInsurancePage = () => {
 															<Typography
 																variant='h5'
 																color='primary'
-																sx={{ fontWeight: 600, mb: 1 }}>
+																sx={{
+																	fontWeight: 600,
+																	mb: 1,
+																	fontSize: { xs: "1.1rem", md: "1.25rem" },
+																}}>
 																Hassle-Free Onboarding
 															</Typography>
 															<Typography
-																variant='body1'
-																color='text.secondary'>
-																From assisting with documentation to ensuring a
-																seamless approval process, we handle all the
-																complexities for you.
-															</Typography>
+																	variant='body1'
+																	color='text.secondary'
+																	sx={{ fontSize: { xs: "0.9rem", md: "1rem" } }}>
+																	From assisting with documentation to ensuring a
+																	seamless approval process, we handle all the
+																	complexities for you.
+																</Typography>
 														</Box>
 													</Box>
 
@@ -1627,16 +1753,21 @@ const VehicleInsurancePage = () => {
 															<Typography
 																variant='h5'
 																color='primary'
-																sx={{ fontWeight: 600, mb: 1 }}>
+																sx={{
+																	fontWeight: 600,
+																	mb: 1,
+																	fontSize: { xs: "1.1rem", md: "1.25rem" },
+																}}>
 																Secure Your Peace of Mind
 															</Typography>
 															<Typography
-																variant='body1'
-																color='text.secondary'>
-																Once your policy is in place, you can rest
-																assured knowing that your family's future is
-																financially secure.
-															</Typography>
+																	variant='body1'
+																	color='text.secondary'
+																	sx={{ fontSize: { xs: "0.9rem", md: "1rem" } }}>
+																	Once your policy is in place, you can rest
+																	assured knowing that your family's future is
+																	financially secure.
+																</Typography>
 														</Box>
 													</Box>
 												</Box>
@@ -1651,7 +1782,7 @@ const VehicleInsurancePage = () => {
 												transform: "translateX(-50%)",
 												textAlign: "center",
 												zIndex: 2,
-												display: { xs: "block", md: "none" },
+												display: { xs: "none", md: "none" },
 											}}>
 											<Button
 												variant='contained'
@@ -1665,9 +1796,11 @@ const VehicleInsurancePage = () => {
 
 										<Box
 											sx={{
-												display: { xs: "none", md: "flex" },
+												display: "flex",
 												justifyContent: "center",
-												mt: 6,
+												mt: { xs: 8, md: 6 },
+												position: "relative",
+												zIndex: 1,
 											}}>
 											<Button
 												variant='contained'
@@ -1692,7 +1825,7 @@ const VehicleInsurancePage = () => {
 											gutterBottom
 											sx={{
 												mb: 1,
-												fontSize: { xs: "1.8rem", md: "2.2rem" },
+												fontSize: { xs: "1.6rem", md: "2.2rem" },
 												position: "relative",
 												display: "inline-block",
 												"&:after": {
@@ -1711,13 +1844,17 @@ const VehicleInsurancePage = () => {
 											<Typography
 												variant='subtitle1'
 												paragraph
-												sx={{ mb: 4, maxWidth: "850px" }}>
+												sx={{
+													mb: 4,
+													maxWidth: "850px",
+													fontSize: { xs: "0.95rem", md: "1rem" },
+												}}>
 												Choose the right coverage to safeguard your vehicle and financial future. Our insurance plans offer comprehensive protection at affordable rates.
 											</Typography>
 
-											<Grid container spacing={3}>
+											<Grid container spacing={{ xs: 6, md: 3 }}>
 												{service.packages.map((pkg, index) => (
-													<Grid item xs={12} sm={6} md={4} key={index}>
+													<Grid item xs={12} sm={6} md={4} key={index} sx={{ mb: { xs: 7, md: 0 } }}>
 														<PackageCard
 															featured={index === 1}
 															sx={{
@@ -1728,24 +1865,23 @@ const VehicleInsurancePage = () => {
 																"&::before":
 																	index === 1
 																		? {
-																				content: '""',
-																				position: "absolute",
-																				top: "-15px",
-																				right: "-10px",
-																				background: "primary.main",
-																				color: "white",
-																				padding: "5px 12px",
-																				borderRadius: "20px",
-																				fontSize: "0.7rem",
-																				fontWeight: "bold",
-																				boxShadow:
-																					"0 4px 8px rgba(0, 0, 0, 0.15)",
-																				zIndex: 2,
-																		  }
+																			content: '""',
+																			position: "absolute",
+																			top: "-15px",
+																			right: "-10px",
+																			background: "primary.main",
+																			color: "white",
+																			padding: "5px 12px",
+																			borderRadius: "20px",
+																			fontSize: "0.7rem",
+																			fontWeight: "bold",
+																			boxShadow: "0 4px 8px rgba(0, 0, 0, 0.15)",
+																			zIndex: 2,
+																		}
 																		: {},
 															}}
 															onClick={() => handlePackageSelect(pkg)}>
-															<CardContent sx={{ p: 3 }}>
+															<CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
 																<Box
 																	sx={{
 																		mb: 2,
@@ -1753,95 +1889,103 @@ const VehicleInsurancePage = () => {
 																		justifyContent: "space-between",
 																		alignItems: "flex-start",
 																	}}>
-																		<Box>
-																			<Typography
-																				variant='h5'
-																				color='primary'
-																				sx={{
-																					fontWeight: 600,
-																					mb: 0.5,
-																					fontSize: "1.4rem",
-																				}}>
-																					{pkg.name}
-																			</Typography>
-																			<Typography
-																				variant='body2'
-																				color='text.secondary'
-																				sx={{ mb: 2 }}>
-																					{pkg.shortDescription}
-																			</Typography>
-																		</Box>
-																		{index === 1 && (
-																			<Chip
-																				label='Popular'
-																				size='small'
-																				sx={{
-																					bgcolor: "primary.main",
-																					color: "white",
-																					fontWeight: 600,
+																	<Box>
+																		<Typography
+																			variant='h5'
+																			color='primary'
+																			sx={{
+																				fontWeight: 600,
+																				mb: 0.5,
+																				fontSize: { xs: "1.2rem", md: "1.4rem" },
+																			}}>
+																			{pkg.name}
+																		</Typography>
+																		<Typography
+																			variant='body2'
+																			color='text.secondary'
+																			sx={{
+																				mb: 2,
+																				fontSize: { xs: "0.85rem", md: "0.9rem" },
+																			}}>
+																			{pkg.shortDescription}
+																		</Typography>
+																	</Box>
+																	{index === 1 && (
+																		<Chip
+																			label='Popular'
+																			size='small'
+																			sx={{
+																				bgcolor: "primary.main",
+																				color: "white",
+																				fontWeight: 600,
+																			}}
+																		/>
+																	)}
+																</Box>
+
+																<Typography
+																	variant='h4'
+																	color='primary'
+																	sx={{
+																		display: "flex",
+																		alignItems: "baseline",
+																		fontWeight: 700,
+																		mb: 3,
+																		fontSize: { xs: "1.5rem", md: "2rem" },
+																	}}>
+																	₹{pkg.price}
+																	<Typography
+																		component='span'
+																		variant='subtitle2'
+																		color='text.secondary'
+																		sx={{
+																			ml: 1,
+																			fontWeight: 400,
+																			fontSize: { xs: "0.8rem", md: "0.9rem" },
+																		}}>
+																		/ year
+																	</Typography>
+																</Typography>
+
+																<Divider sx={{ mb: 2 }} />
+
+																<List sx={{ mb: 2 }}>
+																	{pkg.features && pkg.features.map((feature, idx) => (
+																		<ListItem
+																			key={idx}
+																			sx={{
+																				px: 0,
+																				py: 0.5,
+																				alignItems: "flex-start",
+																			}}>
+																			<ListItemIcon sx={{ minWidth: "32px" }}>
+																				<CheckCircleOutlineIcon
+																					sx={{
+																						color: "success.main",
+																						fontSize: "1.2rem",
+																					}}
+																				/>
+																			</ListItemIcon>
+																			<ListItemText
+																				primary={feature}
+																				primaryTypographyProps={{
+																					fontSize: { xs: "0.85rem", md: "0.9rem" },
 																				}}
 																			/>
-																		)}
-																	</Box>
-
-																	<Typography
-																		variant='h4'
-																		color='primary'
-																		sx={{
-																			display: "flex",
-																			alignItems: "baseline",
-																			fontWeight: 700,
-																			mb: 3,
-																		}}>
-																		₹{pkg.price}
-																		<Typography
-																			component='span'
-																			variant='subtitle2'
-																			color='text.secondary'
-																			sx={{ ml: 1, fontWeight: 400 }}>
-																			/ year
-																		</Typography>
-																	</Typography>
-
-																	<Divider sx={{ mb: 2 }} />
-
-																	<List sx={{ mb: 2 }}>
-																		{pkg.features.map((feature, idx) => (
-																			<ListItem
-																				key={idx}
-																				sx={{
-																					px: 0,
-																					py: 0.5,
-																					alignItems: "flex-start",
-																				}}>
-																					<ListItemIcon sx={{ minWidth: "32px" }}>
-																						<CheckCircleOutlineIcon
-																							sx={{
-																								color: "success.main",
-																								fontSize: "1.2rem",
-																							}}
-																						/>
-																					</ListItemIcon>
-																					<ListItemText
-																						primary={feature}
-																						primaryTypographyProps={{
-																							fontSize: "0.9rem",
-																						}}
-																					/>
-																			</ListItem>
-																		))}
-																	</List>
-																</CardContent>
-																<CardActions sx={{ px: 3, pb: 3 }}>
-																	<Button
-																		variant='contained'
-																		color='primary'
-																		fullWidth
-																		onClick={() => handlePackageSelect(pkg)}>
-																		Select Package
-																	</Button>
-																</CardActions>
-															</PackageCard>
+																		</ListItem>
+																	))}
+																</List>
+															</CardContent>
+															<CardActions sx={{ px: 3, pb: { xs: 4, md: 3 } }}>
+																<Button
+																	variant='contained'
+																	color='primary'
+																	fullWidth
+																	onClick={() => handlePackageSelect(pkg)}>
+																	Select Package
+																</Button>
+															</CardActions>
+														</PackageCard>
 													</Grid>
 												))}
 											</Grid>
@@ -1858,7 +2002,7 @@ const VehicleInsurancePage = () => {
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1875,17 +2019,23 @@ const VehicleInsurancePage = () => {
 										Frequently Asked Questions
 									</Typography>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel1a-content'
 											id='panel1a-header'>
-											<Typography variant='h6'>
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
 												What is Vehicle insurance?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography>
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
 												Vehicle insurance is a type of life insurance policy that
 												provides coverage for a specific period or "term." If
 												the insured person passes away during the policy term,
@@ -1897,18 +2047,24 @@ const VehicleInsurancePage = () => {
 										</AccordionDetails>
 									</Accordion>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel2a-content'
 											id='panel2a-header'>
-											<Typography variant='h6'>
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
 												How is Vehicle insurance different from other types of life
 												insurance?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography>
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
                                             Vehicle insurance differs from other types of life
 												insurance in several ways. It only provides death
 												benefits for a specific period without any investment or
@@ -1920,17 +2076,24 @@ const VehicleInsurancePage = () => {
 										</AccordionDetails>
 									</Accordion>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel3a-content'
 											id='panel3a-header'>
-											<Typography variant='h6'>
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
 												How much coverage do I need?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography paragraph>
+											<Typography
+												paragraph
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
 												The amount of coverage you need depends on several
 												factors including:
 											</Typography>
@@ -1939,28 +2102,52 @@ const VehicleInsurancePage = () => {
 													<ListItemIcon>
 														<ArrowRightIcon color='primary' />
 													</ListItemIcon>
-													<ListItemText primary='Your current income and expected future earnings' />
+													<ListItemText
+														primary='Your current income and expected future earnings'
+														primaryTypographyProps={{
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}
+													/>
 												</ListItem>
 												<ListItem>
 													<ListItemIcon>
 														<ArrowRightIcon color='primary' />
 													</ListItemIcon>
-													<ListItemText primary='Outstanding debts (mortgage, loans, credit cards)' />
+													<ListItemText
+														primary='Outstanding debts (mortgage, loans, credit cards)'
+														primaryTypographyProps={{
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}
+													/>
 												</ListItem>
 												<ListItem>
 													<ListItemIcon>
 														<ArrowRightIcon color='primary' />
 													</ListItemIcon>
-													<ListItemText primary='Number of dependents and their future needs (education, marriage)' />
+													<ListItemText
+														primary='Number of dependents and their future needs (education, marriage)'
+														primaryTypographyProps={{
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}
+													/>
 												</ListItem>
 												<ListItem>
 													<ListItemIcon>
 														<ArrowRightIcon color='primary' />
 													</ListItemIcon>
-													<ListItemText primary='Expected funeral and estate settlement costs' />
+													<ListItemText
+														primary='Expected funeral and estate settlement costs'
+														primaryTypographyProps={{
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}
+													/>
 												</ListItem>
 											</List>
-											<Typography>
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
 												A common rule of thumb is to have coverage that's 10-15
 												times your annual income, but our coverage calculator
 												can help you determine a more precise figure based on
@@ -1969,17 +2156,23 @@ const VehicleInsurancePage = () => {
 										</AccordionDetails>
 									</Accordion>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel4a-content'
 											id='panel4a-header'>
-											<Typography variant='h6'>
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
 												What happens if I outlive my term insurance policy?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography>
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
 												If you outlive your term insurance policy, the coverage
 												simply ends, and no benefits are paid out. However, many
 												term policies offer conversion options that allow you to
@@ -1992,17 +2185,23 @@ const VehicleInsurancePage = () => {
 										</AccordionDetails>
 									</Accordion>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel5a-content'
 											id='panel5a-header'>
-											<Typography variant='h6'>
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
 												Can I get term insurance if I have health issues?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography>
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
 												Yes, it's possible to get term insurance even if you
 												have health issues, though it may affect your premiums
 												or coverage options. Insurance companies categorize
@@ -2019,7 +2218,10 @@ const VehicleInsurancePage = () => {
 									</Accordion>
 
 									<Box sx={{ mt: 4, textAlign: "center" }}>
-										<Typography variant='body1' paragraph>
+										<Typography
+											variant='body1'
+											paragraph
+											sx={{ fontSize: { xs: "0.95rem", md: "1rem" } }}>
 											Have more questions? Our insurance experts are here to
 											help.
 										</Typography>
@@ -2028,7 +2230,8 @@ const VehicleInsurancePage = () => {
 											color='primary'
 											size='large'
 											startIcon={<ContactSupportIcon />}
-											onClick={() => handleApplyNow(true)}>
+											onClick={() => handleApplyNow(true)}
+											sx={{ mt: { xs: 2, md: 0 } }}>
 											Contact Our Support Team
 										</Button>
 									</Box>
@@ -2062,13 +2265,18 @@ const VehicleInsurancePage = () => {
 
 								<Grid
 									container
-									spacing={3}
+									spacing={{ xs: 4, md: 3 }}
 									alignItems='center'
 									sx={{ position: "relative", zIndex: 2 }}>
 									<Grid item xs={12} md={8}>
 										<Typography
 											variant='h3'
-											sx={{ mb: 2, fontWeight: 700, color: "white" }}>
+											sx={{
+												mb: 2,
+												fontWeight: 700,
+												color: "white",
+												fontSize: { xs: "1.6rem", md: "2rem" },
+											}}>
 											Secure Your Family's Future Today
 										</Typography>
 										<Typography
@@ -2078,6 +2286,7 @@ const VehicleInsurancePage = () => {
 												fontWeight: 400,
 												opacity: 0.9,
 												color: "white",
+												fontSize: { xs: "1.1rem", md: "1.3rem" },
 											}}>
 											Get comprehensive vehicle insurance coverage at affordable
 											rates starting from just ₹500 per month.

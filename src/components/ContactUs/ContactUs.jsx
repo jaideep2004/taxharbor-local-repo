@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
 	Box,
 	Container,
@@ -18,6 +19,7 @@ import {
 	useMediaQuery,
 	Snackbar,
 	Alert,
+	CircularProgress,
 } from "@mui/material";
 import {
 	ThemeProvider,
@@ -64,33 +66,37 @@ const theme = createTheme({
 			fontWeight: 700,
 			fontSize: "2.5rem",
 			"@media (max-width:600px)": {
-				fontSize: "2.2rem",
+				fontSize: "1.8rem",
 			},
 		},
 		h2: {
 			fontWeight: 700,
 			fontSize: "2.2rem",
 			"@media (max-width:600px)": {
-				fontSize: "2rem",
+				fontSize: "1.6rem",
 			},
 		},
 		h3: {
 			fontWeight: 600,
 			fontSize: "2rem",
 			"@media (max-width:600px)": {
-				fontSize: "1.75rem",
+				fontSize: "1.5rem",
 			},
 		},
 		h4: {
 			fontWeight: 600,
 			fontSize: "1.5rem",
 			"@media (max-width:600px)": {
-				fontSize: "1.25rem",
+				fontSize: "1.2rem",
 			},
 		},
 		body1: {
 			fontSize: "1.1rem",
 			lineHeight: 1.7,
+			"@media (max-width:600px)": {
+				fontSize: "0.95rem",
+				lineHeight: 1.6,
+			},
 		},
 		button: {
 			textTransform: "none",
@@ -107,9 +113,11 @@ const StyledButton = styled(Button)(({ theme }) => ({
 	fontSize: "0.95rem",
 	fontWeight: 600,
 	letterSpacing: "0.5px",
+	width: 'auto',
 	[theme.breakpoints.down("sm")]: {
 		padding: "10px 20px",
 		fontSize: "0.85rem",
+		width: '100%', // Full width on mobile
 	},
 }));
 
@@ -173,6 +181,10 @@ const FormPaper = styled(Paper)(({ theme }) => ({
 	boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
 	position: "relative",
 	overflow: "hidden",
+	[theme.breakpoints.down("sm")]: {
+		padding: theme.spacing(3, 2),
+		boxShadow: "0 4px 15px rgba(0,0,0,0.08)",
+	},
 	"&::after": {
 		content: '""',
 		position: "absolute",
@@ -191,6 +203,9 @@ const FormPaper = styled(Paper)(({ theme }) => ({
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
 	marginBottom: theme.spacing(3),
+	[theme.breakpoints.down("sm")]: {
+		marginBottom: theme.spacing(2),
+	},
 	"& .MuiOutlinedInput-root": {
 		borderRadius: "8px",
 		"& fieldset": {
@@ -212,6 +227,11 @@ const MapContainer = styled(Box)(({ theme }) => ({
 	overflow: "hidden",
 	boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
 	position: "relative",
+	[theme.breakpoints.down("sm")]: {
+		height: "300px", // Shorter height on mobile
+		borderRadius: "10px",
+		boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
+	},
 	"&::before": {
 		content: '""',
 		position: "absolute",
@@ -227,40 +247,123 @@ const MapContainer = styled(Box)(({ theme }) => ({
 
 const ContactUs = () => {
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+	
+	// Form state
 	const [formData, setFormData] = useState({
 		name: "",
 		email: "",
 		phone: "",
-		subject: "",
+		subject: "General Inquiry", // Default subject
 		message: "",
 	});
-	const [submitted, setSubmitted] = useState(false);
+	
+	// Form submission states
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [submitStatus, setSubmitStatus] = useState({
+		success: false,
+		message: "",
+		open: false
+	});
+
+	// Form validation state
+	const [errors, setErrors] = useState({});
 
 	const handleChange = (e) => {
 		const { name, value } = e.target;
 		setFormData({ ...formData, [name]: value });
+		
+		// Clear errors when user types
+		if (errors[name]) {
+			setErrors({
+				...errors,
+				[name]: null
+			});
+		}
 	};
 
-	const handleSubmit = (e) => {
+	// Validate form fields
+	const validateForm = () => {
+		const newErrors = {};
+		
+		// Validate name
+		if (!formData.name.trim()) {
+			newErrors.name = "Name is required";
+		}
+		
+		// Validate email
+		if (!formData.email.trim()) {
+			newErrors.email = "Email is required";
+		} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+			newErrors.email = "Please enter a valid email address";
+		}
+		
+		// Validate phone (optional but must be valid if provided)
+		if (formData.phone.trim() && !/^\d{10}$/.test(formData.phone.replace(/[^0-9]/g, ''))) {
+			newErrors.phone = "Please enter a valid 10-digit phone number";
+		}
+		
+		// Validate subject
+		if (!formData.subject) {
+			newErrors.subject = "Please select a subject";
+		}
+		
+		// Validate message
+		if (!formData.message.trim()) {
+			newErrors.message = "Message is required";
+		} else if (formData.message.trim().length < 10) {
+			newErrors.message = "Message must be at least 10 characters";
+		}
+		
+		setErrors(newErrors);
+		return Object.keys(newErrors).length === 0;
+	};
+
+	const handleSubmit = async (e) => {
 		e.preventDefault();
-		// Here you would typically send the form data to your backend
-		console.log("Form submitted:", formData);
-
-		// For demo purposes, just show success message
-		setSubmitted(true);
-
-		// Reset form after submission
-		setFormData({
-			name: "",
-			email: "",
-			phone: "",
-			subject: "",
-			message: "",
-		});
+		
+		// Validate form
+		if (!validateForm()) {
+			return;
+		}
+		
+		setIsSubmitting(true);
+		
+		try {
+			// Send data to backend API
+			const response = await axios.post('https://195-35-45-82.sslip.io:8000/api/contact', formData);
+			
+			// Show success message
+			setSubmitStatus({
+				success: true,
+				message: "Thank you! Your message has been sent successfully. We'll get back to you soon.",
+				open: true
+			});
+			
+			// Reset form after submission
+			setFormData({
+				name: "",
+				email: "",
+				phone: "",
+				subject: "General Inquiry",
+				message: "",
+			});
+		} catch (error) {
+			// Show error message
+			setSubmitStatus({
+				success: false,
+				message: error.response?.data?.message || "Something went wrong. Please try again later.",
+				open: true
+			});
+		} finally {
+			setIsSubmitting(false);
+		}
 	};
 
 	const handleCloseSnackbar = () => {
-		setSubmitted(false);
+		setSubmitStatus(prev => ({
+			...prev,
+			open: false
+		}));
 	};
 
 	// Animation variants for Framer Motion
@@ -293,8 +396,8 @@ const ContactUs = () => {
 				<Box
 					sx={{
 						backgroundColor: "background.light",
-						pt: { xs: 12, md: 16 },
-						pb: 6,
+						pt: { xs: 16, sm: 10, md: 16 },
+						pb: { xs: 4, sm: 5, md: 6 },
 						position: "relative",
 						overflow: "hidden",
 						"&::before": {
@@ -317,13 +420,17 @@ const ContactUs = () => {
 								item
 								xs={12}
 								md={6}
-								sx={{ position: "relative", zIndex: 2 }}>
+								sx={{ 
+									position: "relative", 
+									zIndex: 2,
+									textAlign: { xs: 'center', md: 'left' }
+								}}>
 								<Typography
 									variant='h2'
 									component='h1'
 									sx={{
 										fontWeight: 700,
-										fontSize: { xs: "2.5rem", sm: "3rem", md: "3.5rem" },
+										fontSize: { xs: "2rem", sm: "2.5rem", md: "3.5rem" },
 										color: "primary.main",
 										mb: 2,
 										position: "relative",
@@ -331,7 +438,8 @@ const ContactUs = () => {
 											content: '""',
 											position: "absolute",
 											bottom: -10,
-											left: 0,
+											left: { xs: '50%', md: 0 },
+											transform: { xs: 'translateX(-50%)', md: 'none' },
 											width: "80px",
 											height: "4px",
 											background: "linear-gradient(to right, #1b321d, #8cc63f)",
@@ -345,6 +453,7 @@ const ContactUs = () => {
 										fontWeight: 500,
 										mb: 3,
 										color: "text.secondary",
+										fontSize: { xs: '1.25rem', md: '1.5rem' }
 									}}>
 									We're here to help and answer any questions
 								</Typography>
@@ -352,10 +461,10 @@ const ContactUs = () => {
 									variant='body1'
 									paragraph
 									sx={{
-										fontSize: "1.1rem",
+										fontSize: { xs: '0.95rem', sm: '1.05rem', md: '1.1rem' },
 										lineHeight: 1.7,
 										mb: 4,
-										maxWidth: "600px",
+										maxWidth: { xs: '100%', md: "600px" },
 										color: "text.primary",
 									}}>
 									Whether you need help with our services, have inquiries about
@@ -392,17 +501,17 @@ const ContactUs = () => {
 				{/* Contact Info Cards with Animations */}
 				<Container
 					maxWidth='xl'
-					sx={{ py: 8, position: "relative", zIndex: 1 }}>
+					sx={{ py: { xs: 5, md: 8 }, position: "relative", zIndex: 1 }}>
 					<Box
 						component={motion.div}
 						initial='hidden'
 						animate='visible'
 						variants={staggerChildren}>
-						<Grid container spacing={4} justifyContent='center'>
-							<Grid item xs={12} md={4}>
+						<Grid container spacing={{ xs: 3, md: 4 }} justifyContent='center'>
+							<Grid item xs={12} sm={6} md={4}>
 								<Box component={motion.div} variants={fadeInUp}>
-									<AnimatedContactCard style={{ minHeight: "322px" }}>
-										<CardContent sx={{ textAlign: "center", p: 4 }}>
+									<AnimatedContactCard style={{ minHeight: { xs: "auto", md: "322px" }}}>
+										<CardContent sx={{ textAlign: "center", p: { xs: 3, md: 4 } }}>
 											<IconCircle
 												component={motion.div}
 												whileHover={{ rotate: 15 }}
@@ -411,7 +520,12 @@ const ContactUs = () => {
 											</IconCircle>
 											<Typography
 												variant='h5'
-												sx={{ fontWeight: 600, mb: 2, color: "primary.main" }}>
+												sx={{ 
+													fontWeight: 600, 
+													mb: 2, 
+													color: "primary.main",
+													fontSize: { xs: '1.25rem', md: '1.5rem' }
+												}}>
 												Call Us
 											</Typography>
 											<Typography
@@ -441,10 +555,10 @@ const ContactUs = () => {
 								</Box>
 							</Grid>
 
-							<Grid item xs={12} md={4}>
+							<Grid item xs={12} sm={6} md={4}>
 								<Box component={motion.div} variants={fadeInUp}>
-									<AnimatedContactCard style={{ minHeight: "322px" }}>
-										<CardContent sx={{ textAlign: "center", p: 4 }}>
+									<AnimatedContactCard style={{ minHeight: { xs: "auto", md: "322px" }}}>
+										<CardContent sx={{ textAlign: "center", p: { xs: 3, md: 4 } }}>
 											<IconCircle
 												component={motion.div}
 												whileHover={{ scale: 1.1 }}
@@ -453,7 +567,12 @@ const ContactUs = () => {
 											</IconCircle>
 											<Typography
 												variant='h5'
-												sx={{ fontWeight: 600, mb: 2, color: "primary.main" }}>
+												sx={{ 
+													fontWeight: 600, 
+													mb: 2, 
+													color: "primary.main",
+													fontSize: { xs: '1.25rem', md: '1.5rem' }
+												}}>
 												Email Us
 											</Typography>
 											<Typography
@@ -476,15 +595,16 @@ const ContactUs = () => {
 				</Container>
 
 				{/* Contact Form Section */}
-				<Box sx={{ backgroundColor: "background.light", py: 8 }}>
+				<Box sx={{ backgroundColor: "background.light", py: { xs: 5, md: 8 } }}>
 					<Container maxWidth='xl'>
-						<Grid container spacing={6} alignItems='center'>
+						<Grid container spacing={{ xs: 4, md: 6 }} alignItems='center'>
 							<Grid item xs={12} md={5}>
 								<Box
 									component={motion.div}
 									initial={{ opacity: 0, x: -50 }}
 									animate={{ opacity: 1, x: 0 }}
-									transition={{ duration: 0.6, delay: 0.2 }}>
+									transition={{ duration: 0.6, delay: 0.2 }}
+									sx={{ textAlign: { xs: 'center', md: 'left' } }}>
 									<Typography
 										variant='h3'
 										sx={{
@@ -494,11 +614,13 @@ const ContactUs = () => {
 											position: "relative",
 											display: "inline-block",
 											paddingBottom: "15px",
+											fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
 											"&::after": {
 												content: '""',
 												position: "absolute",
 												bottom: 0,
-												left: 0,
+												left: { xs: '50%', md: 0 },
+												transform: { xs: 'translateX(-50%)', md: 'none' },
 												width: "80px",
 												height: "3px",
 												background:
@@ -519,231 +641,265 @@ const ContactUs = () => {
 									<Box sx={{ mb: 4 }}>
 										<Typography
 											variant='h6'
-											sx={{ fontWeight: 600, mb: 2, color: "primary.main" }}>
-											Why Contact Us?
-										</Typography>
+											sx={{ 
+												fontWeight: 600, 
+												mb: 2, 
+												color: "primary.main",
+												fontSize: { xs: '1.1rem', md: '1.25rem' }
+											}}>
+												Why Contact Us?
+											</Typography>
 
-										{[
-											"Get expert financial advice",
-											"Fast and reliable customer support",
-											"Schedule a consultation",
-											"Learn more about our services",
-										].map((item, index) => (
-											<Box
-												key={index}
-												sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+											{[
+												"Get expert financial advice",
+												"Fast and reliable customer support",
+												"Schedule a consultation",
+												"Learn more about our services",
+											].map((item, index) => (
 												<Box
-													component={motion.div}
-													whileHover={{ scale: 1.2, rotate: 180 }}
-													transition={{ duration: 0.3 }}
-													sx={{
-														width: "24px",
-														height: "24px",
-														borderRadius: "50%",
-														backgroundColor: "accent.main",
-														display: "flex",
-														alignItems: "center",
-														justifyContent: "center",
-														mr: 2,
+													key={index}
+													sx={{ 
+														display: "flex", 
+														alignItems: "center", 
+														mb: 2,
+														justifyContent: { xs: 'center', md: 'flex-start' }
 													}}>
-													<Typography
-														variant='body2'
-														sx={{ color: "#fff", fontWeight: "bold" }}>
-														✓
-													</Typography>
-												</Box>
-												<Typography variant='body1'>{item}</Typography>
-											</Box>
-										))}
-									</Box>
-								</Box>
-							</Grid>
-
-							<Grid item xs={12} md={7}>
-								<Box
-									component={motion.div}
-									initial={{ opacity: 0, y: 50 }}
-									animate={{ opacity: 1, y: 0 }}
-									transition={{ duration: 0.5 }}>
-									<FormPaper elevation={0}>
-										<form onSubmit={handleSubmit}>
-											<Grid container spacing={3}>
-												<Grid item xs={12} md={6}>
-													<StyledTextField
-														label='Full Name'
-														name='name'
-														variant='outlined'
-														fullWidth
-														required
-														value={formData.name}
-														onChange={handleChange}
-													/>
-												</Grid>
-												<Grid item xs={12} md={6}>
-													<StyledTextField
-														label='Email Address'
-														name='email'
-														type='email'
-														variant='outlined'
-														fullWidth
-														required
-														value={formData.email}
-														onChange={handleChange}
-													/>
-												</Grid>
-												<Grid item xs={12} md={6}>
-													<StyledTextField
-														label='Phone Number'
-														name='phone'
-														variant='outlined'
-														fullWidth
-														value={formData.phone}
-														onChange={handleChange}
-													/>
-												</Grid>
-												<Grid item xs={12} md={6}>
-													<FormControl
-														fullWidth
-														variant='outlined'
-														sx={{ mb: 3 }}>
-														<InputLabel id='subject-label'>Subject</InputLabel>
-														<Select
-															labelId='subject-label'
-															name='subject'
-															value={formData.subject}
-															onChange={handleChange}
-															label='Subject'
-															sx={{ borderRadius: "8px" }}>
-															<MenuItem value='General Inquiry'>
-																General Inquiry
-															</MenuItem>
-															<MenuItem value='Investment Consultation'>
-																Investment Consultation
-															</MenuItem>
-															<MenuItem value='Tax Services'>
-																Tax Services
-															</MenuItem>
-															<MenuItem value='Insurance'>Insurance</MenuItem>
-															<MenuItem value='Partnership'>
-																Partnership
-															</MenuItem>
-															<MenuItem value='Other'>Other</MenuItem>
-														</Select>
-													</FormControl>
-												</Grid>
-												<Grid item xs={12}>
-													<StyledTextField
-														label='Your Message'
-														name='message'
-														multiline
-														rows={5}
-														variant='outlined'
-														fullWidth
-														required
-														value={formData.message}
-														onChange={handleChange}
-													/>
-												</Grid>
-												<Grid item xs={12}>
-													<Box
-														component={motion.div}
-														whileHover={{ scale: 1.03 }}
-														whileTap={{ scale: 0.97 }}>
-														<StyledButton
-															type='submit'
-															variant='contained'
-															color='primary'
-															size='large'
-															endIcon={<SendIcon />}
+														<Box
+															component={motion.div}
+															whileHover={{ scale: 1.2, rotate: 180 }}
+															transition={{ duration: 0.3 }}
 															sx={{
-																mt: 2,
-																py: 1.5,
-																px: 4,
-																background:
-																	"linear-gradient(45deg, #1b321d 30%, #2C6040 90%)",
-																boxShadow: "0 3px 15px rgba(27,50,29,0.3)",
+																width: "24px",
+																height: "24px",
+																borderRadius: "50%",
+																backgroundColor: "accent.main",
+																display: "flex",
+																alignItems: "center",
+																justifyContent: "center",
+																mr: 2,
 															}}>
-															Send Message
-														</StyledButton>
-													</Box>
-													<Typography
-														variant='body2'
-														sx={{ mt: 2, color: "text.secondary" }}>
-														We respect your privacy. Your information will not
-														be shared.
-													</Typography>
-												</Grid>
-											</Grid>
-										</form>
-									</FormPaper>
-								</Box>
-							</Grid>
-						</Grid>
-					</Container>
-				</Box>
+																<Typography
+																	variant='body2'
+																	sx={{ color: "#fff", fontWeight: "bold" }}>
+																	✓
+																</Typography>
+															</Box>
+															<Typography variant='body1'>{item}</Typography>
+														</Box>
+													))}
+											</Box>
+										</Box>
+									</Grid>
 
-				{/* Map Section */}
-				<Container maxWidth='xl' sx={{ py: 8 }}>
-					<Typography
-						variant='h3'
-						sx={{
-							fontWeight: 700,
-							mb: 5,
-							textAlign: "center",
-							color: "primary.main",
-							position: "relative",
-							"&::after": {
-								content: '""',
-								position: "absolute",
-								bottom: -15,
-								left: "50%",
-								transform: "translateX(-50%)",
-								width: "80px",
-								height: "3px",
-								background:
-									"linear-gradient(to right, #1b321d 30%, #8cc63f 100%)",
-							},
-						}}>
-						Find Us Here
-					</Typography>
+									<Grid item xs={12} md={7}>
+										<Box
+											component={motion.div}
+											initial={{ opacity: 0, y: 50 }}
+											animate={{ opacity: 1, y: 0 }}
+											transition={{ duration: 0.5 }}>
+											<FormPaper elevation={0}>
+												<form onSubmit={handleSubmit}>
+													<Grid container spacing={{ xs: 2, md: 3 }}>
+														<Grid item xs={12} md={6}>
+															<StyledTextField
+																label='Full Name'
+																name='name'
+																variant='outlined'
+																fullWidth
+																required
+																value={formData.name}
+																onChange={handleChange}
+																error={!!errors.name}
+																helperText={errors.name}
+															/>
+														</Grid>
+														<Grid item xs={12} md={6}>
+															<StyledTextField
+																label='Email Address'
+																name='email'
+																type='email'
+																variant='outlined'
+																fullWidth
+																required
+																value={formData.email}
+																onChange={handleChange}
+																error={!!errors.email}
+																helperText={errors.email}
+															/>
+														</Grid>
+														<Grid item xs={12} md={6}>
+															<StyledTextField
+																label='Phone Number'
+																name='phone'
+																variant='outlined'
+																fullWidth
+																value={formData.phone}
+																onChange={handleChange}
+																error={!!errors.phone}
+																helperText={errors.phone}
+															/>
+														</Grid>
+														<Grid item xs={12} md={6}>
+															<FormControl
+																fullWidth
+																variant='outlined'
+																sx={{ mb: { xs: 2, md: 3 } }}
+																error={!!errors.subject}
+															>
+																<InputLabel id='subject-label'>Subject</InputLabel>
+																<Select
+																	labelId='subject-label'
+																	name='subject'
+																	value={formData.subject}
+																	onChange={handleChange}
+																	label='Subject'
+																	sx={{ borderRadius: "8px" }}>
+																	<MenuItem value='General Inquiry'>
+																		General Inquiry
+																	</MenuItem>
+																	<MenuItem value='Investment Consultation'>
+																		Investment Consultation
+																	</MenuItem>
+																	<MenuItem value='Tax Services'>
+																		Tax Services
+																	</MenuItem>
+																	<MenuItem value='Insurance'>Insurance</MenuItem>
+																	<MenuItem value='Partnership'>
+																		Partnership
+																	</MenuItem>
+																	<MenuItem value='Other'>Other</MenuItem>
+																</Select>
+																{errors.subject && (
+																	<Typography variant="caption" color="error" sx={{ mt: 1, ml: 2 }}>
+																		{errors.subject}
+																	</Typography>
+																)}
+															</FormControl>
+														</Grid>
+														<Grid item xs={12}>
+															<StyledTextField
+																label='Your Message'
+																name='message'
+																multiline
+																rows={5}
+																variant='outlined'
+																fullWidth
+																required
+																value={formData.message}
+																onChange={handleChange}
+																error={!!errors.message}
+																helperText={errors.message}
+															/>
+														</Grid>
+														<Grid item xs={12}>
+															<Box
+																component={motion.div}
+																whileHover={{ scale: 1.03 }}
+																whileTap={{ scale: 0.97 }}
+																sx={{ 
+																	display: 'flex', 
+																	justifyContent: { xs: 'center', md: 'flex-start' } 
+																}}>
+																<StyledButton
+																	type='submit'
+																	variant='contained'
+																	color='primary'
+																	size='large'
+																	disabled={isSubmitting}
+																	endIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
+																	sx={{
+																		mt: 2,
+																		py: 1.5,
+																		px: 4,
+																		background:
+																			"linear-gradient(45deg, #1b321d 30%, #2C6040 90%)",
+																		boxShadow: "0 3px 15px rgba(27,50,29,0.3)",
+																	}}>
+																	{isSubmitting ? 'Sending...' : 'Send Message'}
+																</StyledButton>
+															</Box>
+															<Typography
+																variant='body2'
+																sx={{ 
+																	mt: 2, 
+																	color: "text.secondary",
+																	textAlign: { xs: 'center', md: 'left' } 
+																}}>
+																	We respect your privacy. Your information will not
+																	be shared.
+																</Typography>
+															</Grid>
+														</Grid>
+													</form>
+												</FormPaper>
+											</Box>
+										</Grid>
+									</Grid>
+								</Container>
+							</Box>
 
-					<Box
-						component={motion.div}
-						initial={{ opacity: 0, y: 50 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.5, delay: 0.3 }}>
-						<MapContainer>
-							<iframe
-								src='https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d243646.9050970772!2d78.24323223000582!3d17.412608641550744!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcb99daeaebd2c7%3A0xae93b78392bafbc2!2sHyderabad%2C%20Telangana!5e0!3m2!1sen!2sin!4v1745861290209!5m2!1sen!2sin'
-								width='100%'
-								height='100%'
-								style={{ border: 0 }}
-								allowFullScreen=''
-								loading='lazy'
-								referrerPolicy='no-referrer-when-downgrade'
-								title='FinShelter Office Location'
-							/>
-						</MapContainer>
-					</Box>
-				</Container>
+							{/* Map Section */}
+							<Container maxWidth='xl' sx={{ py: { xs: 5, md: 8 } }}>
+								<Typography
+									variant='h3'
+									sx={{
+										fontWeight: 700,
+										mb: { xs: 3, md: 5 },
+										textAlign: "center",
+										color: "primary.main",
+										fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
+										position: "relative",
+										"&::after": {
+											content: '""',
+											position: "absolute",
+											bottom: -15,
+											left: "50%",
+											transform: "translateX(-50%)",
+											width: "80px",
+											height: "3px",
+											background:
+												"linear-gradient(to right, #1b321d 30%, #8cc63f 100%)",
+										},
+									}}>
+										Find Us Here
+									</Typography>
 
-				{/* Success Snackbar */}
-				<Snackbar
-					open={submitted}
-					autoHideDuration={6000}
-					onClose={handleCloseSnackbar}
-					anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
-					<Alert
-						onClose={handleCloseSnackbar}
-						severity='success'
-						sx={{ width: "100%" }}>
-						Thank you! Your message has been sent successfully. We'll get back
-						to you soon.
-					</Alert>
-				</Snackbar>
-			</Box>
-		</ThemeProvider>
-	);
-};
+									<Box
+										component={motion.div}
+										initial={{ opacity: 0, y: 50 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ duration: 0.5, delay: 0.3 }}>
+										<MapContainer>
+											<iframe
+												src='https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d243646.9050970772!2d78.24323223000582!3d17.412608641550744!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcb99daeaebd2c7%3A0xae93b78392bafbc2!2sHyderabad%2C%20Telangana!5e0!3m2!1sen!2sin!4v1745861290209!5m2!1sen!2sin'
+												width='100%'
+												height='100%'
+												style={{ border: 0 }}
+												allowFullScreen=''
+												loading='lazy'
+												referrerPolicy='no-referrer-when-downgrade'
+												title='FinShelter Office Location'
+											/>
+										</MapContainer>
+									</Box>
+								</Container>
 
-export default ContactUs;
+								{/* Updated Snackbar to use submitStatus state */}
+								<Snackbar
+									open={submitStatus.open}
+									autoHideDuration={6000}
+									onClose={handleCloseSnackbar}
+									anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
+									<Alert
+										onClose={handleCloseSnackbar}
+										severity={submitStatus.success ? "success" : "error"}
+										sx={{ width: "100%" }}>
+										{submitStatus.message}
+									</Alert>
+								</Snackbar>
+							</Box>
+						</ThemeProvider>
+					);
+				};
+
+			export default ContactUs;

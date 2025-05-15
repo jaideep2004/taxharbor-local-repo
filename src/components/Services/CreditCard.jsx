@@ -43,6 +43,7 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import AutoGraphIcon from "@mui/icons-material/AutoGraph";
 import GroupIcon from "@mui/icons-material/Group";
 import SavingsIcon from "@mui/icons-material/Savings";
+import MenuIcon from "@mui/icons-material/Menu";
 import "./services.css";
 
 // Theme configuration with updated colors
@@ -220,11 +221,21 @@ const CreditCardPage = () => {
 					document
 						.getElementById("tabs-spacer")
 						?.classList.add("active-spacer");
+					
+					// On mobile, ensure sidebar is closed when scrolling unless explicitly toggled
+					if (isMobile && !tabsContainer.classList.contains("sidebar-open")) {
+						tabsContainer.classList.remove("sidebar-open");
+					}
 				} else {
 					tabsContainer.classList.remove("fixed-tabs");
 					document
 						.getElementById("tabs-spacer")
 						?.classList.remove("active-spacer");
+					
+					// When scrolling back to top, ensure sidebar is closed on mobile
+					if (isMobile) {
+						tabsContainer.classList.remove("sidebar-open");
+					}
 				}
 			}
 		};
@@ -233,7 +244,7 @@ const CreditCardPage = () => {
 		return () => {
 			window.removeEventListener("scroll", handleScroll);
 		};
-	}, [tabHeight]);
+	}, [tabHeight, isMobile]);
 
 	// Fetch service data from backend
 	useEffect(() => {
@@ -555,6 +566,36 @@ const CreditCardPage = () => {
 	return (
 		<ThemeProvider theme={theme}>
 			<Box className='borrow-loan-page' style={{ marginTop: "100px" }}>
+				{/* Mobile tab toggle button - Always visible and outside the tab container */}
+				{isMobile && (
+					<Box
+						className='mobile-tab-toggle'
+						onClick={() => {
+							const tabsContainer = document.getElementById(
+								"sticky-tabs-container"
+							);
+							tabsContainer?.classList.toggle("sidebar-open");
+						}}
+						sx={{
+							position: "fixed !important",
+							top: "64px !important",
+							left: "0 !important",
+							width: "40px !important",
+							height: "40px !important",
+							backgroundColor: "#1e4a30 !important",
+							color: "white !important",
+							zIndex: "9999 !important",
+							display: "flex !important",
+							alignItems: "center !important",
+							justifyContent: "center !important",
+							borderRadius: "0 4px 4px 0 !important",
+							boxShadow: "2px 2px 5px rgba(0,0,0,0.2) !important",
+							cursor: "pointer !important",
+						}}>
+						<MenuIcon />
+					</Box>
+				)}
+
 				{/* Hero Section - Redesigned with enhanced visuals */}
 				<Box
 					ref={heroRef}
@@ -581,8 +622,13 @@ const CreditCardPage = () => {
 								"linear-gradient(135deg, rgba(30,74,48,0.4) 0%, rgba(198,219,206,0.2) 100%)",
 							zIndex: 1,
 						},
+					}}
+					style={{
+						padding: "133px 0px 64px 0px",
 					}}>
-					<Container maxWidth='lg' sx={{ position: "relative", zIndex: 10, py: 0 }}>
+					<Container
+						maxWidth='lg'
+						sx={{ position: "relative", zIndex: 10, py: 0 }}>
 						<Box
 							sx={{
 								boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
@@ -648,7 +694,7 @@ const CreditCardPage = () => {
 										<Typography
 											variant='h2'
 											sx={{ fontWeight: 700, color: "#ff4081" }}>
-											{service?.interestRate || interestRate}%
+											36% - 48%
 										</Typography>
 										<Typography variant='body2' color='text.secondary'>
 											Rate of Interest
@@ -717,7 +763,7 @@ const CreditCardPage = () => {
 								<style jsx='true'>{`
 									.fixed-tabs {
 										position: fixed;
-										top: 125px;
+										top: 109px;
 										left: 0;
 										right: 0;
 										z-index: 1100;
@@ -737,33 +783,95 @@ const CreditCardPage = () => {
 										bottom: 0 !important;
 										background-color: #1e4a30 !important;
 									}
-									
+
 									/* Target the about tab specifically if needed */
-									.MuiTabs-root .MuiTabs-flexContainer button:nth-child(1).Mui-selected + .MuiTabs-indicator {
-										left: calc(0 * (100% / 6)) !important; /* Adjust based on number of tabs */
+									.MuiTabs-root
+										.MuiTabs-flexContainer
+										button:nth-child(1).Mui-selected
+										+ .MuiTabs-indicator {
+										left: calc(
+											0 * (100% / 6)
+										) !important; /* Adjust based on number of tabs */
 									}
-									
+
 									/* Ensure the indicator's width matches tab width */
 									.MuiTabs-flexContainer {
 										width: 100%;
 									}
-									
+
 									.MuiTabs-root .MuiTab-root {
 										flex: 1;
 										min-width: 0;
 									}
-									
+
 									/* Remove any fixed positioning of the indicator */
 									.MuiTabs-indicator {
 										position: absolute !important;
+									}
+									
+									/* Mobile-specific styles for the sidebar menu */
+									@media (max-width: 600px) {
+										.fixed-tabs {
+											top: 60px;
+											left: 0;
+											width: 180px !important; 
+											height: calc(100vh - 60px);
+											max-height: 100vh;
+											overflow-y: auto;
+											z-index: 999;
+											box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
+											background-color: #f2f6f4;
+											padding: 0;
+											transform: translateX(-100%);
+											transition: transform 0.3s ease;
+											border-radius: 0 !important;
+										}
+										
+										.fixed-tabs.sidebar-open {
+											transform: translateX(0);
+										}
+										
+										.tabs-container .MuiTabs-flexContainer {
+											flex-direction: column;
+										}
+										
+										.tabs-container .MuiTab-root {
+											border-bottom: 1px solid rgba(30, 74, 48, 0.1);
+											text-align: left;
+											justify-content: flex-start;
+											min-height: 56px;
+											padding: 12px 15px;
+										}
+										
+										.tabs-container .MuiTabs-indicator {
+											display: none !important;
+										}
+										
+										.mobile-tab-toggle {
+											position: fixed !important;
+											top: 64px !important;
+											left: 0 !important;
+											width: 40px !important;
+											height: 40px !important;
+											background-color: #1e4a30 !important;
+											color: white !important;
+											z-index: 9999 !important;
+											display: flex !important;
+											align-items: center !important;
+											justify-content: center !important;
+											border-radius: 0 4px 4px 0 !important;
+											cursor: pointer !important;
+											box-shadow: 2px 2px 5px rgba(0,0,0,0.2) !important;
+										}
 									}
 								`}</style>
 								<StyledTabs
 									value={activeTab}
 									onChange={handleTabChange}
-									variant='fullWidth'
+									variant={isMobile ? "standard" : "fullWidth"}
 									scrollButtons={false}
-									centered
+									centered={!isMobile}
+									orientation={isMobile ? "vertical" : "horizontal"}
 									sx={{
 										"& .MuiTabs-indicator": {
 											backgroundColor: "#1e4a30",
@@ -771,46 +879,62 @@ const CreditCardPage = () => {
 											transition: "all 0.3s ease",
 											position: "absolute",
 											bottom: 0,
+											display: { xs: "none", md: "block" },
 										},
 										"& .MuiTabs-flexContainer": {
 											width: "100%",
 											justifyContent: "space-between",
+											flexDirection: { xs: "column", md: "row" },
 										},
 										"& .MuiTab-root": {
 											transition: "all 0.3s ease",
 											position: "relative",
-											fontSize: "13px",
+											fontSize: { xs: "15px", md: "17px" },
 											minWidth: "auto",
-											padding: "15px 5px",
+											padding: { xs: "12px 15px", md: "15px 5px" },
 											textTransform: "uppercase",
-											fontWeight: 500,
+											fontWeight: 600,
 											color: "#555555",
+											backgroundColor: "#c6e9bc",
 											flex: 1,
+											textAlign: { xs: "left", md: "center" },
+											justifyContent: { xs: "flex-start", md: "center" },
 											"&::after": {
 												content: '""',
 												position: "absolute",
 												bottom: 0,
-												left: "50%",
-												width: "0%",
-												height: "3px",
+												left: { xs: 0, md: "50%" },
+												width: { xs: "4px", md: "0%" },
+												height: { xs: "100%", md: "3px" },
 												backgroundColor: "transparent",
-												transform: "translateX(-50%)",
-												transition: "width 0.3s ease",
+												transform: { xs: "none", md: "translateX(-50%)" },
+												transition: "width 0.3s ease, height 0.3s ease",
 											},
 											"&:hover": {
 												color: "#1e4a30",
 												backgroundColor: "rgba(30,74,48,0.05)",
 												"&::after": {
-													width: "30%",
+													width: { xs: "4px", md: "30%" },
+													height: { xs: "70%", md: "3px" },
 													backgroundColor: "rgba(30, 74, 48, 0.3)",
 												},
 											},
 											"&.Mui-selected": {
 												color: "#1e4a30",
 												fontWeight: "600",
+												backgroundColor: {
+													xs: "rgba(30,74,48,0.1)",
+													md: "#c6e9bc",
+												},
+												"&::after": {
+													width: { xs: "4px", md: "30%" },
+													height: { xs: "70%", md: "3px" },
+													backgroundColor: "#1e4a30",
+												},
 											},
 										},
 										width: "100%",
+										height: { xs: "100%", md: "auto" },
 									}}
 									aria-label='credit card tabs'>
 									<StyledTab label='ABOUT CARD' />
@@ -907,7 +1031,7 @@ const CreditCardPage = () => {
 										sx={{
 											fontSize: "1.1rem",
 											lineHeight: 1.7,
-											color: "#555",
+											color: "black",
 											mb: 3,
 										}}>
 										A credit card is a financial tool that allows you to make
@@ -924,11 +1048,11 @@ const CreditCardPage = () => {
 										sx={{
 											fontSize: "1.1rem",
 											lineHeight: 1.7,
-											color: "#555",
+											color: "black",
 											mb: 3,
 										}}>
-										With a FinShelter credit card, you don't just spend—you enjoy
-										the benefits of building credit, earning rewards, and
+										With a FinShelter credit card, you don't just spend—you
+										enjoy the benefits of building credit, earning rewards, and
 										experiencing world-class privileges.
 									</Typography>
 								</>
@@ -961,8 +1085,8 @@ const CreditCardPage = () => {
 
 				{/* Card Types Section */}
 				<Box
-					sx={{ 
-						py: 7, 
+					sx={{
+						py: 7,
 						bgcolor: theme.palette.background.alternate, // Use theme color
 						position: "relative",
 						"&::before": {
@@ -1011,9 +1135,9 @@ const CreditCardPage = () => {
 							sx={{ mb: 6, maxWidth: "800px", mx: "auto", color: "#666" }}>
 							{service?.productsTagline || ""}
 						</Typography>
-						<Grid container spacing={4} style={{ justifyContent: "center" }}>
+						<Grid container spacing={{ xs: 5, md: 4 }} style={{ justifyContent: "center" }}>
 							{loanProducts.map((product, index) => (
-								<Grid item xs={12} sm={6} md={3} key={index}>
+								<Grid item xs={12} sm={6} md={3} key={index} sx={{ mb: { xs: 5, md: 0 } }}>
 									<Card
 										sx={{
 											height: "100%",
@@ -1030,7 +1154,7 @@ const CreditCardPage = () => {
 												boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
 											},
 										}}>
-										<CardContent sx={{ p: 3, flexGrow: 1 }}>
+										<CardContent sx={{ p: { xs: 2.5, md: 3 }, flexGrow: 1 }}>
 											<Box
 												sx={{ mb: 2.5, color: "#ff4081", textAlign: "center" }}>
 												{product.icon || <MoneyIcon fontSize='large' />}
@@ -1052,7 +1176,8 @@ const CreditCardPage = () => {
 												variant='body2'
 												color='text.secondary'
 												sx={{
-													fontSize: "0.95rem",
+													fontSize: "17px",
+													color: "black",
 													lineHeight: 1.6,
 													textAlign: "center",
 												}}>
@@ -1120,7 +1245,7 @@ const CreditCardPage = () => {
 						</Typography>
 						<Grid
 							container
-							spacing={4}
+							spacing={{ xs: 5, md: 4 }}
 							alignItems='stretch'
 							justifyContent='center'>
 							{loanFeatures.map((feature, index) => (
@@ -1130,11 +1255,14 @@ const CreditCardPage = () => {
 									sm={6}
 									md={3}
 									key={index}
-									sx={{ display: "flex", marginBottom: "50px" }}>
+									sx={{ 
+										display: "flex", 
+										marginBottom: { xs: "30px", md: "50px" }
+									}}>
 									<Box
 										sx={{
 											textAlign: "center",
-											padding: 3,
+											padding: { xs: 2, md: 3 },
 											transition: "all 0.3s ease",
 											borderRadius: "8px",
 											border: "1px solid #eaeaea",
@@ -1251,7 +1379,7 @@ const CreditCardPage = () => {
 							sx={{ mb: 5, maxWidth: "800px", mx: "auto", color: "#666" }}>
 							{service?.eligibilityText || ""}
 						</Typography>
-						<Grid container spacing={4} justifyContent='center'>
+						<Grid container spacing={{ xs: 4, md: 4 }} justifyContent='center'>
 							{(
 								service?.eligibilityCriteria || [
 									{
@@ -1276,7 +1404,7 @@ const CreditCardPage = () => {
 									},
 								]
 							).map((criteria, index) => (
-								<Grid item xs={12} sm={6} md={6} key={index}>
+								<Grid item xs={12} sm={6} md={6} key={index} sx={{ mb: { xs: 6, md: 0 } }}>
 									<Card
 										sx={{
 											boxShadow: "0 3px 10px rgba(0,0,0,0.06)",
@@ -1391,7 +1519,8 @@ const CreditCardPage = () => {
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											sx={{
-												backgroundColor: expanded === index ? "#f9f9f9" : "#fff",
+												backgroundColor:
+													expanded === index ? "#f9f9f9" : "#fff",
 												borderBottom:
 													expanded === index ? "1px solid #e0e0e0" : "none",
 												"&:hover": {
@@ -1429,7 +1558,9 @@ const CreditCardPage = () => {
 											key={actualIndex}
 											expanded={expanded === actualIndex}
 											onChange={() =>
-												setExpanded(expanded === actualIndex ? false : actualIndex)
+												setExpanded(
+													expanded === actualIndex ? false : actualIndex
+												)
 											}
 											sx={{
 												mb: 2,
@@ -1441,39 +1572,44 @@ const CreditCardPage = () => {
 												borderRadius: "4px",
 												overflow: "hidden",
 											}}>
-											<AccordionSummary
-												expandIcon={<ExpandMoreIcon />}
-												sx={{
-													backgroundColor: expanded === actualIndex ? "#f9f9f9" : "#fff",
-													borderBottom:
-														expanded === actualIndex ? "1px solid #e0e0e0" : "none",
-													"&:hover": {
-														backgroundColor: "#f5f5f5",
-													},
-												}}>
-													<Typography
-														variant='h6'
-														sx={{
-															fontSize: "1.1rem",
-															fontWeight: 600,
-															color: expanded === actualIndex ? "#1e4a30" : "#333",
-														}}>
-														{faq.question}
-													</Typography>
-												</AccordionSummary>
-												<AccordionDetails sx={{ p: 3, backgroundColor: "#fafafa" }}>
-													<Typography
-														variant='body1'
-														sx={{
-															color: "#555",
-															lineHeight: 1.7,
-														}}>
-														{faq.answer}
-													</Typography>
-												</AccordionDetails>
-											</Accordion>
-										);
-									})}
+												<AccordionSummary
+													expandIcon={<ExpandMoreIcon />}
+													sx={{
+														backgroundColor:
+															expanded === actualIndex ? "#f9f9f9" : "#fff",
+														borderBottom:
+															expanded === actualIndex
+																? "1px solid #e0e0e0"
+																: "none",
+														"&:hover": {
+															backgroundColor: "#f5f5f5",
+														},
+													}}>
+														<Typography
+															variant='h6'
+															sx={{
+																fontSize: "1.1rem",
+																fontWeight: 600,
+																color:
+																	expanded === actualIndex ? "#1e4a30" : "#333",
+															}}>
+															{faq.question}
+														</Typography>
+													</AccordionSummary>
+													<AccordionDetails
+														sx={{ p: 3, backgroundColor: "#fafafa" }}>
+														<Typography
+															variant='body1'
+															sx={{
+																color: "#555",
+																lineHeight: 1.7,
+															}}>
+															{faq.answer}
+														</Typography>
+													</AccordionDetails>
+												</Accordion>
+											);
+										})}
 							</Grid>
 						</Grid>
 					</Container>
@@ -1792,8 +1928,8 @@ const CreditCardPage = () => {
 											<Slider
 												value={interestRate}
 												onChange={(e, newValue) => setInterestRate(newValue)}
-												min={5}
-												max={20}
+												min={36}
+												max={48}
 												step={0.1}
 												valueLabelDisplay='auto'
 												sx={{

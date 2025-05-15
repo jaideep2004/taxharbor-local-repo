@@ -47,6 +47,7 @@ import GroupIcon from "@mui/icons-material/Group";
 import SavingsIcon from "@mui/icons-material/Savings";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import MenuIcon from "@mui/icons-material/Menu";
 import "./services.css";
 
 // Theme configuration with updated colors
@@ -224,20 +225,34 @@ const BusinessLoanPage = () => {
 					document
 						.getElementById("tabs-spacer")
 						?.classList.add("active-spacer");
+
+					// Don't automatically close the sidebar if it was manually opened
+					// Only keep it closed if it was already closed
+					if (isMobile && !tabsContainer.classList.contains("sidebar-open")) {
+						tabsContainer.classList.remove("sidebar-open");
+					}
 				} else {
 					tabsContainer.classList.remove("fixed-tabs");
 					document
 						.getElementById("tabs-spacer")
 						?.classList.remove("active-spacer");
+
+					// Don't automatically open sidebar when scrolling back to top
+					if (isMobile) {
+						tabsContainer.classList.remove("sidebar-open");
+					}
 				}
 			}
 		};
 
 		window.addEventListener("scroll", handleScroll);
+		// Run once on mount to set initial state
+		handleScroll();
+
 		return () => {
 			window.removeEventListener("scroll", handleScroll);
 		};
-	}, [tabHeight]);
+	}, [tabHeight, isMobile]);
 
 	// Fetch service data from backend
 	useEffect(() => {
@@ -408,7 +423,7 @@ const BusinessLoanPage = () => {
 		{
 			title: "Flexible Loan Amounts",
 			description:
-				": Borrow amounts tailored to the size and scope of your business needs.",
+				"Borrow amounts tailored to the size and scope of your business needs.",
 			icon: <MoneyIcon fontSize='large' />,
 		},
 		{
@@ -551,6 +566,36 @@ const BusinessLoanPage = () => {
 	return (
 		<ThemeProvider theme={theme}>
 			<Box className='borrow-loan-page' style={{ marginTop: "100px" }}>
+				{/* Mobile tab toggle button - Always visible and outside the tab container */}
+				{isMobile && (
+					<Box
+						className='mobile-tab-toggle'
+						onClick={() => {
+							const tabsContainer = document.getElementById(
+								"sticky-tabs-container"
+							);
+							tabsContainer?.classList.toggle("sidebar-open");
+						}}
+						sx={{
+							position: "fixed !important",
+							top: "64px !important",
+							left: "0 !important",
+							width: "40px !important",
+							height: "40px !important",
+							backgroundColor: "#1e4a30 !important",
+							color: "white !important",
+							zIndex: "9999 !important",
+							display: "flex !important",
+							alignItems: "center !important",
+							justifyContent: "center !important",
+							borderRadius: "0 4px 4px 0 !important",
+							boxShadow: "2px 2px 5px rgba(0,0,0,0.2) !important",
+							cursor: "pointer !important",
+						}}>
+						<MenuIcon />
+					</Box>
+				)}
+
 				{/* Hero Section - Redesigned with enhanced visuals */}
 				<Box
 					ref={heroRef}
@@ -564,7 +609,7 @@ const BusinessLoanPage = () => {
 						backgroundPosition: "center",
 						backgroundRepeat: "no-repeat",
 						borderBottom: "5px solid #1e4a30",
-						pt: 4,
+						pt: { xs: 8, md: 4 },
 						pb: 3,
 						"&::before": {
 							content: '""',
@@ -577,6 +622,9 @@ const BusinessLoanPage = () => {
 								"linear-gradient(135deg, rgba(30,74,48,0.4) 0%, rgba(198,219,206,0.2) 100%)",
 							zIndex: 1,
 						},
+					}}
+					style={{
+						padding: "133px 0px 64px 0px",
 					}}>
 					<Container
 						maxWidth='lg'
@@ -584,25 +632,27 @@ const BusinessLoanPage = () => {
 						<Box
 							sx={{
 								boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-								borderRadius: "0 8px 8px 8px",
+								borderRadius: { xs: "8px", md: "0 8px 8px 8px" },
 								overflow: "hidden",
+								mx: { xs: 1, md: 0 },
 							}}>
 							<HeroPaper
 								sx={{
-									borderLeft: "4px solid #1e4a30",
-									borderRadius: "0 8px 0 0", // Only top-right radius
-									boxShadow: "none", // Remove shadow from this component
-									my: 0, // No vertical margin
+									borderLeft: { xs: "none", md: "4px solid #1e4a30" },
+									borderRadius: { xs: "8px 8px 0 0", md: "0 8px 0 0" },
+									boxShadow: "none",
+									my: 0,
 									mb: 0,
 									p: { xs: 2, md: 4 },
 									backgroundColor: "rgba(255,255,255,0.95)",
+									flexDirection: { xs: "column", md: "row" },
 								}}>
 								<Box sx={{ flex: 1, textAlign: { xs: "center", md: "left" } }}>
 									<Typography
 										variant='h1'
 										color='primary'
 										sx={{
-											fontSize: { xs: "2.2rem", md: "2.8rem" },
+											fontSize: { xs: "1.8rem", sm: "2.2rem", md: "2.8rem" },
 											fontWeight: 700,
 											position: "relative",
 											paddingBottom: "10px",
@@ -633,6 +683,7 @@ const BusinessLoanPage = () => {
 										alignItems: "center",
 										gap: 2,
 										mt: { xs: 2, md: 0 },
+										width: { xs: "100%", md: "auto" },
 									}}>
 									<Box
 										sx={{
@@ -642,11 +693,16 @@ const BusinessLoanPage = () => {
 											px: 3,
 											py: 1,
 											textAlign: "center",
+											width: { xs: "100%", md: "auto" },
 										}}>
 										<Typography
 											variant='h2'
-											sx={{ fontWeight: 700, color: "#ff4081" }}>
-											{service?.interestRate || interestRate}%
+											sx={{
+												fontWeight: 700,
+												color: "#ff4081",
+												fontSize: { xs: "1.8rem", md: "2.2rem" },
+											}}>
+											10% - 30%
 										</Typography>
 										<Typography variant='body2' color='text.secondary'>
 											Rate of Interest
@@ -658,6 +714,7 @@ const BusinessLoanPage = () => {
 											display: "flex",
 											flexDirection: { xs: "column", sm: "row" },
 											gap: 2,
+											width: { xs: "100%", md: "auto" },
 										}}>
 										<Button
 											variant='contained'
@@ -711,11 +768,13 @@ const BusinessLoanPage = () => {
 									ml: "4px",
 									justifyContent: "space-between",
 									position: "relative",
+									width: "100%",
+									overflowX: { xs: "auto", md: "visible" },
 								}}>
 								<style jsx='true'>{`
 									.fixed-tabs {
 										position: fixed;
-										top: 125px;
+										top: 109px;
 										left: 0;
 										right: 0;
 										z-index: 1100;
@@ -760,13 +819,71 @@ const BusinessLoanPage = () => {
 									.MuiTabs-indicator {
 										position: absolute !important;
 									}
+
+									/* Mobile sidebar navigation */
+									@media (max-width: 768px) {
+										.fixed-tabs {
+											position: fixed;
+											top: 60px;
+											left: 0;
+											width: 180px !important;
+											height: calc(100vh - 60px);
+											max-height: 100vh;
+											overflow-y: auto;
+											z-index: 999;
+											box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
+											background-color: #f2f6f4;
+											padding: 0;
+											transform: translateX(-100%);
+											transition: transform 0.3s ease;
+											border-radius: 0 !important;
+										}
+
+										.fixed-tabs.sidebar-open {
+											transform: translateX(0);
+										}
+
+										.tabs-container .MuiTabs-flexContainer {
+											flex-direction: column;
+										}
+
+										.tabs-container .MuiTab-root {
+											border-bottom: 1px solid rgba(30, 74, 48, 0.1);
+											text-align: left;
+											justify-content: flex-start;
+											min-height: 56px;
+											padding: 12px 15px;
+										}
+
+										.tabs-container .MuiTabs-indicator {
+											display: none !important;
+										}
+
+										.mobile-tab-toggle {
+											position: fixed !important;
+											top: 64px !important;
+											left: 0 !important;
+											width: 40px !important;
+											height: 40px !important;
+											background-color: #1e4a30 !important;
+											color: white !important;
+											z-index: 9999 !important;
+											display: flex !important;
+											align-items: center !important;
+											justify-content: center !important;
+											border-radius: 0 4px 4px 0 !important;
+											cursor: pointer !important;
+											box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2) !important;
+										}
+									}
 								`}</style>
 								<StyledTabs
 									value={activeTab}
 									onChange={handleTabChange}
-									variant='fullWidth'
+									variant={isMobile ? "standard" : "fullWidth"}
 									scrollButtons={false}
-									centered
+									centered={!isMobile}
+									orientation={isMobile ? "vertical" : "horizontal"}
 									sx={{
 										"& .MuiTabs-indicator": {
 											backgroundColor: "#1e4a30",
@@ -774,46 +891,62 @@ const BusinessLoanPage = () => {
 											transition: "all 0.3s ease",
 											position: "absolute",
 											bottom: 0,
+											display: { xs: "none", md: "block" },
 										},
 										"& .MuiTabs-flexContainer": {
 											width: "100%",
 											justifyContent: "space-between",
+											flexDirection: { xs: "column", md: "row" },
 										},
 										"& .MuiTab-root": {
 											transition: "all 0.3s ease",
 											position: "relative",
-											fontSize: "13px",
+											fontSize: { xs: "15px", md: "17px" },
 											minWidth: "auto",
-											padding: "15px 5px",
+											padding: { xs: "12px 15px", md: "15px 5px" },
 											textTransform: "uppercase",
-											fontWeight: 500,
+											fontWeight: 600,
 											color: "#555555",
+											backgroundColor: "#c6e9bc",
 											flex: 1,
+											textAlign: { xs: "left", md: "center" },
+											justifyContent: { xs: "flex-start", md: "center" },
 											"&::after": {
 												content: '""',
 												position: "absolute",
 												bottom: 0,
-												left: "50%",
-												width: "0%",
-												height: "3px",
+												left: { xs: 0, md: "50%" },
+												width: { xs: "4px", md: "0%" },
+												height: { xs: "100%", md: "3px" },
 												backgroundColor: "transparent",
-												transform: "translateX(-50%)",
-												transition: "width 0.3s ease",
+												transform: { xs: "none", md: "translateX(-50%)" },
+												transition: "width 0.3s ease, height 0.3s ease",
 											},
 											"&:hover": {
 												color: "#1e4a30",
 												backgroundColor: "rgba(30,74,48,0.05)",
 												"&::after": {
-													width: "30%",
+													width: { xs: "4px", md: "30%" },
+													height: { xs: "70%", md: "3px" },
 													backgroundColor: "rgba(30, 74, 48, 0.3)",
 												},
 											},
 											"&.Mui-selected": {
 												color: "#1e4a30",
 												fontWeight: "600",
+												backgroundColor: {
+													xs: "rgba(30,74,48,0.1)",
+													md: "#c6e9bc",
+												},
+												"&::after": {
+													width: { xs: "4px", md: "30%" },
+													height: { xs: "70%", md: "3px" },
+													backgroundColor: "#1e4a30",
+												},
 											},
 										},
 										width: "100%",
+										height: { xs: "100%", md: "auto" },
 									}}
 									aria-label='business loan tabs'>
 									<StyledTab label='ABOUT LOAN' />
@@ -913,7 +1046,7 @@ const BusinessLoanPage = () => {
 										sx={{
 											fontSize: "1.1rem",
 											lineHeight: 1.7,
-											color: "#555",
+											color: "black",
 											mb: 3,
 										}}>
 										<b>Business Loan Services: Fuel Your Business Growth</b>
@@ -999,6 +1132,7 @@ const BusinessLoanPage = () => {
 								position: "relative",
 								paddingBottom: "15px",
 								marginBottom: "15px",
+								fontSize: { xs: "1.8rem", md: "2.2rem" },
 								"&::after": {
 									content: '""',
 									position: "absolute",
@@ -1018,12 +1152,14 @@ const BusinessLoanPage = () => {
 							sx={{ mb: 6, maxWidth: "800px", mx: "auto", color: "#666" }}>
 							{service?.productsTagline || ""}
 						</Typography>
-						<Grid container spacing={4} style={{ justifyContent: "center" }}>
-							{loanProducts.map((product, index) => (
-								<Grid item xs={12} sm={6} md={3} key={index}>
+
+						{/* Mobile view uses a different approach with no grid spacing to prevent overlap */}
+						{isMobile ? (
+							<Box sx={{ px: 1 }}>
+								{loanProducts.map((product, index) => (
 									<Card
+										key={index}
 										sx={{
-											height: "100%",
 											display: "flex",
 											flexDirection: "column",
 											boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
@@ -1035,6 +1171,8 @@ const BusinessLoanPage = () => {
 												transform: "translateY(-5px)",
 												boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
 											},
+											mb: 5, // Large fixed bottom margin to ensure no overlap
+											mx: 1, // Side margin
 										}}>
 										<CardContent sx={{ p: 3, flexGrow: 1 }}>
 											<Box
@@ -1049,7 +1187,7 @@ const BusinessLoanPage = () => {
 													fontWeight: 600,
 													textAlign: "center",
 													color: "#1e4a30",
-													fontSize: "1.3rem",
+													fontSize: { xs: "1.1rem", md: "1.3rem" },
 													mb: 2,
 												}}>
 												{product.title}
@@ -1058,17 +1196,77 @@ const BusinessLoanPage = () => {
 												variant='body2'
 												color='text.secondary'
 												sx={{
-													fontSize: "0.95rem",
+													fontSize: { xs: "0.95rem", md: "1.06rem" },
+													color: "black",
 													lineHeight: 1.6,
 													textAlign: "center",
+													mb: 2,
 												}}>
 												{product.description}
 											</Typography>
 										</CardContent>
 									</Card>
-								</Grid>
-							))}
-						</Grid>
+								))}
+							</Box>
+						) : (
+							<Grid container spacing={4} style={{ justifyContent: "center" }}>
+								{loanProducts.map((product, index) => (
+									<Grid item xs={12} sm={6} md={3} key={index}>
+										<Card
+											sx={{
+												height: "100%",
+												display: "flex",
+												flexDirection: "column",
+												boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
+												transition: "transform 0.3s ease, box-shadow 0.3s ease",
+												borderRadius: "8px",
+												border: "1px solid #eaeaea",
+												overflow: "hidden",
+												"&:hover": {
+													transform: "translateY(-5px)",
+													boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
+												},
+											}}>
+											<CardContent sx={{ p: 3, flexGrow: 1 }}>
+												<Box
+													sx={{
+														mb: 2.5,
+														color: "#ff4081",
+														textAlign: "center",
+													}}>
+													{product.icon || <MoneyIcon fontSize='large' />}
+												</Box>
+												<Typography
+													variant='h5'
+													component='h3'
+													gutterBottom
+													sx={{
+														fontWeight: 600,
+														textAlign: "center",
+														color: "#1e4a30",
+														fontSize: { xs: "1.1rem", md: "1.3rem" },
+														mb: 2,
+													}}>
+													{product.title}
+												</Typography>
+												<Typography
+													variant='body2'
+													color='text.secondary'
+													sx={{
+														fontSize: { xs: "0.95rem", md: "1.06rem" },
+														color: "black",
+														lineHeight: 1.6,
+														textAlign: "center",
+														mb: 2,
+													}}>
+													{product.description}
+												</Typography>
+											</CardContent>
+										</Card>
+									</Grid>
+								))}
+							</Grid>
+						)}
 					</Container>
 				</Box>
 
@@ -1154,6 +1352,7 @@ const BusinessLoanPage = () => {
 								color: "#1e4a30",
 								position: "relative",
 								paddingBottom: "15px",
+								fontSize: { xs: "1.8rem", md: "2.2rem" },
 								"&::after": {
 									content: '""',
 									position: "absolute",
@@ -1170,12 +1369,19 @@ const BusinessLoanPage = () => {
 						<Typography
 							variant='subtitle1'
 							align='center'
-							sx={{ mb: 6, maxWidth: "800px", mx: "auto", color: "#666" }}>
+							sx={{
+								mb: 6,
+								maxWidth: "800px",
+								mx: "auto",
+								color: "#666",
+								px: { xs: 2, md: 0 },
+								fontSize: { xs: "0.95rem", md: "1.1rem" },
+							}}>
 							{service?.featuresTagline || ""}
 						</Typography>
 						<Grid
 							container
-							spacing={4}
+							spacing={{ xs: 2, md: 4 }}
 							alignItems='stretch'
 							justifyContent='center'>
 							{loanFeatures.map((feature, index) => (
@@ -1185,11 +1391,14 @@ const BusinessLoanPage = () => {
 									sm={6}
 									md={3}
 									key={index}
-									sx={{ display: "flex", marginBottom: "50px" }}>
+									sx={{
+										display: "flex",
+										marginBottom: { xs: "30px", md: "50px" },
+									}}>
 									<Box
 										sx={{
 											textAlign: "center",
-											padding: 3,
+											padding: { xs: 2, md: 3 },
 											transition: "all 0.3s ease",
 											borderRadius: "8px",
 											border: "1px solid #eaeaea",
@@ -1199,7 +1408,6 @@ const BusinessLoanPage = () => {
 											display: "flex",
 											flexDirection: "column",
 											alignItems: "center",
-
 											"&:hover": {
 												transform: "translateY(-5px)",
 												backgroundColor: "#f5f9f6",
@@ -1210,7 +1418,6 @@ const BusinessLoanPage = () => {
 										<Box
 											sx={{
 												mb: 3,
-
 												color: "#ff4081",
 												display: "inline-flex",
 												p: 2.5,
@@ -1234,7 +1441,7 @@ const BusinessLoanPage = () => {
 												fontWeight: 600,
 												color: "#1e4a30",
 												mb: 2,
-												fontSize: "1.3rem",
+												fontSize: { xs: "1.1rem", md: "1.3rem" },
 											}}>
 											{feature.title}
 										</Typography>
@@ -1242,7 +1449,8 @@ const BusinessLoanPage = () => {
 											variant='body2'
 											color='text.secondary'
 											sx={{
-												fontSize: "0.95rem",
+												fontSize: { xs: "0.95rem", md: "1.06rem" },
+												color: "black",
 												lineHeight: 1.6,
 												flexGrow: 1,
 											}}>
@@ -1375,7 +1583,7 @@ const BusinessLoanPage = () => {
 												variant='body1'
 												sx={{
 													textAlign: "center",
-													color: "#555",
+													color: "black",
 												}}
 												dangerouslySetInnerHTML={{
 													__html: criteria.description,
@@ -1513,7 +1721,7 @@ const BusinessLoanPage = () => {
 											<Typography
 												variant='body1'
 												sx={{
-													color: "#555",
+													color: "black",
 													lineHeight: 1.7,
 												}}
 												dangerouslySetInnerHTML={{ __html: faq.answer }}
@@ -1614,7 +1822,7 @@ const BusinessLoanPage = () => {
 												<Typography
 													variant='body1'
 													sx={{
-														color: "#555",
+														color: "black",
 														lineHeight: 1.7,
 													}}
 													dangerouslySetInnerHTML={{ __html: faq.answer }}
@@ -1633,6 +1841,7 @@ const BusinessLoanPage = () => {
 					<Box
 						sx={{
 							pt: 8,
+							pb: { xs: 5, md: 8 },
 							bgcolor: "white",
 							position: "relative",
 							"&::before": {
@@ -1647,8 +1856,7 @@ const BusinessLoanPage = () => {
 							},
 						}}
 						className='section-container'
-						ref={packagesRef}
-						style={{ paddingBottom: "125px" }}>
+						ref={packagesRef}>
 						<Container>
 							<Box sx={{ mb: 6, textAlign: "center" }}>
 								<Typography
@@ -1941,8 +2149,8 @@ const BusinessLoanPage = () => {
 											<Slider
 												value={interestRate}
 												onChange={(e, newValue) => setInterestRate(newValue)}
-												min={5}
-												max={20}
+												min={10}
+												max={30}
 												step={0.1}
 												valueLabelDisplay='auto'
 												sx={{
@@ -2084,7 +2292,7 @@ const BusinessLoanPage = () => {
 
 				{/* Newsletter Section */}
 				<Box sx={{ py: 3, bgcolor: "#1e4a30" }}>
-					<Container>
+					<Container maxWidth='lg'>
 						<Grid
 							container
 							alignItems='center'
@@ -2098,7 +2306,7 @@ const BusinessLoanPage = () => {
 									sx={{
 										color: "white",
 										fontWeight: 500,
-										fontSize: "1rem",
+										fontSize: { xs: "0.9rem", md: "1rem" },
 										m: 0,
 										mb: { xs: 1, sm: 0 },
 									}}>

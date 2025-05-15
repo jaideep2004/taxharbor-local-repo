@@ -358,7 +358,7 @@ const ITRFilingPage = () => {
 		serviceId: "SER099",
 		serviceName: "Income Tax Return Filing",
 		serviceDescription:
-			"Professional and hassle-free ITR filing services with maximum tax savings and complete compliance",
+			"Comprehensive Tax Filing with a Focus on Compliance and Optimization",
 		serviceHero: "/images/hero6.jpg",
 		isLeadService: false,
 		leadButtonText: "Get Expert Assistance",

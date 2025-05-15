@@ -29,6 +29,9 @@ import {
 	ListItemIcon,
 	ListItemText,
 	alpha,
+	RadioGroup,
+	FormControlLabel,
+	Radio,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
@@ -43,6 +46,7 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import AutoGraphIcon from "@mui/icons-material/AutoGraph";
 import GroupIcon from "@mui/icons-material/Group";
 import SavingsIcon from "@mui/icons-material/Savings";
+import MenuIcon from "@mui/icons-material/Menu";
 import "./services.css";
 
 // Theme configuration with updated colors
@@ -552,7 +556,7 @@ const VehicleLoanPage = () => {
 						backgroundPosition: "center",
 						backgroundRepeat: "no-repeat",
 						borderBottom: "5px solid #1e4a30",
-						pt: 4,
+						pt: { xs: 8, md: 4 },
 						pb: 3,
 						"&::before": {
 							content: '""',
@@ -565,30 +569,37 @@ const VehicleLoanPage = () => {
 								"linear-gradient(135deg, rgba(30,74,48,0.4) 0%, rgba(198,219,206,0.2) 100%)",
 							zIndex: 1,
 						},
+					}}
+					style={{
+						padding: "133px 0px 64px 0px",
 					}}>
-					<Container maxWidth='lg' sx={{ position: "relative", zIndex: 10, py: 0 }}>
+					<Container
+						maxWidth='lg'
+						sx={{ position: "relative", zIndex: 10, py: 0 }}>
 						<Box
 							sx={{
 								boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-								borderRadius: "0 8px 8px 8px",
+								borderRadius: { xs: "8px", md: "0 8px 8px 8px" },
 								overflow: "hidden",
+								mx: { xs: 1, md: 0 }
 							}}>
 							<HeroPaper
 								sx={{
-									borderLeft: "4px solid #1e4a30",
-									borderRadius: "0 8px 0 0", // Only top-right radius
+									borderLeft: { xs: "none", md: "4px solid #1e4a30" },
+									borderRadius: { xs: "8px 8px 0 0", md: "0 8px 0 0" },
 									boxShadow: "none", // Remove shadow from this component
 									my: 0, // No vertical margin
 									mb: 0,
 									p: { xs: 2, md: 4 },
 									backgroundColor: "rgba(255,255,255,0.95)",
+									flexDirection: { xs: "column", md: "row" }
 								}}>
 								<Box sx={{ flex: 1, textAlign: { xs: "center", md: "left" } }}>
 									<Typography
 										variant='h1'
 										color='primary'
 										sx={{
-											fontSize: { xs: "2.2rem", md: "2.8rem" },
+											fontSize: { xs: "1.8rem", sm: "2.2rem", md: "2.8rem" },
 											fontWeight: 700,
 											position: "relative",
 											paddingBottom: "10px",
@@ -619,6 +630,7 @@ const VehicleLoanPage = () => {
 										alignItems: "center",
 										gap: 2,
 										mt: { xs: 2, md: 0 },
+										width: { xs: "100%", md: "auto" }
 									}}>
 									<Box
 										sx={{
@@ -628,11 +640,12 @@ const VehicleLoanPage = () => {
 											px: 3,
 											py: 1,
 											textAlign: "center",
+											width: { xs: "100%", md: "auto" }
 										}}>
 										<Typography
 											variant='h2'
-											sx={{ fontWeight: 700, color: "#ff4081" }}>
-											{service?.interestRate || interestRate}%
+											sx={{ fontWeight: 700, color: "#ff4081", fontSize: { xs: "1.8rem", md: "2.2rem" } }}>
+											7.3% - 14.05%
 										</Typography>
 										<Typography variant='body2' color='text.secondary'>
 											Rate of Interest
@@ -644,6 +657,7 @@ const VehicleLoanPage = () => {
 											display: "flex",
 											flexDirection: { xs: "column", sm: "row" },
 											gap: 2,
+											width: { xs: "100%", md: "auto" }
 										}}>
 										<Button
 											variant='contained'
@@ -684,24 +698,55 @@ const VehicleLoanPage = () => {
 								</Box>
 							</HeroPaper>
 
+							{/* Mobile tab toggle button - Always visible and outside the tab container */}
+							{isMobile && (
+								<Box
+									className="mobile-tab-toggle"
+									onClick={() => {
+										const tabsContainer = document.getElementById('sticky-tabs-container');
+										tabsContainer?.classList.toggle('sidebar-open');
+									}}
+									sx={{
+										position: "fixed !important",
+										top: "64px !important",
+										left: "0 !important",
+										width: "40px !important",
+										height: "40px !important",
+										backgroundColor: "#1e4a30 !important",
+										color: "white !important", 
+										zIndex: "9999 !important",
+										display: "flex !important",
+										alignItems: "center !important",
+										justifyContent: "center !important",
+										borderRadius: "0 4px 4px 0 !important",
+										boxShadow: "2px 2px 5px rgba(0,0,0,0.2) !important",
+										cursor: "pointer !important"
+									}}
+								>
+									<MenuIcon />
+								</Box>
+							)}
+
 							{/* Tabs Navigation */}
 							<Box
 								id='sticky-tabs-container'
 								className='tabs-container'
 								sx={{
 									borderBottom: "1px solid #e0e0e0",
-									borderRadius: "0 0 8px 8px", // Only bottom radius
-									boxShadow: "none", // Remove shadow from this component
+									borderRadius: "0 0 8px 8px",
+									boxShadow: "none",
 									backgroundColor: "#f2f6f4",
-									mt: 0, // No top margin
+									mt: 0,
 									ml: "4px",
 									justifyContent: "space-between",
 									position: "relative",
+									width: "100%",
+									overflowX: { xs: "auto", md: "visible" },
 								}}>
 								<style jsx='true'>{`
 									.fixed-tabs {
 										position: fixed;
-										top: 125px;
+										top: 109px;
 										left: 0;
 										right: 0;
 										z-index: 1100;
@@ -721,33 +766,96 @@ const VehicleLoanPage = () => {
 										bottom: 0 !important;
 										background-color: #1e4a30 !important;
 									}
-									
+
 									/* Target the about tab specifically if needed */
-									.MuiTabs-root .MuiTabs-flexContainer button:nth-child(1).Mui-selected + .MuiTabs-indicator {
-										left: calc(0 * (100% / 6)) !important; /* Adjust based on number of tabs */
+									.MuiTabs-root
+										.MuiTabs-flexContainer
+										button:nth-child(1).Mui-selected
+										+ .MuiTabs-indicator {
+										left: calc(
+											0 * (100% / 6)
+										) !important; /* Adjust based on number of tabs */
 									}
-									
+
 									/* Ensure the indicator's width matches tab width */
 									.MuiTabs-flexContainer {
 										width: 100%;
 									}
-									
+
 									.MuiTabs-root .MuiTab-root {
 										flex: 1;
 										min-width: 0;
 									}
-									
+
 									/* Remove any fixed positioning of the indicator */
 									.MuiTabs-indicator {
 										position: absolute !important;
+									}
+									
+									/* Mobile sidebar navigation */
+									@media (max-width: 768px) {
+										.fixed-tabs {
+											position: fixed;
+											top: 60px;
+											left: 0;
+											width: 180px !important; 
+											height: calc(100vh - 60px);
+											max-height: 100vh;
+											overflow-y: auto;
+											z-index: 999;
+											box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
+											background-color: #f2f6f4;
+											padding: 0;
+											transform: translateX(-100%);
+											transition: transform 0.3s ease;
+											border-radius: 0 !important;
+										}
+										
+										.fixed-tabs.sidebar-open {
+											transform: translateX(0);
+										}
+										
+										.tabs-container .MuiTabs-flexContainer {
+											flex-direction: column;
+										}
+										
+										.tabs-container .MuiTab-root {
+											border-bottom: 1px solid rgba(30,74,48,0.1);
+											text-align: left;
+											justify-content: flex-start;
+											min-height: 56px;
+											padding: 12px 15px;
+										}
+										
+										.tabs-container .MuiTabs-indicator {
+											display: none !important;
+										}
+										
+										.mobile-tab-toggle {
+											position: fixed !important;
+											top: 64px !important;
+											left: 0 !important;
+											width: 40px !important;
+											height: 40px !important;
+											background-color: #1e4a30 !important;
+											color: white !important;
+											z-index: 9999 !important;
+											display: flex !important;
+											align-items: center !important;
+											justify-content: center !important;
+											border-radius: 0 4px 4px 0 !important;
+											cursor: pointer !important;
+											box-shadow: 2px 2px 5px rgba(0,0,0,0.2) !important;
+										}
 									}
 								`}</style>
 								<StyledTabs
 									value={activeTab}
 									onChange={handleTabChange}
-									variant='fullWidth'
+									variant={isMobile ? "standard" : "fullWidth"}
 									scrollButtons={false}
-									centered
+									centered={!isMobile}
+									orientation={isMobile ? "vertical" : "horizontal"}
 									sx={{
 										"& .MuiTabs-indicator": {
 											backgroundColor: "#1e4a30",
@@ -755,46 +863,59 @@ const VehicleLoanPage = () => {
 											transition: "all 0.3s ease",
 											position: "absolute",
 											bottom: 0,
+											display: { xs: "none", md: "block" }
 										},
 										"& .MuiTabs-flexContainer": {
 											width: "100%",
 											justifyContent: "space-between",
+											flexDirection: { xs: "column", md: "row" }
 										},
 										"& .MuiTab-root": {
 											transition: "all 0.3s ease",
 											position: "relative",
-											fontSize: "13px",
+											fontSize: { xs: "15px", md: "17px" },
 											minWidth: "auto",
-											padding: "15px 5px",
+											padding: { xs: "12px 15px", md: "15px 5px" },
 											textTransform: "uppercase",
-											fontWeight: 500,
+											fontWeight: 600,
 											color: "#555555",
+											backgroundColor: "#c6e9bc",
 											flex: 1,
+											textAlign: { xs: "left", md: "center" },
+											justifyContent: { xs: "flex-start", md: "center" },
 											"&::after": {
 												content: '""',
 												position: "absolute",
 												bottom: 0,
-												left: "50%",
-												width: "0%",
-												height: "3px",
+												left: { xs: 0, md: "50%" },
+												width: { xs: "4px", md: "0%" },
+												height: { xs: "100%", md: "3px" },
 												backgroundColor: "transparent",
-												transform: "translateX(-50%)",
-												transition: "width 0.3s ease",
+												transform: { xs: "none", md: "translateX(-50%)" },
+												transition: "width 0.3s ease, height 0.3s ease",
 											},
 											"&:hover": {
 												color: "#1e4a30",
 												backgroundColor: "rgba(30,74,48,0.05)",
 												"&::after": {
-													width: "30%",
+													width: { xs: "4px", md: "30%" },
+													height: { xs: "70%", md: "3px" },
 													backgroundColor: "rgba(30, 74, 48, 0.3)",
 												},
 											},
 											"&.Mui-selected": {
 												color: "#1e4a30",
 												fontWeight: "600",
+												backgroundColor: { xs: "rgba(30,74,48,0.1)", md: "#c6e9bc" },
+												"&::after": {
+													width: { xs: "4px", md: "30%" },
+													height: { xs: "70%", md: "3px" },
+													backgroundColor: "#1e4a30",
+												},
 											},
 										},
 										width: "100%",
+										height: { xs: "100%", md: "auto" }
 									}}
 									aria-label='vehicle loan tabs'>
 									<StyledTab label='ABOUT LOAN' />
@@ -891,7 +1012,7 @@ const VehicleLoanPage = () => {
 										sx={{
 											fontSize: "1.1rem",
 											lineHeight: 1.7,
-											color: "#555",
+											color: "black",
 											mb: 3,
 										}}>
 										A vehicle loan is a financial product designed to help
@@ -944,8 +1065,8 @@ const VehicleLoanPage = () => {
 
 				{/* Loan Products Section */}
 				<Box
-					sx={{ 
-						py: 7, 
+					sx={{
+						py: 7,
 						bgcolor: theme.palette.background.alternate, // Use theme color
 						position: "relative",
 						"&::before": {
@@ -975,6 +1096,7 @@ const VehicleLoanPage = () => {
 								position: "relative",
 								paddingBottom: "15px",
 								marginBottom: "15px",
+								fontSize: { xs: "1.8rem", md: "2.2rem" },
 								"&::after": {
 									content: '""',
 									position: "absolute",
@@ -991,18 +1113,26 @@ const VehicleLoanPage = () => {
 						<Typography
 							variant='subtitle1'
 							align='center'
-							sx={{ mb: 6, maxWidth: "800px", mx: "auto", color: "#666" }}>
+							sx={{ 
+								mb: 6, 
+								maxWidth: "800px", 
+								mx: "auto", 
+								color: "#666",
+								px: { xs: 2, md: 0 },
+								fontSize: { xs: "0.95rem", md: "1.1rem" }
+							}}>
 							{service?.productsTagline || ""}
 						</Typography>
-						<Grid container spacing={4} style={{ justifyContent: "center" }}>
-							{loanProducts.map((product, index) => (
-								<Grid item xs={12} sm={6} md={3} key={index}>
+						
+						{/* Mobile view uses a different approach with no grid spacing to prevent overlap */}
+						{isMobile ? (
+							<Box sx={{ px: 1 }}>
+								{loanProducts.map((product, index) => (
 									<Card
+										key={index}
 										sx={{
-											height: "100%",
 											display: "flex",
 											flexDirection: "column",
-
 											boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
 											transition: "transform 0.3s ease, box-shadow 0.3s ease",
 											borderRadius: "8px",
@@ -1012,6 +1142,8 @@ const VehicleLoanPage = () => {
 												transform: "translateY(-5px)",
 												boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
 											},
+											mb: 5, // Large fixed bottom margin to ensure no overlap
+											mx: 1,  // Side margin
 										}}>
 										<CardContent sx={{ p: 3, flexGrow: 1 }}>
 											<Box
@@ -1026,7 +1158,7 @@ const VehicleLoanPage = () => {
 													fontWeight: 600,
 													textAlign: "center",
 													color: "#1e4a30",
-													fontSize: "1.3rem",
+													fontSize: { xs: "1.1rem", md: "1.3rem" },
 													mb: 2,
 												}}>
 												{product.title}
@@ -1035,17 +1167,73 @@ const VehicleLoanPage = () => {
 												variant='body2'
 												color='text.secondary'
 												sx={{
-													fontSize: "0.95rem",
+													fontSize: { xs: "0.95rem", md: "1.06rem" },
+													color: "black",
 													lineHeight: 1.6,
 													textAlign: "center",
+													mb: 2,
 												}}>
 												{product.description}
 											</Typography>
 										</CardContent>
 									</Card>
-								</Grid>
-							))}
-						</Grid>
+								))}
+							</Box>
+						) : (
+							<Grid container spacing={4} style={{ justifyContent: "center" }}>
+								{loanProducts.map((product, index) => (
+									<Grid item xs={12} sm={6} md={3} key={index}>
+										<Card
+											sx={{
+												height: "100%",
+												display: "flex",
+												flexDirection: "column",
+												boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
+												transition: "transform 0.3s ease, box-shadow 0.3s ease",
+												borderRadius: "8px",
+												border: "1px solid #eaeaea",
+												overflow: "hidden",
+												"&:hover": {
+													transform: "translateY(-5px)",
+													boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
+												},
+											}}>
+											<CardContent sx={{ p: 3, flexGrow: 1 }}>
+												<Box
+													sx={{ mb: 2.5, color: "#ff4081", textAlign: "center" }}>
+													{product.icon || <MoneyIcon fontSize='large' />}
+												</Box>
+												<Typography
+													variant='h5'
+													component='h3'
+													gutterBottom
+													sx={{
+														fontWeight: 600,
+														textAlign: "center",
+														color: "#1e4a30",
+														fontSize: { xs: "1.1rem", md: "1.3rem" },
+														mb: 2,
+													}}>
+													{product.title}
+												</Typography>
+												<Typography
+													variant='body2'
+													color='text.secondary'
+													sx={{
+														fontSize: { xs: "0.95rem", md: "1.06rem" },
+														color: "black",
+														lineHeight: 1.6,
+														textAlign: "center",
+														mb: 2,
+													}}>
+													{product.description}
+												</Typography>
+											</CardContent>
+										</Card>
+									</Grid>
+								))}
+							</Grid>
+						)}
 					</Container>
 				</Box>
 
@@ -1130,6 +1318,7 @@ const VehicleLoanPage = () => {
 								color: "#1e4a30",
 								position: "relative",
 								paddingBottom: "15px",
+								fontSize: { xs: "1.8rem", md: "2.2rem" },
 								"&::after": {
 									content: '""',
 									position: "absolute",
@@ -1146,12 +1335,19 @@ const VehicleLoanPage = () => {
 						<Typography
 							variant='subtitle1'
 							align='center'
-							sx={{ mb: 6, maxWidth: "800px", mx: "auto", color: "#666" }}>
+							sx={{ 
+								mb: 6, 
+								maxWidth: "800px", 
+								mx: "auto", 
+								color: "#666",
+								px: { xs: 2, md: 0 },
+								fontSize: { xs: "0.95rem", md: "1.1rem" }
+							}}>
 							{service?.featuresTagline || ""}
 						</Typography>
 						<Grid
 							container
-							spacing={4}
+							spacing={{ xs: 2, md: 4 }}
 							alignItems='stretch'
 							justifyContent='center'>
 							{loanFeatures.map((feature, index) => (
@@ -1161,11 +1357,11 @@ const VehicleLoanPage = () => {
 									sm={6}
 									md={3}
 									key={index}
-									sx={{ display: "flex", marginBottom: "50px" }}>
+									sx={{ display: "flex", marginBottom: { xs: "30px", md: "50px" } }}>
 									<Box
 										sx={{
 											textAlign: "center",
-											padding: 3,
+											padding: { xs: 2, md: 3 },
 											transition: "all 0.3s ease",
 											borderRadius: "8px",
 											border: "1px solid #eaeaea",
@@ -1175,7 +1371,6 @@ const VehicleLoanPage = () => {
 											display: "flex",
 											flexDirection: "column",
 											alignItems: "center",
-
 											"&:hover": {
 												transform: "translateY(-5px)",
 												backgroundColor: "#f5f9f6",
@@ -1186,7 +1381,6 @@ const VehicleLoanPage = () => {
 										<Box
 											sx={{
 												mb: 3,
-
 												color: "#ff4081",
 												display: "inline-flex",
 												p: 2.5,
@@ -1210,7 +1404,7 @@ const VehicleLoanPage = () => {
 												fontWeight: 600,
 												color: "#1e4a30",
 												mb: 2,
-												fontSize: "1.3rem",
+												fontSize: { xs: "1.1rem", md: "1.3rem" },
 											}}>
 											{feature.title}
 										</Typography>
@@ -1218,7 +1412,8 @@ const VehicleLoanPage = () => {
 											variant='body2'
 											color='text.secondary'
 											sx={{
-												fontSize: "0.95rem",
+												fontSize: { xs: "0.95rem", md: "1.06rem" },
+												color: "black",
 												lineHeight: 1.6,
 												flexGrow: 1,
 											}}>
@@ -1356,7 +1551,8 @@ const VehicleLoanPage = () => {
 												variant='body1'
 												sx={{
 													textAlign: "center",
-													color: "#555",
+
+													color: "black",
 												}}
 												dangerouslySetInnerHTML={{
 													__html: criteria.description,
@@ -1390,6 +1586,7 @@ const VehicleLoanPage = () => {
 								position: "relative",
 								paddingBottom: "15px",
 								marginBottom: "15px",
+								fontSize: { xs: "1.8rem", md: "2.2rem" },
 								"&::after": {
 									content: '""',
 									position: "absolute",
@@ -1406,117 +1603,28 @@ const VehicleLoanPage = () => {
 						<Typography
 							variant='body1'
 							align='center'
-							sx={{ mb: 5, maxWidth: "900px", mx: "auto", color: "#666" }}>
+							sx={{ 
+								mb: 5, 
+								maxWidth: "900px", 
+								mx: "auto", 
+								color: "#666",
+								px: { xs: 2, md: 0 },
+								fontSize: { xs: "0.95rem", md: "1.1rem" }
+							}}>
 							{service?.faqTagline || ""}
 						</Typography>
-						
-						{/* Two column FAQ layout */}
-						<Grid container spacing={3}>
-							{/* Left Column */}
-							<Grid item xs={12} md={6}>
-								{faqs.slice(0, Math.ceil(faqs.length / 2)).map((faq, index) => (
-									<Accordion
-										key={index}
-										expanded={expanded === index}
-										onChange={() =>
-											setExpanded(expanded === index ? false : index)
-										}
-										sx={{
-											mb: 2,
-											boxShadow: "none",
-											"&:before": {
-												display: "none",
-											},
-											border: "1px solid #e0e0e0",
-											borderRadius: "8px !important", // Important to override default
-											overflow: "hidden",
-											position: "relative",
-											"&::before":
-												expanded === index
-													? {
-															content: '""',
-															position: "absolute",
-															left: 0,
-															top: 0,
-															height: "100%",
-															width: "4px",
-															background:
-																"linear-gradient(to bottom, #1e4a30, #8cc63f)",
-															borderRadius: "4px 0 0 4px",
-													  }
-													: {},
-										}}>
-										<AccordionSummary
-											expandIcon={
-												<ExpandMoreIcon
-													sx={{
-														color: expanded === index ? "#1e4a30" : "#666",
-													}}
-												/>
-											}
-											sx={{
-												backgroundColor:
-													expanded === index ? "rgba(30,74,48,0.05)" : "#fff",
-												borderBottom:
-													expanded === index
-														? "1px solid rgba(30,74,48,0.1)"
-														: "none",
-												borderRadius: "8px",
-												transition: "all 0.3s ease",
-												"& .MuiAccordionSummary-content": {
-													margin: "12px 0",
-												},
-												"&:hover": {
-													backgroundColor:
-														expanded === index
-															? "rgba(30,74,48,0.07)"
-															: "rgba(30,74,48,0.02)",
-												},
-											}}>
-											<Typography
-												variant='h6'
-												sx={{
-													fontSize: "1.1rem",
-													fontWeight: 600,
-													color: expanded === index ? "#1e4a30" : "#333",
-													pl: expanded === index ? 1 : 0,
-													transition: "all 0.3s ease",
-												}}>
-												{faq.question}
-											</Typography>
-										</AccordionSummary>
-										<AccordionDetails
-											sx={{
-												p: 3,
-												backgroundColor: "rgba(248,250,249,0.7)",
-												borderTop: "1px solid rgba(30,74,48,0.05)",
-											}}>
-											<Typography
-												variant='body1'
-												sx={{
-													color: "#555",
-													lineHeight: 1.7,
-												}}
-												dangerouslySetInnerHTML={{ __html: faq.answer }}
-											/>
-										</AccordionDetails>
-									</Accordion>
-								))}
-							</Grid>
 
-							{/* Right Column */}
-							<Grid item xs={12} md={6}>
-								{faqs.slice(Math.ceil(faqs.length / 2)).map((faq, index) => {
-									// Adjust index for the right column
-									const actualIndex = index + Math.ceil(faqs.length / 2);
-									return (
+						{/* Two column FAQ layout for desktop, single column for mobile */}
+						<Grid container spacing={3}>
+							{isMobile ? (
+								// Single column on mobile
+								<Grid item xs={12}>
+									{faqs.map((faq, index) => (
 										<Accordion
-											key={actualIndex}
-											expanded={expanded === actualIndex}
+											key={index}
+											expanded={expanded === index}
 											onChange={() =>
-												setExpanded(
-													expanded === actualIndex ? false : actualIndex
-												)
+												setExpanded(expanded === index ? false : index)
 											}
 											sx={{
 												mb: 2,
@@ -1525,11 +1633,11 @@ const VehicleLoanPage = () => {
 													display: "none",
 												},
 												border: "1px solid #e0e0e0",
-												borderRadius: "8px !important",
+												borderRadius: "8px !important", // Important to override default
 												overflow: "hidden",
 												position: "relative",
 												"&::before":
-													expanded === actualIndex
+													expanded === index
 														? {
 																content: '""',
 																position: "absolute",
@@ -1547,18 +1655,15 @@ const VehicleLoanPage = () => {
 												expandIcon={
 													<ExpandMoreIcon
 														sx={{
-															color:
-																expanded === actualIndex ? "#1e4a30" : "#666",
+															color: expanded === index ? "#1e4a30" : "#666",
 														}}
 													/>
 												}
 												sx={{
 													backgroundColor:
-														expanded === actualIndex
-															? "rgba(30,74,48,0.05)"
-															: "#fff",
+														expanded === index ? "rgba(30,74,48,0.05)" : "#fff",
 													borderBottom:
-														expanded === actualIndex
+														expanded === index
 															? "1px solid rgba(30,74,48,0.1)"
 															: "none",
 													borderRadius: "8px",
@@ -1568,7 +1673,7 @@ const VehicleLoanPage = () => {
 													},
 													"&:hover": {
 														backgroundColor:
-															expanded === actualIndex
+															expanded === index
 																? "rgba(30,74,48,0.07)"
 																: "rgba(30,74,48,0.02)",
 													},
@@ -1576,11 +1681,10 @@ const VehicleLoanPage = () => {
 												<Typography
 													variant='h6'
 													sx={{
-														fontSize: "1.1rem",
+														fontSize: { xs: "1rem", md: "1.1rem" },
 														fontWeight: 600,
-														color:
-															expanded === actualIndex ? "#1e4a30" : "#333",
-														pl: expanded === actualIndex ? 1 : 0,
+														color: expanded === index ? "#1e4a30" : "#333",
+														pl: expanded === index ? 1 : 0,
 														transition: "all 0.3s ease",
 													}}>
 													{faq.question}
@@ -1595,16 +1699,213 @@ const VehicleLoanPage = () => {
 												<Typography
 													variant='body1'
 													sx={{
-														color: "#555",
+														color: "black",
 														lineHeight: 1.7,
+														fontSize: { xs: "0.95rem", md: "1.06rem" },
 													}}
 													dangerouslySetInnerHTML={{ __html: faq.answer }}
 												/>
 											</AccordionDetails>
 										</Accordion>
-									);
-								})}
-							</Grid>
+									))}
+								</Grid>
+							) : (
+								<>
+									{/* Left Column */}
+									<Grid item xs={12} md={6}>
+										{faqs.slice(0, Math.ceil(faqs.length / 2)).map((faq, index) => (
+											<Accordion
+												key={index}
+												expanded={expanded === index}
+												onChange={() =>
+													setExpanded(expanded === index ? false : index)
+												}
+												sx={{
+													mb: 2,
+													boxShadow: "none",
+													"&:before": {
+														display: "none",
+													},
+													border: "1px solid #e0e0e0",
+													borderRadius: "8px !important", // Important to override default
+													overflow: "hidden",
+													position: "relative",
+													"&::before":
+														expanded === index
+															? {
+																	content: '""',
+																	position: "absolute",
+																	left: 0,
+																	top: 0,
+																	height: "100%",
+																	width: "4px",
+																	background:
+																		"linear-gradient(to bottom, #1e4a30, #8cc63f)",
+																	borderRadius: "4px 0 0 4px",
+															  }
+															: {},
+												}}>
+												<AccordionSummary
+													expandIcon={
+														<ExpandMoreIcon
+															sx={{
+																color: expanded === index ? "#1e4a30" : "#666",
+															}}
+														/>
+													}
+													sx={{
+														backgroundColor:
+															expanded === index ? "rgba(30,74,48,0.05)" : "#fff",
+														borderBottom:
+															expanded === index
+																? "1px solid rgba(30,74,48,0.1)"
+																: "none",
+														borderRadius: "8px",
+														transition: "all 0.3s ease",
+														"& .MuiAccordionSummary-content": {
+															margin: "12px 0",
+														},
+														"&:hover": {
+															backgroundColor:
+																expanded === index
+																	? "rgba(30,74,48,0.07)"
+																	: "rgba(30,74,48,0.02)",
+														},
+													}}>
+													<Typography
+														variant='h6'
+														sx={{
+															fontSize: "1.1rem",
+															fontWeight: 600,
+															color: expanded === index ? "#1e4a30" : "#333",
+															pl: expanded === index ? 1 : 0,
+															transition: "all 0.3s ease",
+														}}>
+														{faq.question}
+													</Typography>
+												</AccordionSummary>
+												<AccordionDetails
+													sx={{
+														p: 3,
+														backgroundColor: "rgba(248,250,249,0.7)",
+														borderTop: "1px solid rgba(30,74,48,0.05)",
+													}}>
+													<Typography
+														variant='body1'
+														sx={{
+															color: "black",
+															lineHeight: 1.7,
+														}}
+														dangerouslySetInnerHTML={{ __html: faq.answer }}
+													/>
+												</AccordionDetails>
+											</Accordion>
+										))}
+									</Grid>
+
+									{/* Right Column */}
+									<Grid item xs={12} md={6}>
+										{faqs.slice(Math.ceil(faqs.length / 2)).map((faq, index) => {
+											// Adjust index for the right column
+											const actualIndex = index + Math.ceil(faqs.length / 2);
+											return (
+												<Accordion
+													key={actualIndex}
+													expanded={expanded === actualIndex}
+													onChange={() =>
+														setExpanded(
+															expanded === actualIndex ? false : actualIndex
+														)
+													}
+													sx={{
+														mb: 2,
+														boxShadow: "none",
+														"&:before": {
+															display: "none",
+														},
+														border: "1px solid #e0e0e0",
+														borderRadius: "8px !important",
+														overflow: "hidden",
+														position: "relative",
+														"&::before":
+															expanded === actualIndex
+																? {
+																		content: '""',
+																		position: "absolute",
+																		left: 0,
+																		top: 0,
+																		height: "100%",
+																		width: "4px",
+																		background:
+																			"linear-gradient(to bottom, #1e4a30, #8cc63f)",
+																		borderRadius: "4px 0 0 4px",
+																  }
+																: {},
+													}}>
+													<AccordionSummary
+														expandIcon={
+															<ExpandMoreIcon
+																sx={{
+																	color:
+																		expanded === actualIndex ? "#1e4a30" : "#666",
+																}}
+															/>
+														}
+														sx={{
+															backgroundColor:
+																expanded === actualIndex
+																	? "rgba(30,74,48,0.05)"
+																	: "#fff",
+															borderBottom:
+																expanded === actualIndex
+																	? "1px solid rgba(30,74,48,0.1)"
+																	: "none",
+															borderRadius: "8px",
+															transition: "all 0.3s ease",
+															"& .MuiAccordionSummary-content": {
+																margin: "12px 0",
+															},
+															"&:hover": {
+																backgroundColor:
+																	expanded === actualIndex
+																		? "rgba(30,74,48,0.07)"
+																		: "rgba(30,74,48,0.02)",
+															},
+														}}>
+														<Typography
+															variant='h6'
+															sx={{
+																fontSize: "1.1rem",
+																fontWeight: 600,
+																color:
+																	expanded === actualIndex ? "#1e4a30" : "#333",
+																pl: expanded === actualIndex ? 1 : 0,
+																transition: "all 0.3s ease",
+															}}>
+															{faq.question}
+														</Typography>
+													</AccordionSummary>
+													<AccordionDetails
+														sx={{
+															p: 3,
+															backgroundColor: "rgba(248,250,249,0.7)",
+															borderTop: "1px solid rgba(30,74,48,0.05)",
+														}}>
+														<Typography
+															variant='body1'
+															sx={{
+																color: "black",
+																lineHeight: 1.7,
+															}}
+															dangerouslySetInnerHTML={{ __html: faq.answer }}
+														/>
+													</AccordionDetails>
+												</Accordion>
+											);
+										})}
+									</Grid>
+								</>
+							)}
 						</Grid>
 					</Container>
 				</Box>
@@ -1614,6 +1915,7 @@ const VehicleLoanPage = () => {
 					<Box
 						sx={{
 							pt: 8,
+							pb: { xs: 5, md: 8 },
 							bgcolor: "white",
 							position: "relative",
 							"&::before": {
@@ -1642,6 +1944,7 @@ const VehicleLoanPage = () => {
 										position: "relative",
 										display: "inline-block",
 										pb: 2,
+										fontSize: { xs: "1.8rem", md: "2.2rem" },
 										"&::after": {
 											content: '""',
 											position: "absolute",
@@ -1662,36 +1965,29 @@ const VehicleLoanPage = () => {
 										mb: 6,
 										maxWidth: "800px",
 										mx: "auto",
-										fontSize: "1.1rem",
+										fontSize: { xs: "0.95rem", md: "1.1rem" },
+										px: { xs: 2, md: 0 },
 									}}>
 									Choose the package that best fits your needs
 								</Typography>
 							</Box>
 
-							<Grid container spacing={4} justifyContent='center'>
-								{service.packages.map((pkg, index) => (
-									<Grid
-										item
-										xs={12}
-										sm={6}
-										md={4}
-										key={index}
-										data-aos='fade-up'
-										data-aos-delay={index * 150}>
+							{/* Mobile view: vertical stack to prevent overlap */}
+							{isMobile ? (
+								<Box sx={{ px: 2 }}>
+									{service.packages.map((pkg, index) => (
 										<Paper
 											elevation={3}
+											key={index}
 											sx={{
-												height: "100%",
 												display: "flex",
 												flexDirection: "column",
 												position: "relative",
 												borderRadius: "16px",
-												border:
-													index === 1
-														? `2px solid ${theme.palette.primary.main}`
-														: "none",
+												border: index === 1 ? `2px solid ${theme.palette.primary.main}` : "none",
 												transition: "transform 0.3s ease, box-shadow 0.3s ease",
 												p: 4,
+												mb: 5, // Large bottom margin to prevent overlap
 												"&:hover": {
 													transform: "translateY(-10px)",
 													boxShadow: "0 20px 30px rgba(0,0,0,0.1)",
@@ -1712,24 +2008,33 @@ const VehicleLoanPage = () => {
 														fontWeight: "bold",
 														boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
 													}}>
-														<Typography variant='body2' fontWeight='bold'>
-															Most Popular
-														</Typography>
-													</Box>
+													<Typography variant='body2' fontWeight='bold'>
+														Most Popular
+													</Typography>
+												</Box>
 											)}
 
 											<Typography
 												variant='h5'
 												gutterBottom
 												color='primary'
-												sx={{ fontWeight: 700, mb: 2 }}>
+												sx={{ 
+													fontWeight: 700, 
+													mb: 2,
+													fontSize: { xs: "1.2rem", md: "1.5rem" },
+												}}>
 												{pkg.name}
 											</Typography>
 
 											<Typography
 												variant='body2'
 												paragraph
-												sx={{ mb: 3, flexGrow: 1, color: "text.secondary" }}>
+												sx={{ 
+													mb: 3, 
+													flexGrow: 1, 
+													color: "text.secondary",
+													fontSize: { xs: "0.9rem", md: "1rem" },
+												}}>
 												{pkg.description}
 											</Typography>
 
@@ -1738,7 +2043,11 @@ const VehicleLoanPage = () => {
 												<Typography
 													variant='h3'
 													component='span'
-													sx={{ fontWeight: 700, color: "primary.main" }}>
+													sx={{ 
+														fontWeight: 700, 
+														color: "primary.main",
+														fontSize: { xs: "1.8rem", md: "2.2rem" },
+													}}>
 													₹{pkg.salePrice || pkg.actualPrice}
 												</Typography>
 												{pkg.salePrice &&
@@ -1749,7 +2058,7 @@ const VehicleLoanPage = () => {
 															sx={{
 																textDecoration: "line-through",
 																color: "text.secondary",
-																fontSize: "1rem",
+																fontSize: { xs: "0.9rem", md: "1rem" },
 																ml: 1,
 															}}>
 															₹{pkg.actualPrice}
@@ -1773,7 +2082,10 @@ const VehicleLoanPage = () => {
 															</ListItemIcon>
 															<ListItemText
 																primary={feature}
-																primaryTypographyProps={{ variant: "body2" }}
+																primaryTypographyProps={{ 
+																	variant: "body2",
+																	fontSize: { xs: "0.9rem", md: "1rem" },
+																}}
 															/>
 														</ListItem>
 													))}
@@ -1799,9 +2111,160 @@ const VehicleLoanPage = () => {
 												Select Package
 											</Button>
 										</Paper>
-									</Grid>
-								))}
-							</Grid>
+									))}
+								</Box>
+							) : (
+								<Grid container spacing={4} justifyContent='center'>
+									{service.packages.map((pkg, index) => (
+										<Grid
+											item
+											xs={12}
+											sm={6}
+											md={4}
+											key={index}
+											data-aos='fade-up'
+											data-aos-delay={index * 150}>
+											<Paper
+												elevation={3}
+												sx={{
+													height: "100%",
+													display: "flex",
+													flexDirection: "column",
+													position: "relative",
+													borderRadius: "16px",
+													border:
+														index === 1
+															? `2px solid ${theme.palette.primary.main}`
+															: "none",
+													transition: "transform 0.3s ease, box-shadow 0.3s ease",
+													p: 4,
+													"&:hover": {
+														transform: "translateY(-10px)",
+														boxShadow: "0 20px 30px rgba(0,0,0,0.1)",
+													},
+												}}>
+												{index === 1 && (
+													<Box
+														sx={{
+															position: "absolute",
+															top: "-15px",
+															left: "50%",
+															transform: "translateX(-50%)",
+															bgcolor: theme.palette.primary.main,
+															color: "white",
+															py: 0.5,
+															px: 3,
+															borderRadius: "30px",
+															fontWeight: "bold",
+															boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+														}}>
+														<Typography variant='body2' fontWeight='bold'>
+															Most Popular
+														</Typography>
+													</Box>
+												)}
+
+												<Typography
+													variant='h5'
+													gutterBottom
+													color='primary'
+													sx={{ 
+														fontWeight: 700, 
+														mb: 2,
+														fontSize: { xs: "1.2rem", md: "1.5rem" },
+													}}>
+													{pkg.name}
+												</Typography>
+
+												<Typography
+													variant='body2'
+													paragraph
+													sx={{ 
+														mb: 3, 
+														flexGrow: 1, 
+														color: "text.secondary",
+														fontSize: { xs: "0.9rem", md: "1rem" },
+													}}>
+													{pkg.description}
+												</Typography>
+
+												<Box
+													sx={{ display: "flex", alignItems: "baseline", mb: 3 }}>
+													<Typography
+														variant='h3'
+														component='span'
+														sx={{ 
+															fontWeight: 700, 
+															color: "primary.main",
+															fontSize: { xs: "1.8rem", md: "2.2rem" },
+														}}>
+														₹{pkg.salePrice || pkg.actualPrice}
+													</Typography>
+													{pkg.salePrice &&
+														pkg.actualPrice &&
+														pkg.salePrice < pkg.actualPrice && (
+															<Typography
+																component='span'
+																sx={{
+																	textDecoration: "line-through",
+																	color: "text.secondary",
+																	fontSize: { xs: "0.9rem", md: "1rem" },
+																	ml: 1,
+																}}>
+																₹{pkg.actualPrice}
+															</Typography>
+														)}
+												</Box>
+
+												<Divider sx={{ my: 2 }} />
+
+												{pkg.features && pkg.features.length > 0 && (
+													<List dense sx={{ mb: 3 }}>
+														{pkg.features.map((feature, idx) => (
+															<ListItem key={idx} disableGutters sx={{ pb: 1 }}>
+																<ListItemIcon sx={{ minWidth: 30 }}>
+																	<CheckCircleIcon
+																		sx={{
+																			color: "primary.main",
+																			fontSize: "1rem",
+																		}}
+																	/>
+																</ListItemIcon>
+																<ListItemText
+																	primary={feature}
+																	primaryTypographyProps={{ 
+																		variant: "body2",
+																		fontSize: { xs: "0.9rem", md: "1rem" },
+																	}}
+																/>
+															</ListItem>
+														))}
+													</List>
+												)}
+
+												<Button
+													variant='contained'
+													color='primary'
+													fullWidth
+													onClick={() => handlePackageSelect(pkg)}
+													endIcon={<ArrowForwardIcon />}
+													sx={{
+														mt: "auto",
+														py: 1.5,
+														borderRadius: "30px",
+														fontWeight: 600,
+														boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+														"&:hover": {
+															boxShadow: "0 6px 15px rgba(0,0,0,0.2)",
+														},
+													}}>
+													Select Package
+												</Button>
+											</Paper>
+										</Grid>
+									))}
+								</Grid>
+							)}
 						</Container>
 					</Box>
 				)}
@@ -1811,7 +2274,7 @@ const VehicleLoanPage = () => {
 					ref={calculatorRef}
 					className='calculator-section'
 					sx={{
-						py: 7,
+						py: { xs: 5, md: 7 },
 						bgcolor: "#f5f5f5",
 						position: "relative",
 						scrollMarginTop: "160px",
@@ -1829,6 +2292,7 @@ const VehicleLoanPage = () => {
 								position: "relative",
 								paddingBottom: "15px",
 								marginBottom: "15px",
+								fontSize: { xs: "1.8rem", md: "2.2rem" },
 								"&::after": {
 									content: '""',
 									position: "absolute",
@@ -1846,7 +2310,14 @@ const VehicleLoanPage = () => {
 							variant='body1'
 							align='center'
 							className='scroll-animation'
-							sx={{ mb: 6, maxWidth: "800px", mx: "auto", color: "#666" }}>
+							sx={{ 
+								mb: { xs: 4, md: 6 }, 
+								maxWidth: "800px", 
+								mx: "auto", 
+								color: "#666",
+								fontSize: { xs: "0.95rem", md: "1.1rem" },
+								px: { xs: 2, md: 0 },
+							}}>
 							Use our simple calculator to estimate your monthly loan payment
 						</Typography>
 						<Grid container spacing={4} justifyContent='center'>
@@ -1854,17 +2325,22 @@ const VehicleLoanPage = () => {
 								<Paper
 									className='calculator-form'
 									sx={{
-										p: 4,
+										p: { xs: 3, md: 4 },
 										borderRadius: "8px",
 										boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
 										border: "1px solid #e8e8e8",
 										overflow: "hidden",
 									}}>
-									<Grid container spacing={3}>
+									<Grid container spacing={{ xs: 2, md: 3 }}>
 										<Grid item xs={12} md={6}>
 											<Typography
 												gutterBottom
-												sx={{ fontWeight: 600, color: "#333", mb: 1 }}>
+												sx={{ 
+													fontWeight: 600, 
+													color: "#333", 
+													mb: 1,
+													fontSize: { xs: "0.95rem", md: "1rem" },
+												}}>
 												Loan Amount
 											</Typography>
 											<Slider
@@ -1877,47 +2353,80 @@ const VehicleLoanPage = () => {
 												sx={{
 													mb: 1,
 													color: "#ff4081",
+													height: 8,  // Slightly larger for touch
 													"& .MuiSlider-rail": {
 														opacity: 0.3,
+														height: 8,
+													},
+													"& .MuiSlider-track": {
+														height: 8,
 													},
 													"& .MuiSlider-thumb": {
-														width: 14,
-														height: 14,
+														width: { xs: 18, md: 14 },
+														height: { xs: 18, md: 14 },
 														backgroundColor: "#fff",
 														border: "2px solid currentColor",
 														"&:focus, &:hover, &.Mui-active, &.Mui-focusVisible":
 															{
-																boxShadow:
-																	"0px 0px 0px 8px rgba(255, 64, 129, 0.16)",
+																outline: "none",
+																boxShadow: "0 0 0 8px rgba(255,64,129,0.16)",
 															},
-													},
-												}}
-											/>
-											<TextField
-												fullWidth
-												value={loanAmount}
-												onChange={(e) => setLoanAmount(Number(e.target.value))}
-												InputProps={{
-													startAdornment: (
-														<InputAdornment position='start'>₹</InputAdornment>
-													),
-												}}
-												sx={{
-													mb: 3,
-													"& .MuiOutlinedInput-root": {
-														"&.Mui-focused fieldset": {
-															borderColor: "#ff4081",
+														"&::before": {
+															display: "none",
 														},
 													},
 												}}
 											/>
+											<Box
+												sx={{
+													display: "flex",
+													justifyContent: "space-between",
+													mt: 1,
+													mb: 2,
+												}}>
+												<Typography variant='caption' color='text.secondary'>
+													₹1,000
+												</Typography>
+												<Typography variant='caption' color='text.secondary'>
+													₹100,000
+												</Typography>
+											</Box>
+											<Box sx={{ mt: 2.5, mb: { xs: 3, md: 1 } }}>
+												<TextField
+													label='Loan Amount'
+													variant='outlined'
+													fullWidth
+													value={loanAmount}
+													size='small'
+													onChange={(e) => {
+														const val = Number(e.target.value);
+														if (val >= 1000 && val <= 100000) {
+															setLoanAmount(val);
+														}
+													}}
+													InputProps={{
+														startAdornment: (
+															<InputAdornment position='start'>₹</InputAdornment>
+														),
+													}}
+													sx={{
+														"& .MuiOutlinedInput-root": {
+															borderRadius: "4px",
+														},
+													}}
+												/>
+											</Box>
 										</Grid>
-
 										<Grid item xs={12} md={6}>
 											<Typography
 												gutterBottom
-												sx={{ fontWeight: 600, color: "#333", mb: 1 }}>
-												Interest Rate (%)
+												sx={{ 
+													fontWeight: 600, 
+													color: "#333", 
+													mb: 1,
+													fontSize: { xs: "0.95rem", md: "1rem" },
+												}}>
+												Interest Rate
 											</Typography>
 											<Slider
 												value={interestRate}
@@ -1926,115 +2435,157 @@ const VehicleLoanPage = () => {
 												max={20}
 												step={0.1}
 												valueLabelDisplay='auto'
+												valueLabelFormat={(value) => `${value}%`}
 												sx={{
 													mb: 1,
 													color: "#ff4081",
+													height: 8,  // Slightly larger for touch
 													"& .MuiSlider-rail": {
 														opacity: 0.3,
+														height: 8,
+													},
+													"& .MuiSlider-track": {
+														height: 8,
 													},
 													"& .MuiSlider-thumb": {
-														width: 14,
-														height: 14,
+														width: { xs: 18, md: 14 },
+														height: { xs: 18, md: 14 },
 														backgroundColor: "#fff",
 														border: "2px solid currentColor",
 														"&:focus, &:hover, &.Mui-active, &.Mui-focusVisible":
 															{
-																boxShadow:
-																	"0px 0px 0px 8px rgba(255, 64, 129, 0.16)",
+																outline: "none",
+																boxShadow: "0 0 0 8px rgba(255,64,129,0.16)",
 															},
-													},
-												}}
-											/>
-											<TextField
-												fullWidth
-												value={interestRate}
-												onChange={(e) =>
-													setInterestRate(Number(e.target.value))
-												}
-												InputProps={{
-													endAdornment: (
-														<InputAdornment position='end'>%</InputAdornment>
-													),
-												}}
-												sx={{
-													mb: 3,
-													"& .MuiOutlinedInput-root": {
-														"&.Mui-focused fieldset": {
-															borderColor: "#ff4081",
+														"&::before": {
+															display: "none",
 														},
 													},
 												}}
 											/>
-										</Grid>
-
-										<Grid item xs={12}>
-											<Typography
-												gutterBottom
-												sx={{ fontWeight: 600, color: "#333", mb: 1 }}>
-												Loan Term
-											</Typography>
-											<FormControl
-												fullWidth
-												sx={{
-													mb: 3,
-													"& .MuiOutlinedInput-root": {
-														"&.Mui-focused fieldset": {
-															borderColor: "#ff4081",
-														},
-													},
-												}}>
-												<Select
-													value={loanTerm}
-													onChange={(e) => setLoanTerm(e.target.value)}>
-													<MenuItem value={6}>6 months</MenuItem>
-													<MenuItem value={12}>12 months</MenuItem>
-													<MenuItem value={18}>18 months</MenuItem>
-													<MenuItem value={24}>24 months</MenuItem>
-													<MenuItem value={36}>36 months</MenuItem>
-													<MenuItem value={48}>48 months</MenuItem>
-													<MenuItem value={60}>60 months</MenuItem>
-												</Select>
-											</FormControl>
-										</Grid>
-
-										<Grid item xs={12}>
 											<Box
 												sx={{
-													background: "#1e4a30",
-													p: 3,
-													borderRadius: 2,
-													mb: 3,
-													color: "white",
+													display: "flex",
+													justifyContent: "space-between",
+													mt: 1,
+													mb: 2,
 												}}>
-												<Typography
-													variant='h6'
-													gutterBottom
-													color='white'
-													sx={{ fontWeight: 500 }}>
-													Monthly Payment
+												<Typography variant='caption' color='text.secondary'>
+													5%
 												</Typography>
-												<Typography
-													variant='h3'
-													sx={{ fontWeight: 700, color: "#ffffff" }}>
-													₹{calculateMonthlyPayment()}
+												<Typography variant='caption' color='text.secondary'>
+													20%
 												</Typography>
 											</Box>
-
+											<Box sx={{ mt: 2.5, mb: { xs: 3, md: 1 } }}>
+												<TextField
+													label='Interest Rate'
+													variant='outlined'
+													fullWidth
+													value={interestRate}
+													size='small'
+													onChange={(e) => {
+														const val = Number(e.target.value);
+														if (val >= 5 && val <= 20) {
+															setInterestRate(val);
+														}
+													}}
+													InputProps={{
+														endAdornment: (
+															<InputAdornment position='end'>%</InputAdornment>
+														),
+													}}
+													sx={{
+														"& .MuiOutlinedInput-root": {
+															borderRadius: "4px",
+														},
+													}}
+												/>
+											</Box>
+										</Grid>
+										<Grid item xs={12} md={6}>
+											<Typography
+												gutterBottom
+												sx={{ 
+													fontWeight: 600, 
+													color: "#333", 
+													mb: 1,
+													fontSize: { xs: "0.95rem", md: "1rem" },
+												}}>
+												Loan Term
+											</Typography>
+											<RadioGroup
+												row
+												value={loanTerm}
+												onChange={(e) => setLoanTerm(Number(e.target.value))}
+												sx={{ justifyContent: "space-between", mb: 3 }}>
+												{[12, 24, 36, 48, 60].map((term) => (
+													<FormControlLabel
+														key={term}
+														value={term}
+														control={
+															<Radio
+																sx={{
+																	color: "#ff4081",
+																	"&.Mui-checked": {
+																		color: "#ff4081",
+																	},
+																}}
+															/>
+														}
+														label={`${term} mos`}
+														sx={{
+															marginRight: { xs: 0, md: 1 },
+															"& .MuiFormControlLabel-label": {
+																fontSize: { xs: "0.8rem", md: "0.9rem" },
+																fontWeight: 500,
+															},
+														}}
+													/>
+												))}
+											</RadioGroup>
+										</Grid>
+										<Grid item xs={12} md={6}>
+											<Typography
+												sx={{
+													fontWeight: 600,
+													color: "#333",
+													mb: 1,
+													fontSize: { xs: "0.95rem", md: "1rem" },
+												}}>
+												Monthly Payment
+											</Typography>
+											<TextField
+												variant='outlined'
+												fullWidth
+												size='small'
+												disabled
+												value={`₹${calculateMonthlyPayment()}`}
+												sx={{
+													mb: 3,
+													"& .MuiOutlinedInput-root": {
+														backgroundColor: "#fafafa",
+														borderRadius: "4px",
+														"& .MuiOutlinedInput-input": {
+															fontWeight: 700,
+															fontSize: "1.2rem",
+															color: "#1e4a30",
+															textAlign: "center",
+															py: 1.5,
+														},
+													},
+												}}
+											/>
+										</Grid>
+										<Grid item xs={12}>
 											<Button
 												variant='contained'
 												fullWidth
-												className='borrow-btn'
-												endIcon={
-													service?.packages?.length > 0 ? (
-														<ArrowForwardIcon />
-													) : (
-														<CalculateIcon />
-													)
-												}
 												sx={{
+													py: 1.5,
+													mt: { xs: 0, md: 2 },
 													backgroundColor: "#ff4081",
 													color: "white",
-													py: 1.5,
 													fontWeight: 600,
 													fontSize: "1rem",
 													borderRadius: "4px",
@@ -2064,13 +2615,13 @@ const VehicleLoanPage = () => {
 				</Box>
 
 				{/* Newsletter Section */}
-				<Box sx={{ py: 3, bgcolor: "#1e4a30" }}>
+				<Box sx={{ py: { xs: 4, md: 3 }, bgcolor: "#1e4a30" }}>
 					<Container maxWidth='lg'>
 						<Grid
 							container
 							alignItems='center'
 							justifyContent='center'
-							spacing={2}>
+							spacing={{ xs: 2, md: 2 }}>
 							<Grid item xs={12} sm='auto'>
 								<Typography
 									variant='h6'
@@ -2079,7 +2630,7 @@ const VehicleLoanPage = () => {
 									sx={{
 										color: "white",
 										fontWeight: 500,
-										fontSize: "1rem",
+										fontSize: { xs: "0.95rem", md: "1rem" },
 										m: 0,
 										mb: { xs: 1, sm: 0 },
 									}}>

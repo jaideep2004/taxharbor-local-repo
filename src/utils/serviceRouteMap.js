@@ -32,6 +32,7 @@ export const SERVICE_PATHS = {
 	// Insurance services
 	"term insurance": "/term-insurance",
 	"term life insurance": "/term-insurance",
+	"life insurance": "/term-insurance",
 	"health insurance": "/health-insurance",
 	"medical insurance": "/health-insurance",
 	"vehicle insurance": "/vehicle-insurance",
@@ -73,22 +74,22 @@ export const SERVICE_PATHS = {
 	"tds filing": "/tds-returns",
 	"tds return filing": "/tds-returns",
 	"tax deducted at source": "/tds-returns",
-	"gst": "/gst",
+	gst: "/gst",
 	"gst filing": "/gst",
 	"goods and services tax": "/gst",
 	"gst returns": "/gst",
 	"gst registration": "/gst",
-	
+
 	// Compliance services
 	"pf and esi": "/pf-and-esi",
 	"pf & esi": "/pf-and-esi",
 	"provident fund": "/pf-and-esi",
 	"employee state insurance": "/pf-and-esi",
-	"epf": "/pf-and-esi",
-	"esi": "/pf-and-esi",
-	
+	epf: "/pf-and-esi",
+	esi: "/pf-and-esi",
+
 	// Registration services
-	"registrations": "/registrations",
+	registrations: "/registrations",
 	"business registration": "/registrations",
 	"company registration": "/registrations",
 	"llp registration": "/registrations",
@@ -110,7 +111,7 @@ export const STANDARD_SERVICE_PATHS = [
 	},
 	{
 		path: "/term-insurance",
-		namePattern: /(term insurance|term life insurance)/i,
+		namePattern: /(term insurance|term life insurance|life insurance)/i,
 	},
 	{
 		path: "/health-insurance",
@@ -141,7 +142,8 @@ export const STANDARD_SERVICE_PATHS = [
 	},
 	{
 		path: "/portfolio-builder",
-		namePattern: /(portfolio builder|portfolio management|investment portfolio|wealth management)/i,
+		namePattern:
+			/(portfolio builder|portfolio management|investment portfolio|wealth management)/i,
 	},
 	{
 		path: "/itr-filing",
@@ -154,19 +156,23 @@ export const STANDARD_SERVICE_PATHS = [
 	},
 	{
 		path: "/tds-returns",
-		namePattern: /(tds returns|tds filing|tds return filing|tax deducted at source)/i,
+		namePattern:
+			/(tds returns|tds filing|tds return filing|tax deducted at source)/i,
 	},
 	{
 		path: "/gst",
-		namePattern: /(gst|gst filing|goods and services tax|gst returns|gst registration)/i,
+		namePattern:
+			/(gst|gst filing|goods and services tax|gst returns|gst registration)/i,
 	},
 	{
 		path: "/pf-and-esi",
-		namePattern: /(pf and esi|pf & esi|provident fund|employee state insurance|epf|esi)/i,
+		namePattern:
+			/(pf and esi|pf & esi|provident fund|employee state insurance|epf|esi)/i,
 	},
 	{
 		path: "/registrations",
-		namePattern: /(registrations|business registration|company registration|llp registration|shop registration|msme registration|udyam registration)/i,
+		namePattern:
+			/(registrations|business registration|company registration|llp registration|shop registration|msme registration|udyam registration)/i,
 	},
 ];
 
@@ -182,15 +188,8 @@ export const getServicePath = (service) => {
 	const serviceName = service.name?.toLowerCase();
 	const serviceCategory = service.category?.toLowerCase();
 
-	console.log(
-		`Determining path for service: Name=${serviceName}, Category=${serviceCategory}, ID=${service._id}`
-	);
-
 	// Check if we have a direct mapping for this service name
 	if (serviceName && SERVICE_PATHS[serviceName]) {
-		console.log(
-			`Found direct mapping for ${serviceName}: ${SERVICE_PATHS[serviceName]}`
-		);
 		return SERVICE_PATHS[serviceName];
 	}
 
@@ -200,7 +199,6 @@ export const getServicePath = (service) => {
 			(serviceName && namePattern.test(serviceName)) ||
 			(serviceCategory && namePattern.test(serviceCategory))
 		) {
-			console.log(`Matched pattern ${namePattern} to path ${path}`);
 			return path;
 		}
 	}

@@ -127,7 +127,7 @@ const GradientCard = styled(Paper)(({ theme }) => ({
 		},
 		"&::after": {
 			transform: "rotate(-210deg) scale(1.5)",
-		},
+	},
 	},
 	"&::before, &::after": {
 		content: '""',
@@ -217,10 +217,10 @@ const PortfolioBPage = () => {
 
 	return (
 		<ThemeProvider theme={theme}>
-			<Box 
+				<Box
 				className='service-page mutual-funds-page' 
-				sx={{ 
-					pt: "196px", 
+					sx={{
+						pt: "196px",
 					minHeight: "100vh",
 					background: "linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%)"
 				}}
@@ -228,17 +228,17 @@ const PortfolioBPage = () => {
 				<Container maxWidth="lg">
 					<Grid container spacing={4} justifyContent="center" alignItems="center">
 						<Grid item xs={12} textAlign="center">
-							<Typography 
+									<Typography
 								variant="h2" 
-								sx={{
-									fontWeight: 700,
+										sx={{
+											fontWeight: 700,
 									mb: 2,
-									position: "relative",
-									display: "inline-block",
+											position: "relative",
+											display: "inline-block",
 									color: theme.palette.primary.main,
-									"&::after": {
-										content: '""',
-										position: "absolute",
+											"&::after": {
+												content: '""',
+												position: "absolute",
 										width: "60%",
 										height: "4px",
 										background: "linear-gradient(to right, #1b321d 30%, #ff4081 100%)",
@@ -250,11 +250,11 @@ const PortfolioBPage = () => {
 								}}
 							>
 								Portfolio Builder
-							</Typography>
-							<Typography 
+									</Typography>
+									<Typography
 								variant="h5" 
 								color="textSecondary"
-								sx={{ 
+										sx={{
 									mb: 4, 
 									opacity: 0.9,
 									fontWeight: 500,
@@ -263,9 +263,9 @@ const PortfolioBPage = () => {
 								}}
 							>
 								Your personalized investment strategy is on its way
-							</Typography>
-						</Grid>
-						
+									</Typography>
+										</Grid>
+
 						<Grid item xs={12} md={10} lg={8}>
 							<GradientCard>
 								{/* Decorative elements */}
@@ -278,35 +278,35 @@ const PortfolioBPage = () => {
 									<AutoGraphIcon fontSize="inherit" />
 								</AnimatedIcon>
 								
-								<Typography 
+													<Typography
 									variant="h3" 
 									align="center" 
-									gutterBottom
-									sx={{ 
-										fontWeight: 700, 
+										gutterBottom
+										sx={{
+											fontWeight: 700,
 										color: theme.palette.primary.main,
 										mb: 3,
-										position: "relative",
+											position: "relative",
 										zIndex: 2
 									}}
 								>
 									Coming Soon
-								</Typography>
-								
-								<Typography 
+									</Typography>
+
+									<Typography
 									variant="body1" 
 									align="center"
-									sx={{ 
+										sx={{
 										maxWidth: "600px", 
-										mb: 4,
+											mb: 4,
 										color: theme.palette.text.secondary,
 										position: "relative",
 										zIndex: 2
 									}}
 								>
 									We're building a powerful portfolio management solution to help you achieve your financial goals. Our team is working to create a personalized experience that will revolutionize how you plan, build, and track your investments.
-								</Typography>
-								
+									</Typography>
+
 								<Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, mt: 2, position: "relative", zIndex: 2 }}>
 									<StyledButton
 										variant="contained"
@@ -323,12 +323,12 @@ const PortfolioBPage = () => {
 									>
 										Explore Other Services
 									</StyledButton>
-								</Box>
+														</Box>
 								
-								<Typography 
+														<Typography
 									variant="body2" 
 									align="center" 
-									sx={{ 
+														sx={{
 										mt: 4, 
 										fontStyle: "italic", 
 										color: theme.palette.text.secondary,
@@ -338,82 +338,82 @@ const PortfolioBPage = () => {
 									}}
 								>
 									Expected launch: Q1 2023
-								</Typography>
-							</GradientCard>
-						</Grid>
-						
+														</Typography>
+											</GradientCard>
+										</Grid>
+
 						<Grid item xs={12} textAlign="center" sx={{ mt: 6 }}>
 							<Typography variant="h5" color="primary" gutterBottom sx={{ fontWeight: 600 }}>
 								Features to Look Forward To
-							</Typography>
+														</Typography>
 							
 							<Grid container spacing={3} sx={{ mt: 2 }} justifyContent="center">
 								<Grid item xs={12} sm={6} md={4}>
 									<Box sx={{ 
 										p: 3, 
 										textAlign: "center",
-										height: "100%",
+													height: "100%",
 										background: alpha(theme.palette.background.light, 0.6),
 										borderRadius: "12px",
 										border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
 										transition: "transform 0.3s ease",
-										"&:hover": {
+													"&:hover": {
 											transform: "translateY(-5px)"
 										}
 									}}>
 										<Typography variant="h6" color="primary" gutterBottom>
 											Risk Assessment
-										</Typography>
+													</Typography>
 										<Typography variant="body2" color="textSecondary">
 											Personalized portfolio recommendations based on your risk tolerance and financial goals.
-										</Typography>
-									</Box>
-								</Grid>
-								
+												</Typography>
+													</Box>
+										</Grid>
+
 								<Grid item xs={12} sm={6} md={4}>
 									<Box sx={{ 
 										p: 3, 
 										textAlign: "center",
-										height: "100%",
+													height: "100%",
 										background: alpha(theme.palette.background.light, 0.6),
 										borderRadius: "12px",
 										border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
 										transition: "transform 0.3s ease",
-										"&:hover": {
+													"&:hover": {
 											transform: "translateY(-5px)"
 										}
 									}}>
 										<Typography variant="h6" color="primary" gutterBottom>
 											Performance Tracking
-										</Typography>
+													</Typography>
 										<Typography variant="body2" color="textSecondary">
 											Real-time dashboards to monitor your investments and track progress toward your goals.
-										</Typography>
+												</Typography>
 									</Box>
-								</Grid>
-								
+										</Grid>
+
 								<Grid item xs={12} sm={6} md={4}>
 									<Box sx={{ 
 										p: 3, 
 										textAlign: "center",
-										height: "100%",
+													height: "100%",
 										background: alpha(theme.palette.background.light, 0.6),
 										borderRadius: "12px",
 										border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
 										transition: "transform 0.3s ease",
-										"&:hover": {
+													"&:hover": {
 											transform: "translateY(-5px)"
 										}
 									}}>
 										<Typography variant="h6" color="primary" gutterBottom>
 											Smart Rebalancing
-										</Typography>
+													</Typography>
 										<Typography variant="body2" color="textSecondary">
 											Automated suggestions to optimize your portfolio and maintain your desired asset allocation.
-										</Typography>
-									</Box>
-								</Grid>
-							</Grid>
+													</Typography>
+											</Box>
+										</Grid>
+										</Grid>
 						</Grid>
 					</Grid>
 				</Container>

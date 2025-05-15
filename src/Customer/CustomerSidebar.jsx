@@ -29,7 +29,7 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
 						{section}
 					</li>
 				))}
-				<button onClick={logout}>Logout</button>
+				{/* <button onClick={logout}>Logout</button> */}
 			</ul>
 		</div>
 	);

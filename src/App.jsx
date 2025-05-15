@@ -18,6 +18,7 @@ import ProtectedRoute from "./Admin/utils/ProtectedRoute";
 import { useState, useEffect, useContext } from "react";
 import CustomerDashboard from "./Customer/CustomerDashboard";
 import CustomerLoginPage from "./Customer/CustomerLoginPage";
+import ResetPasswordPage from "./Customer/ResetPasswordPage";
 import { CustomerAuthProvider } from "./Customer/CustomerAuthContext";
 import { useNavigate } from "react-router-dom";
 import CustomerProtectedRoute from "./Customer/CustomerProtectedRoute";
@@ -61,6 +62,7 @@ import GSTPage from "./components/Services/GST";
 import PFandESIPage from "./components/Services/PFandESI";
 import RegistartionsPage from "./components/Services/Registrations";
 import ScrollToTop from "./components/ScrollToTop";
+import GlossaryPage from "./components/Glossary/Glossary";
 
 // Import calculators
 import EMICalculator from "./components/Calculators/EMICalculator";
@@ -341,6 +343,16 @@ function App() {
 								{/* Customer Routes */}
 
 								<Route
+									path='/login'
+									element={
+										<>
+											<Header />
+											<CustomerLoginPage />
+										</>
+									}
+								/>
+
+								<Route
 									path='/customers/login'
 									element={
 										<>
@@ -349,6 +361,17 @@ function App() {
 										</>
 									}
 								/>
+
+								<Route
+									path='/reset-password/:token'
+									element={
+										<>
+											<Header />
+											<ResetPasswordPage />
+										</>
+									}
+								/>
+
 								<Route
 									path='/investments'
 									element={
@@ -368,15 +391,6 @@ function App() {
 										</>
 									}
 								/>
-								{/* <Route
-									path='/calculator1'
-									element={
-										<>
-											<Header />
-											<EMICalc />
-										</>
-									}
-								/> */}
 
 								<Route
 									path='/customers/dashboard/:email'
@@ -440,7 +454,7 @@ function App() {
 										</>
 									}
 								/>
-								
+
 								<Route
 									path='/data-policy'
 									element={
@@ -450,13 +464,24 @@ function App() {
 										</>
 									}
 								/>
-								
+
 								<Route
 									path='/refund-policy'
 									element={
 										<>
 											<Header />
 											<RefundPolicy />
+										</>
+									}
+								/>
+
+								{/* Glossary Page Route */}
+								<Route
+									path='/glossary'
+									element={
+										<>
+											<Header />
+											<GlossaryPage />
 										</>
 									}
 								/>

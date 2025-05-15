@@ -38,7 +38,7 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
 						{section}
 					</li>
 				))}
-				{isAuthenticated && <button onClick={handleLogout}>Logout</button>}
+				{/* {isAuthenticated && <button onClick={handleLogout}>Logout</button>} */}
 			</ul>
 		</div>
 	);

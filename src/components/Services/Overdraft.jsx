@@ -43,6 +43,7 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import AutoGraphIcon from "@mui/icons-material/AutoGraph";
 import GroupIcon from "@mui/icons-material/Group";
 import SavingsIcon from "@mui/icons-material/Savings";
+import MenuIcon from "@mui/icons-material/Menu";
 import "./services.css";
 
 // Theme configuration with updated colors
@@ -112,6 +113,15 @@ const theme = createTheme({
 			fontWeight: 600,
 		},
 	},
+	components: {
+		MuiContainer: {
+			styleOverrides: {
+				maxWidthLg: {
+					maxWidth: "1400px !important",
+				},
+			},
+		},
+	},
 });
 
 // Styled Components
@@ -141,9 +151,10 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 }));
 
 const StyledTabs = styled(Tabs)(({ theme }) => ({
-	background: "#f8f9fa",
+	background: "#f2f6f4",
 	"& .MuiTabs-flexContainer": {
-		justifyContent: "center",
+		justifyContent: "space-between",
+		width: "100%",
 	},
 }));
 
@@ -165,7 +176,7 @@ const HeroPaper = styled(Paper)(({ theme }) => ({
 
 const OverdraftPage = () => {
 	// Service ID from backend - change this for each loan page
-	const SERVICE_ID = "SER113"; // Replace with your actual service ID
+	const SERVICE_ID = "SER116"; // Replace with your actual service ID
 	const navigate = useNavigate();
 
 	// State variables
@@ -210,11 +221,21 @@ const OverdraftPage = () => {
 					document
 						.getElementById("tabs-spacer")
 						?.classList.add("active-spacer");
+					
+					// On mobile, ensure sidebar is closed when scrolling unless explicitly toggled
+					if (isMobile && !tabsContainer.classList.contains("sidebar-open")) {
+						tabsContainer.classList.remove("sidebar-open");
+					}
 				} else {
 					tabsContainer.classList.remove("fixed-tabs");
 					document
 						.getElementById("tabs-spacer")
 						?.classList.remove("active-spacer");
+					
+					// When scrolling back to top, ensure sidebar is closed on mobile
+					if (isMobile) {
+						tabsContainer.classList.remove("sidebar-open");
+					}
 				}
 			}
 		};
@@ -223,7 +244,7 @@ const OverdraftPage = () => {
 		return () => {
 			window.removeEventListener("scroll", handleScroll);
 		};
-	}, [tabHeight]);
+	}, [tabHeight, isMobile]);
 
 	// Fetch service data from backend
 	useEffect(() => {
@@ -377,7 +398,7 @@ const OverdraftPage = () => {
 			description:
 				"Designed for businesses looking to scale operations, these loans leverage property for growth capital.",
 			icon: <DescriptionIcon fontSize='large' />,
-		}
+		},
 	];
 
 	const defaultLoanFeatures = [
@@ -431,8 +452,7 @@ const OverdraftPage = () => {
 		},
 		{
 			title: "Secure and Transparent Process",
-			description:
-				"Complete clarity in terms, conditions, and charges.",
+			description: "Complete clarity in terms, conditions, and charges.",
 			icon: <DescriptionIcon fontSize='large' />,
 		},
 		{
@@ -440,7 +460,7 @@ const OverdraftPage = () => {
 			description:
 				"Pledge multiple properties for higher loan amounts if required.",
 			icon: <DescriptionIcon fontSize='large' />,
-		}
+		},
 	];
 
 	const defaultFaqs = [
@@ -488,7 +508,7 @@ const OverdraftPage = () => {
 			question: "How long does it take to process LAP?",
 			answer:
 				"The loan process is quick, with disbursal usually completed within 7–10 working days after verification.",
-		}
+		},
 	];
 
 	// Use data from backend or fallback to defaults
@@ -549,6 +569,36 @@ const OverdraftPage = () => {
 	return (
 		<ThemeProvider theme={theme}>
 			<Box className='borrow-loan-page' style={{ marginTop: "100px" }}>
+				{/* Mobile tab toggle button - Always visible and outside the tab container */}
+				{isMobile && (
+					<Box
+						className='mobile-tab-toggle'
+						onClick={() => {
+							const tabsContainer = document.getElementById(
+								"sticky-tabs-container"
+							);
+							tabsContainer?.classList.toggle("sidebar-open");
+						}}
+						sx={{
+							position: "fixed !important",
+							top: "64px !important",
+							left: "0 !important",
+							width: "40px !important",
+							height: "40px !important",
+							backgroundColor: "#1e4a30 !important",
+							color: "white !important",
+							zIndex: "9999 !important",
+							display: "flex !important",
+							alignItems: "center !important",
+							justifyContent: "center !important",
+							borderRadius: "0 4px 4px 0 !important",
+							boxShadow: "2px 2px 5px rgba(0,0,0,0.2) !important",
+							cursor: "pointer !important",
+						}}>
+						<MenuIcon />
+					</Box>
+				)}
+
 				{/* Hero Section - Redesigned with enhanced visuals */}
 				<Box
 					ref={heroRef}
@@ -575,8 +625,13 @@ const OverdraftPage = () => {
 								"linear-gradient(135deg, rgba(30,74,48,0.4) 0%, rgba(198,219,206,0.2) 100%)",
 							zIndex: 1,
 						},
+					}}
+					style={{
+						padding: "133px 0px 64px 0px",
 					}}>
-					<Container sx={{ position: "relative", zIndex: 10, py: 0 }}>
+					<Container
+						maxWidth='lg'
+						sx={{ position: "relative", zIndex: 10, py: 0 }}>
 						<Box
 							sx={{
 								boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
@@ -709,7 +764,7 @@ const OverdraftPage = () => {
 								<style jsx='true'>{`
 									.fixed-tabs {
 										position: fixed;
-										top: 100px;
+										top: 109px;
 										left: 0;
 										right: 0;
 										z-index: 1100;
@@ -723,49 +778,133 @@ const OverdraftPage = () => {
 									.active-spacer {
 										display: block;
 									}
+									
+									/* Mobile-specific styles for the sidebar menu */
+									@media (max-width: 600px) {
+										.fixed-tabs {
+											top: 60px;
+											left: 0;
+											width: 180px !important; 
+											height: calc(100vh - 60px);
+											max-height: 100vh;
+											overflow-y: auto;
+											z-index: 999;
+											box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
+											background-color: #f2f6f4;
+											padding: 0;
+											transform: translateX(-100%);
+											transition: transform 0.3s ease;
+											border-radius: 0 !important;
+										}
+										
+										.fixed-tabs.sidebar-open {
+											transform: translateX(0);
+										}
+										
+										.tabs-container .MuiTabs-flexContainer {
+											flex-direction: column;
+										}
+										
+										.tabs-container .MuiTab-root {
+											border-bottom: 1px solid rgba(30, 74, 48, 0.1);
+											text-align: left;
+											justify-content: flex-start;
+											min-height: 56px;
+											padding: 12px 15px;
+										}
+										
+										.tabs-container .MuiTabs-indicator {
+											display: none !important;
+										}
+										
+										.mobile-tab-toggle {
+											position: fixed !important;
+											top: 64px !important;
+											left: 0 !important;
+											width: 40px !important;
+											height: 40px !important;
+											background-color: #1e4a30 !important;
+											color: white !important;
+											z-index: 9999 !important;
+											display: flex !important;
+											align-items: center !important;
+											justify-content: center !important;
+											border-radius: 0 4px 4px 0 !important;
+											cursor: pointer !important;
+											box-shadow: 2px 2px 5px rgba(0,0,0,0.2) !important;
+										}
+									}
 								`}</style>
 								<StyledTabs
 									value={activeTab}
 									onChange={handleTabChange}
-									variant='scrollable'
-									scrollButtons='auto'
+									variant={isMobile ? "standard" : "fullWidth"}
+									scrollButtons={false}
+									centered={!isMobile}
+									orientation={isMobile ? "vertical" : "horizontal"}
 									sx={{
 										"& .MuiTabs-indicator": {
 											backgroundColor: "#1e4a30",
 											height: "3px",
+											transition: "all 0.3s ease",
+											position: "absolute",
+											bottom: 0,
+											display: { xs: "none", md: "block" },
+										},
+										"& .MuiTabs-flexContainer": {
+											width: "100%",
+											justifyContent: "space-between",
+											flexDirection: { xs: "column", md: "row" },
 										},
 										"& .MuiTab-root": {
 											transition: "all 0.3s ease",
 											position: "relative",
-											fontSize: "13px",
-											padding: "15px 20px",
+											fontSize: { xs: "15px", md: "17px" },
+											minWidth: "auto",
+											padding: { xs: "12px 15px", md: "15px 5px" },
 											textTransform: "uppercase",
-											fontWeight: 500,
+											fontWeight: 600,
 											color: "#555555",
+											backgroundColor: "#c6e9bc",
+											flex: 1,
+											textAlign: { xs: "left", md: "center" },
+											justifyContent: { xs: "flex-start", md: "center" },
 											"&::after": {
 												content: '""',
 												position: "absolute",
 												bottom: 0,
-												left: "50%",
-												width: "0%",
-												height: "3px",
+												left: { xs: 0, md: "50%" },
+												width: { xs: "4px", md: "0%" },
+												height: { xs: "100%", md: "3px" },
 												backgroundColor: "transparent",
-												transform: "translateX(-50%)",
-												transition: "width 0.3s ease",
+												transform: { xs: "none", md: "translateX(-50%)" },
+												transition: "width 0.3s ease, height 0.3s ease",
 											},
 											"&:hover": {
 												color: "#1e4a30",
-												backgroundColor: "rgba(245, 249, 246, 0.5)",
+												backgroundColor: "rgba(30,74,48,0.05)",
 												"&::after": {
-													width: "30%",
+													width: { xs: "4px", md: "30%" },
+													height: { xs: "70%", md: "3px" },
 													backgroundColor: "rgba(30, 74, 48, 0.3)",
 												},
 											},
 											"&.Mui-selected": {
 												color: "#1e4a30",
 												fontWeight: "600",
+												backgroundColor: {
+													xs: "rgba(30,74,48,0.1)",
+													md: "#c6e9bc",
+												},
+												"&::after": {
+													width: { xs: "4px", md: "30%" },
+													height: { xs: "70%", md: "3px" },
+													backgroundColor: "#1e4a30",
+												},
 											},
 										},
+										width: "100%",
+										height: { xs: "100%", md: "auto" },
 									}}
 									aria-label='lap tabs'>
 									<StyledTab label='ABOUT OVERDRAFT' />
@@ -808,10 +947,10 @@ const OverdraftPage = () => {
 					id='about-lap'
 					ref={aboutLoanRef}
 					className='section-container'>
-					<Container>
+					<Container maxWidth='lg'>
 						<Box
 							sx={{
-								maxWidth: 900,
+								maxWidth: 1100,
 								mx: "auto",
 								position: "relative",
 								zIndex: 1,
@@ -862,14 +1001,14 @@ const OverdraftPage = () => {
 										sx={{
 											fontSize: "1.1rem",
 											lineHeight: 1.7,
-											color: "#555",
+											color: "black",
 											mb: 3,
 										}}>
 										Loan Against Property is a secured loan where borrowers can
-										pledge their residential, commercial, or industrial property as
-										collateral to avail funds. Unlike selling your property, LAP
-										enables you to retain ownership while accessing capital to
-										meet financial requirements.
+										pledge their residential, commercial, or industrial property
+										as collateral to avail funds. Unlike selling your property,
+										LAP enables you to retain ownership while accessing capital
+										to meet financial requirements.
 									</Typography>
 									<Typography
 										variant='body1'
@@ -880,10 +1019,11 @@ const OverdraftPage = () => {
 											color: "#555",
 											mb: 3,
 										}}>
-										At FinShelter, LAP is designed with flexibility, affordability,
-										and convenience in mind. It's an ideal solution for individuals
-										and businesses seeking substantial funds at low interest rates
-										for personal or professional goals.
+										At FinShelter, LAP is designed with flexibility,
+										affordability, and convenience in mind. It's an ideal
+										solution for individuals and businesses seeking substantial
+										funds at low interest rates for personal or professional
+										goals.
 									</Typography>
 								</>
 							)}
@@ -918,7 +1058,7 @@ const OverdraftPage = () => {
 					sx={{ py: 7, bgcolor: "#f5f5f5" }}
 					ref={typesLoanRef}
 					className='section-container'>
-					<Container>
+					<Container maxWidth='lg'>
 						<Typography
 							variant='h3'
 							gutterBottom
@@ -941,7 +1081,7 @@ const OverdraftPage = () => {
 									background: "#1e4a30",
 								},
 							}}>
-							Types of Overdraft
+							Types of Loan Against Property (LAP)
 						</Typography>
 						<Typography
 							variant='subtitle1'
@@ -949,9 +1089,9 @@ const OverdraftPage = () => {
 							sx={{ mb: 6, maxWidth: "800px", mx: "auto", color: "#666" }}>
 							{service?.productsTagline || ""}
 						</Typography>
-						<Grid container spacing={4} style={{ justifyContent: "center" }}>
+						<Grid container spacing={{ xs: 5, md: 4 }} style={{ justifyContent: "center" }}>
 							{loanProducts.map((product, index) => (
-								<Grid item xs={12} sm={6} md={4} key={index}>
+								<Grid item xs={12} sm={6} md={4} key={index} sx={{ mb: { xs: 5, md: 0 } }}>
 									<Card
 										sx={{
 											height: "100%",
@@ -968,7 +1108,7 @@ const OverdraftPage = () => {
 												boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
 											},
 										}}>
-										<CardContent sx={{ p: 3, flexGrow: 1 }}>
+										<CardContent sx={{ p: { xs: 2.5, md: 3 }, flexGrow: 1 }}>
 											<Box
 												sx={{ mb: 2.5, color: "#ff4081", textAlign: "center" }}>
 												{product.icon || <MoneyIcon fontSize='large' />}
@@ -990,7 +1130,8 @@ const OverdraftPage = () => {
 												variant='body2'
 												color='text.secondary'
 												sx={{
-													fontSize: "0.95rem",
+													fontSize: "17px",
+													color: "black",
 													lineHeight: 1.6,
 													textAlign: "center",
 												}}>
@@ -1025,7 +1166,7 @@ const OverdraftPage = () => {
 					}}
 					ref={featuresRef}
 					className='section-container'>
-					<Container sx={{ position: "relative", zIndex: 1 }}>
+					<Container maxWidth='lg' sx={{ position: "relative", zIndex: 1 }}>
 						<Typography
 							variant='h3'
 							gutterBottom
@@ -1058,7 +1199,7 @@ const OverdraftPage = () => {
 						</Typography>
 						<Grid
 							container
-							spacing={4}
+							spacing={{ xs: 5, md: 4 }}
 							alignItems='stretch'
 							justifyContent='center'>
 							{loanFeatures.map((feature, index) => (
@@ -1068,11 +1209,14 @@ const OverdraftPage = () => {
 									sm={6}
 									md={3}
 									key={index}
-									sx={{ display: "flex", marginBottom: "50px" }}>
+									sx={{ 
+										display: "flex", 
+										marginBottom: { xs: "30px", md: "50px" }
+									}}>
 									<Box
 										sx={{
 											textAlign: "center",
-											padding: 3,
+											padding: { xs: 2, md: 3 },
 											transition: "all 0.3s ease",
 											borderRadius: "8px",
 											border: "1px solid #eaeaea",
@@ -1125,7 +1269,8 @@ const OverdraftPage = () => {
 											variant='body2'
 											color='text.secondary'
 											sx={{
-												fontSize: "0.95rem",
+												fontSize: "17px",
+												color: "black",
 												lineHeight: 1.6,
 												flexGrow: 1,
 											}}>
@@ -1158,7 +1303,7 @@ const OverdraftPage = () => {
 					}}
 					ref={eligibilityRef}
 					className='section-container'>
-					<Container sx={{ position: "relative", zIndex: 1 }}>
+					<Container maxWidth='lg' sx={{ position: "relative", zIndex: 1 }}>
 						<Typography
 							variant='h3'
 							gutterBottom
@@ -1189,7 +1334,7 @@ const OverdraftPage = () => {
 							sx={{ mb: 5, maxWidth: "800px", mx: "auto", color: "#666" }}>
 							{service?.eligibilityText || ""}
 						</Typography>
-						<Grid container spacing={4} justifyContent='center'>
+						<Grid container spacing={{ xs: 4, md: 4 }} justifyContent='center'>
 							{(
 								service?.eligibilityCriteria || [
 									{
@@ -1209,7 +1354,7 @@ const OverdraftPage = () => {
 									},
 								]
 							).map((criteria, index) => (
-								<Grid item xs={12} sm={6} md={6} key={index}>
+								<Grid item xs={12} sm={6} md={6} key={index} sx={{ mb: { xs: 6, md: 0 } }}>
 									<Card
 										sx={{
 											boxShadow: "0 3px 10px rgba(0,0,0,0.06)",
@@ -1249,7 +1394,8 @@ const OverdraftPage = () => {
 												variant='body1'
 												sx={{
 													textAlign: "center",
-													color: "#555",
+
+													color: "black",
 												}}
 												dangerouslySetInnerHTML={{
 													__html: criteria.description,
@@ -1271,7 +1417,7 @@ const OverdraftPage = () => {
 					}}
 					ref={faqsRef}
 					className='section-container'>
-					<Container>
+					<Container maxWidth='lg'>
 						<Typography
 							variant='h3'
 							gutterBottom
@@ -1279,80 +1425,148 @@ const OverdraftPage = () => {
 							align='center'
 							sx={{
 								fontWeight: 700,
-								color: "#1e4a30",
 								position: "relative",
-								paddingBottom: "15px",
-								marginBottom: "15px",
+								display: "inline-block",
+								pb: 2,
 								"&::after": {
 									content: '""',
 									position: "absolute",
+									width: "80px",
+									height: "4px",
+									backgroundColor: theme.palette.primary.main,
 									bottom: 0,
 									left: "50%",
 									transform: "translateX(-50%)",
-									width: "80px",
-									height: "3px",
-									background: "#1e4a30",
 								},
 							}}>
-							Frequently Ask Questions
+							Frequently Asked Questions
 						</Typography>
 						<Typography
 							variant='body1'
 							align='center'
-							sx={{ mb: 5, maxWidth: "800px", mx: "auto", color: "#666" }}>
-							{service?.faqTagline || ""}
+							sx={{
+								mb: 6,
+								maxWidth: "800px",
+								mx: "auto",
+								fontSize: "1.1rem",
+							}}>
+							Everything you need to know about Overdraft loans
 						</Typography>
-						<Box sx={{ maxWidth: 800, mx: "auto" }}>
-							{faqs.map((faq, index) => (
-								<Accordion
-									key={index}
-									expanded={expanded === index}
-									onChange={() =>
-										setExpanded(expanded === index ? false : index)
-									}
-									sx={{
-										mb: 2,
-										boxShadow: "none",
-										"&:before": {
-											display: "none",
-										},
-										border: "1px solid #e0e0e0",
-										borderRadius: "4px",
-										overflow: "hidden",
-									}}>
-									<AccordionSummary
-										expandIcon={<ExpandMoreIcon />}
+						<Grid container spacing={4}>
+							<Grid item xs={12} md={6}>
+								{faqs.slice(0, Math.ceil(faqs.length / 2)).map((faq, index) => (
+									<Accordion
+										key={index}
+										expanded={expanded === index}
+										onChange={() =>
+											setExpanded(expanded === index ? false : index)
+										}
 										sx={{
-											backgroundColor: expanded === index ? "#f9f9f9" : "#fff",
-											borderBottom:
-												expanded === index ? "1px solid #e0e0e0" : "none",
-											"&:hover": {
-												backgroundColor: "#f5f5f5",
+											mb: 2,
+											boxShadow: "none",
+											"&:before": {
+												display: "none",
 											},
+											border: "1px solid #e0e0e0",
+											borderRadius: "4px",
+											overflow: "hidden",
 										}}>
-										<Typography
-											variant='h6'
+										<AccordionSummary
+											expandIcon={<ExpandMoreIcon />}
 											sx={{
-												fontSize: "1.1rem",
-												fontWeight: 600,
-												color: expanded === index ? "#1e4a30" : "#333",
+												backgroundColor:
+													expanded === index ? "#f9f9f9" : "#fff",
+												borderBottom:
+													expanded === index ? "1px solid #e0e0e0" : "none",
+												"&:hover": {
+													backgroundColor: "#f5f5f5",
+												},
 											}}>
-											{faq.question}
-										</Typography>
-									</AccordionSummary>
-									<AccordionDetails sx={{ p: 3, backgroundColor: "#fafafa" }}>
-										<Typography
-											variant='body1'
+											<Typography
+												variant='h6'
+												sx={{
+													fontSize: "1.1rem",
+													fontWeight: 600,
+													color: expanded === index ? "#1e4a30" : "#333",
+												}}>
+												{faq.question}
+											</Typography>
+										</AccordionSummary>
+										<AccordionDetails sx={{ p: 3, backgroundColor: "#fafafa" }}>
+											<Typography
+												variant='body1'
+												sx={{
+													color: "black",
+													lineHeight: 1.7,
+												}}>
+												{faq.answer}
+											</Typography>
+										</AccordionDetails>
+									</Accordion>
+								))}
+							</Grid>
+							<Grid item xs={12} md={6}>
+								{faqs.slice(Math.ceil(faqs.length / 2)).map((faq, index) => {
+									const actualIndex = index + Math.ceil(faqs.length / 2);
+									return (
+										<Accordion
+											key={actualIndex}
+											expanded={expanded === actualIndex}
+											onChange={() =>
+												setExpanded(
+													expanded === actualIndex ? false : actualIndex
+												)
+											}
 											sx={{
-												color: "#555",
-												lineHeight: 1.7,
+												mb: 2,
+												boxShadow: "none",
+												"&:before": {
+													display: "none",
+												},
+												border: "1px solid #e0e0e0",
+												borderRadius: "4px",
+												overflow: "hidden",
 											}}>
-											{faq.answer}
-										</Typography>
-									</AccordionDetails>
-								</Accordion>
-							))}
-						</Box>
+											<AccordionSummary
+												expandIcon={<ExpandMoreIcon />}
+												sx={{
+													backgroundColor:
+														expanded === actualIndex ? "#f9f9f9" : "#fff",
+													borderBottom:
+														expanded === actualIndex
+															? "1px solid #e0e0e0"
+															: "none",
+													"&:hover": {
+														backgroundColor: "#f5f5f5",
+													},
+												}}>
+													<Typography
+														variant='h6'
+														sx={{
+															fontSize: "1.1rem",
+															fontWeight: 600,
+															color:
+																expanded === actualIndex ? "#1e4a30" : "#333",
+														}}>
+														{faq.question}
+													</Typography>
+												</AccordionSummary>
+												<AccordionDetails
+													sx={{ p: 3, backgroundColor: "#fafafa" }}>
+													<Typography
+														variant='body1'
+														sx={{
+															color: "black",
+															lineHeight: 1.7,
+														}}>
+														{faq.answer}
+													</Typography>
+												</AccordionDetails>
+											</Accordion>
+										);
+								})}
+							</Grid>
+						</Grid>
 					</Container>
 				</Box>
 
@@ -1377,7 +1591,7 @@ const OverdraftPage = () => {
 						className='section-container'
 						ref={packagesRef}
 						style={{ paddingBottom: "125px" }}>
-						<Container>
+						<Container maxWidth='lg'>
 							<Box sx={{ mb: 6, textAlign: "center" }}>
 								<Typography
 									variant='h3'
@@ -1482,401 +1696,401 @@ const OverdraftPage = () => {
 
 											<Box
 												sx={{ display: "flex", alignItems: "baseline", mb: 3 }}>
-													<Typography
-														variant='h3'
-														component='span'
-														sx={{ fontWeight: 700, color: "primary.main" }}>
-														₹{pkg.salePrice || pkg.actualPrice}
-													</Typography>
-													{pkg.salePrice &&
-														pkg.actualPrice &&
-														pkg.salePrice < pkg.actualPrice && (
-															<Typography
-																component='span'
-																sx={{
-																	textDecoration: "line-through",
-																	color: "text.secondary",
-																	fontSize: "1rem",
-																	ml: 1,
-																}}>
-																₹{pkg.actualPrice}
-															</Typography>
-														)}
-												</Box>
+												<Typography
+													variant='h3'
+													component='span'
+													sx={{ fontWeight: 700, color: "primary.main" }}>
+													₹{pkg.salePrice || pkg.actualPrice}
+												</Typography>
+												{pkg.salePrice &&
+													pkg.actualPrice &&
+													pkg.salePrice < pkg.actualPrice && (
+														<Typography
+															component='span'
+															sx={{
+																textDecoration: "line-through",
+																color: "text.secondary",
+																fontSize: "1rem",
+																ml: 1,
+															}}>
+															₹{pkg.actualPrice}
+														</Typography>
+													)}
+											</Box>
 
-												<Divider sx={{ my: 2 }} />
+											<Divider sx={{ my: 2 }} />
 
-												{pkg.features && pkg.features.length > 0 && (
-													<List dense sx={{ mb: 3 }}>
-														{pkg.features.map((feature, idx) => (
-															<ListItem key={idx} disableGutters sx={{ pb: 1 }}>
-																<ListItemIcon sx={{ minWidth: 30 }}>
-																	<CheckCircleIcon
-																		sx={{
-																			color: "primary.main",
-																			fontSize: "1rem",
-																		}}
-																	/>
-																</ListItemIcon>
-																<ListItemText
-																	primary={feature}
-																	primaryTypographyProps={{ variant: "body2" }}
+											{pkg.features && pkg.features.length > 0 && (
+												<List dense sx={{ mb: 3 }}>
+													{pkg.features.map((feature, idx) => (
+														<ListItem key={idx} disableGutters sx={{ pb: 1 }}>
+															<ListItemIcon sx={{ minWidth: 30 }}>
+																<CheckCircleIcon
+																	sx={{
+																		color: "primary.main",
+																		fontSize: "1rem",
+																	}}
 																/>
-															</ListItem>
-														))}
-													</List>
-												)}
+															</ListItemIcon>
+															<ListItemText
+																primary={feature}
+																primaryTypographyProps={{ variant: "body2" }}
+															/>
+														</ListItem>
+													))}
+												</List>
+											)}
 
-												<Button
-													variant='contained'
-													color='primary'
-													fullWidth
-													onClick={() => handlePackageSelect(pkg)}
-													endIcon={<ArrowForwardIcon />}
-													sx={{
-														mt: "auto",
-														py: 1.5,
-														borderRadius: "30px",
-														fontWeight: 600,
-														boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-														"&:hover": {
-															boxShadow: "0 6px 15px rgba(0,0,0,0.2)",
-														},
-													}}>
-													Select Package
-												</Button>
-											</Paper>
-										</Grid>
-									))}
-								</Grid>
-							</Container>
-						</Box>
-					)}
-
-					{/* EMI Calculator Section */}
-					<Box
-						ref={calculatorRef}
-						className='calculator-section'
-						sx={{
-							py: 7,
-							bgcolor: "#f5f5f5",
-							position: "relative",
-							scrollMarginTop: "160px",
-						}}>
-						<Container>
-							<Typography
-								variant='h3'
-								gutterBottom
-								color='primary'
-								align='center'
-								className='scroll-animation'
-								sx={{
-									fontWeight: 700,
-									color: "#1e4a30",
-									position: "relative",
-									paddingBottom: "15px",
-									marginBottom: "15px",
-									"&::after": {
-										content: '""',
-										position: "absolute",
-										bottom: 0,
-										left: "50%",
-										transform: "translateX(-50%)",
-										width: "80px",
-										height: "3px",
-										background: "#1e4a30",
-									},
-								}}>
-								Calculate Your Payment
-							</Typography>
-							<Typography
-								variant='body1'
-								align='center'
-								className='scroll-animation'
-								sx={{ mb: 6, maxWidth: "800px", mx: "auto", color: "#666" }}>
-								Use our simple calculator to estimate your monthly loan payment
-							</Typography>
-							<Grid container spacing={4} justifyContent='center'>
-								<Grid item xs={12} md={8}>
-									<Paper
-										className='calculator-form'
-										sx={{
-											p: 4,
-											borderRadius: "8px",
-											boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
-											border: "1px solid #e8e8e8",
-											overflow: "hidden",
-										}}>
-										<Grid container spacing={3}>
-											<Grid item xs={12} md={6}>
-												<Typography
-													gutterBottom
-													sx={{ fontWeight: 600, color: "#333", mb: 1 }}>
-													Loan Amount
-												</Typography>
-												<Slider
-													value={loanAmount}
-													onChange={(e, newValue) => setLoanAmount(newValue)}
-													min={1000}
-													max={100000}
-													step={1000}
-													valueLabelDisplay='auto'
-													sx={{
-														mb: 1,
-														color: "#ff4081",
-														"& .MuiSlider-rail": {
-															opacity: 0.3,
-														},
-														"& .MuiSlider-thumb": {
-															width: 14,
-															height: 14,
-															backgroundColor: "#fff",
-															border: "2px solid currentColor",
-															"&:focus, &:hover, &.Mui-active, &.Mui-focusVisible":
-																{
-																	boxShadow:
-																		"0px 0px 0px 8px rgba(255, 64, 129, 0.16)",
-																},
-														},
-													}}
-												/>
-												<TextField
-													fullWidth
-													value={loanAmount}
-													onChange={(e) => setLoanAmount(Number(e.target.value))}
-													InputProps={{
-														startAdornment: (
-															<InputAdornment position='start'>₹</InputAdornment>
-														),
-													}}
-													sx={{
-														mb: 3,
-														"& .MuiOutlinedInput-root": {
-															"&.Mui-focused fieldset": {
-																borderColor: "#ff4081",
-															},
-														},
-													}}
-												/>
-											</Grid>
-
-											<Grid item xs={12} md={6}>
-												<Typography
-													gutterBottom
-													sx={{ fontWeight: 600, color: "#333", mb: 1 }}>
-													Interest Rate (%)
-												</Typography>
-												<Slider
-													value={interestRate}
-													onChange={(e, newValue) => setInterestRate(newValue)}
-													min={5}
-													max={20}
-													step={0.1}
-													valueLabelDisplay='auto'
-													sx={{
-														mb: 1,
-														color: "#ff4081",
-														"& .MuiSlider-rail": {
-															opacity: 0.3,
-														},
-														"& .MuiSlider-thumb": {
-															width: 14,
-															height: 14,
-															backgroundColor: "#fff",
-															border: "2px solid currentColor",
-															"&:focus, &:hover, &.Mui-active, &.Mui-focusVisible":
-																{
-																	boxShadow:
-																		"0px 0px 0px 8px rgba(255, 64, 129, 0.16)",
-																},
-														},
-													}}
-												/>
-												<TextField
-													fullWidth
-													value={interestRate}
-													onChange={(e) =>
-														setInterestRate(Number(e.target.value))
-													}
-													InputProps={{
-														endAdornment: (
-															<InputAdornment position='end'>%</InputAdornment>
-														),
-													}}
-													sx={{
-														mb: 3,
-														"& .MuiOutlinedInput-root": {
-															"&.Mui-focused fieldset": {
-																borderColor: "#ff4081",
-															},
-														},
-													}}
-												/>
-											</Grid>
-
-											<Grid item xs={12}>
-												<Typography
-													gutterBottom
-													sx={{ fontWeight: 600, color: "#333", mb: 1 }}>
-													Loan Term
-												</Typography>
-												<FormControl
-													fullWidth
-													sx={{
-														mb: 3,
-														"& .MuiOutlinedInput-root": {
-															"&.Mui-focused fieldset": {
-																borderColor: "#ff4081",
-															},
-														},
-													}}>
-													<Select
-														value={loanTerm}
-														onChange={(e) => setLoanTerm(e.target.value)}>
-														<MenuItem value={6}>6 months</MenuItem>
-														<MenuItem value={12}>12 months</MenuItem>
-														<MenuItem value={18}>18 months</MenuItem>
-														<MenuItem value={24}>24 months</MenuItem>
-														<MenuItem value={36}>36 months</MenuItem>
-														<MenuItem value={48}>48 months</MenuItem>
-														<MenuItem value={60}>60 months</MenuItem>
-													</Select>
-												</FormControl>
-											</Grid>
-
-											<Grid item xs={12}>
-												<Box
-													sx={{
-														background: "#1e4a30",
-														p: 3,
-														borderRadius: 2,
-														mb: 3,
-														color: "white",
-													}}>
-													<Typography
-														variant='h6'
-														gutterBottom
-														color='white'
-														sx={{ fontWeight: 500 }}>
-														Monthly Payment
-													</Typography>
-													<Typography
-														variant='h3'
-														sx={{ fontWeight: 700, color: "#ffffff" }}>
-														₹{calculateMonthlyPayment()}
-													</Typography>
-												</Box>
-
-												<Button
-													variant='contained'
-													fullWidth
-													className='borrow-btn'
-													endIcon={
-														service?.packages?.length > 0 ? (
-															<ArrowForwardIcon />
-														) : (
-															<CalculateIcon />
-														)
-													}
-													sx={{
-														backgroundColor: "#ff4081",
-														color: "white",
-														py: 1.5,
-														fontWeight: 600,
-														fontSize: "1rem",
-														borderRadius: "4px",
-														"&:hover": {
-															backgroundColor: "#e0356f",
-														},
-													}}
-													onClick={() => {
-														if (service?.packages?.length > 0) {
-															// If service has packages, scroll to packages section
-															scrollToSection(packagesRef);
-														} else {
-															// Otherwise, proceed with direct application
-															handleApplyNow(true);
-														}
-													}}>
-													{service?.packages?.length > 0
-														? "View Packages"
-														: "Apply Now"}
-												</Button>
-											</Grid>
-										</Grid>
-									</Paper>
-								</Grid>
+											<Button
+												variant='contained'
+												color='primary'
+												fullWidth
+												onClick={() => handlePackageSelect(pkg)}
+												endIcon={<ArrowForwardIcon />}
+												sx={{
+													mt: "auto",
+													py: 1.5,
+													borderRadius: "30px",
+													fontWeight: 600,
+													boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+													"&:hover": {
+														boxShadow: "0 6px 15px rgba(0,0,0,0.2)",
+													},
+												}}>
+												Select Package
+											</Button>
+										</Paper>
+									</Grid>
+								))}
 							</Grid>
 						</Container>
 					</Box>
+				)}
 
-					{/* Newsletter Section */}
-					<Box sx={{ py: 3, bgcolor: "#1e4a30" }}>
-						<Container>
-							<Grid
-								container
-								alignItems='center'
-								justifyContent='center'
-								spacing={2}>
-								<Grid item xs={12} sm='auto'>
-									<Typography
-										variant='h6'
-										align='center'
-										gutterBottom
-										sx={{
-											color: "white",
-											fontWeight: 500,
-											fontSize: "1rem",
-											m: 0,
-											mb: { xs: 1, sm: 0 },
-										}}>
-										Signup For Our Newsletter
-									</Typography>
-								</Grid>
-								<Grid item xs={12} sm='auto'>
-									<Box
-										sx={{
-											display: "flex",
-											maxWidth: { xs: "100%", sm: "auto" },
-											mx: "auto",
-										}}>
-										<TextField
-											placeholder='Email Address'
-											size='small'
-											variant='outlined'
-											fullWidth
-											sx={{
-												backgroundColor: "white",
-												borderRadius: "4px 0 0 4px",
-												"& .MuiOutlinedInput-root": {
-													borderRadius: "4px 0 0 4px",
-												},
-												"& .MuiOutlinedInput-notchedOutline": {
-													borderRight: 0,
-												},
-											}}
-										/>
-										<Button
-											variant='contained'
-											sx={{
-												backgroundColor: "#000",
-												color: "white",
-												borderRadius: "0 4px 4px 0",
-												padding: "8px 16px",
-												"&:hover": {
-													backgroundColor: "#333",
-												},
-											}}>
-											Go!
-										</Button>
-									</Box>
-								</Grid>
+				{/* EMI Calculator Section */}
+				<Box
+					ref={calculatorRef}
+					className='calculator-section'
+					sx={{
+						py: 7,
+						bgcolor: "#f5f5f5",
+						position: "relative",
+						scrollMarginTop: "160px",
+					}}>
+					<Container maxWidth='lg'>
+						<Typography
+							variant='h3'
+							gutterBottom
+							color='primary'
+							align='center'
+							className='scroll-animation'
+							sx={{
+								fontWeight: 700,
+								color: "#1e4a30",
+								position: "relative",
+								paddingBottom: "15px",
+								marginBottom: "15px",
+								"&::after": {
+									content: '""',
+									position: "absolute",
+									bottom: 0,
+									left: "50%",
+									transform: "translateX(-50%)",
+									width: "80px",
+									height: "3px",
+									background: "#1e4a30",
+								},
+							}}>
+							Calculate Your Payment
+						</Typography>
+						<Typography
+							variant='body1'
+							align='center'
+							className='scroll-animation'
+							sx={{ mb: 6, maxWidth: "800px", mx: "auto", color: "#666" }}>
+							Use our simple calculator to estimate your monthly loan payment
+						</Typography>
+						<Grid container spacing={4} justifyContent='center'>
+							<Grid item xs={12} md={8}>
+								<Paper
+									className='calculator-form'
+									sx={{
+										p: 4,
+										borderRadius: "8px",
+										boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
+										border: "1px solid #e8e8e8",
+										overflow: "hidden",
+									}}>
+									<Grid container spacing={3}>
+										<Grid item xs={12} md={6}>
+											<Typography
+												gutterBottom
+												sx={{ fontWeight: 600, color: "#333", mb: 1 }}>
+												Loan Amount
+											</Typography>
+											<Slider
+												value={loanAmount}
+												onChange={(e, newValue) => setLoanAmount(newValue)}
+												min={1000}
+												max={100000}
+												step={1000}
+												valueLabelDisplay='auto'
+												sx={{
+													mb: 1,
+													color: "#ff4081",
+													"& .MuiSlider-rail": {
+														opacity: 0.3,
+													},
+													"& .MuiSlider-thumb": {
+														width: 14,
+														height: 14,
+														backgroundColor: "#fff",
+														border: "2px solid currentColor",
+														"&:focus, &:hover, &.Mui-active, &.Mui-focusVisible":
+															{
+																boxShadow:
+																	"0px 0px 0px 8px rgba(255, 64, 129, 0.16)",
+															},
+													},
+												}}
+											/>
+											<TextField
+												fullWidth
+												value={loanAmount}
+												onChange={(e) => setLoanAmount(Number(e.target.value))}
+												InputProps={{
+													startAdornment: (
+														<InputAdornment position='start'>₹</InputAdornment>
+													),
+												}}
+												sx={{
+													mb: 3,
+													"& .MuiOutlinedInput-root": {
+														"&.Mui-focused fieldset": {
+															borderColor: "#ff4081",
+														},
+													},
+												}}
+											/>
+										</Grid>
+
+										<Grid item xs={12} md={6}>
+											<Typography
+												gutterBottom
+												sx={{ fontWeight: 600, color: "#333", mb: 1 }}>
+												Interest Rate (%)
+											</Typography>
+											<Slider
+												value={interestRate}
+												onChange={(e, newValue) => setInterestRate(newValue)}
+												min={5}
+												max={20}
+												step={0.1}
+												valueLabelDisplay='auto'
+												sx={{
+													mb: 1,
+													color: "#ff4081",
+													"& .MuiSlider-rail": {
+														opacity: 0.3,
+													},
+													"& .MuiSlider-thumb": {
+														width: 14,
+														height: 14,
+														backgroundColor: "#fff",
+														border: "2px solid currentColor",
+														"&:focus, &:hover, &.Mui-active, &.Mui-focusVisible":
+															{
+																boxShadow:
+																	"0px 0px 0px 8px rgba(255, 64, 129, 0.16)",
+															},
+													},
+												}}
+											/>
+											<TextField
+												fullWidth
+												value={interestRate}
+												onChange={(e) =>
+													setInterestRate(Number(e.target.value))
+												}
+												InputProps={{
+													endAdornment: (
+														<InputAdornment position='end'>%</InputAdornment>
+													),
+												}}
+												sx={{
+													mb: 3,
+													"& .MuiOutlinedInput-root": {
+														"&.Mui-focused fieldset": {
+															borderColor: "#ff4081",
+														},
+													},
+												}}
+											/>
+										</Grid>
+
+										<Grid item xs={12}>
+											<Typography
+												gutterBottom
+												sx={{ fontWeight: 600, color: "#333", mb: 1 }}>
+												Loan Term
+											</Typography>
+											<FormControl
+												fullWidth
+												sx={{
+													mb: 3,
+													"& .MuiOutlinedInput-root": {
+														"&.Mui-focused fieldset": {
+															borderColor: "#ff4081",
+														},
+													},
+												}}>
+												<Select
+													value={loanTerm}
+													onChange={(e) => setLoanTerm(e.target.value)}>
+													<MenuItem value={6}>6 months</MenuItem>
+													<MenuItem value={12}>12 months</MenuItem>
+													<MenuItem value={18}>18 months</MenuItem>
+													<MenuItem value={24}>24 months</MenuItem>
+													<MenuItem value={36}>36 months</MenuItem>
+													<MenuItem value={48}>48 months</MenuItem>
+													<MenuItem value={60}>60 months</MenuItem>
+												</Select>
+											</FormControl>
+										</Grid>
+
+										<Grid item xs={12}>
+											<Box
+												sx={{
+													background: "#1e4a30",
+													p: 3,
+													borderRadius: 2,
+													mb: 3,
+													color: "white",
+												}}>
+												<Typography
+													variant='h6'
+													gutterBottom
+													color='white'
+													sx={{ fontWeight: 500 }}>
+													Monthly Payment
+												</Typography>
+												<Typography
+													variant='h3'
+													sx={{ fontWeight: 700, color: "#ffffff" }}>
+													₹{calculateMonthlyPayment()}
+												</Typography>
+											</Box>
+
+											<Button
+												variant='contained'
+												fullWidth
+												className='borrow-btn'
+												endIcon={
+													service?.packages?.length > 0 ? (
+														<ArrowForwardIcon />
+													) : (
+														<CalculateIcon />
+													)
+												}
+												sx={{
+													backgroundColor: "#ff4081",
+													color: "white",
+													py: 1.5,
+													fontWeight: 600,
+													fontSize: "1rem",
+													borderRadius: "4px",
+													"&:hover": {
+														backgroundColor: "#e0356f",
+													},
+												}}
+												onClick={() => {
+													if (service?.packages?.length > 0) {
+														// If service has packages, scroll to packages section
+														scrollToSection(packagesRef);
+													} else {
+														// Otherwise, proceed with direct application
+														handleApplyNow(true);
+													}
+												}}>
+												{service?.packages?.length > 0
+													? "View Packages"
+													: "Apply Now"}
+											</Button>
+										</Grid>
+									</Grid>
+								</Paper>
 							</Grid>
-						</Container>
-					</Box>
+						</Grid>
+					</Container>
 				</Box>
-			</ThemeProvider>
-		);
-	};
 
-	export default OverdraftPage;
+				{/* Newsletter Section */}
+				<Box sx={{ py: 3, bgcolor: "#1e4a30" }}>
+					<Container maxWidth='lg'>
+						<Grid
+							container
+							alignItems='center'
+							justifyContent='center'
+							spacing={2}>
+							<Grid item xs={12} sm='auto'>
+								<Typography
+									variant='h6'
+									align='center'
+									gutterBottom
+									sx={{
+										color: "white",
+										fontWeight: 500,
+										fontSize: "1rem",
+										m: 0,
+										mb: { xs: 1, sm: 0 },
+									}}>
+									Signup For Our Newsletter
+								</Typography>
+							</Grid>
+							<Grid item xs={12} sm='auto'>
+								<Box
+									sx={{
+										display: "flex",
+										maxWidth: { xs: "100%", sm: "auto" },
+										mx: "auto",
+									}}>
+									<TextField
+										placeholder='Email Address'
+										size='small'
+										variant='outlined'
+										fullWidth
+										sx={{
+											backgroundColor: "white",
+											borderRadius: "4px 0 0 4px",
+											"& .MuiOutlinedInput-root": {
+												borderRadius: "4px 0 0 4px",
+											},
+											"& .MuiOutlinedInput-notchedOutline": {
+												borderRight: 0,
+											},
+										}}
+									/>
+									<Button
+										variant='contained'
+										sx={{
+											backgroundColor: "#000",
+											color: "white",
+											borderRadius: "0 4px 4px 0",
+											padding: "8px 16px",
+											"&:hover": {
+												backgroundColor: "#333",
+											},
+										}}>
+										Go!
+									</Button>
+								</Box>
+							</Grid>
+						</Grid>
+					</Container>
+				</Box>
+			</Box>
+		</ThemeProvider>
+	);
+};
+
+export default OverdraftPage;

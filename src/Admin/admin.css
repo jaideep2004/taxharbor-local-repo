@@ -37,10 +37,11 @@
 }
 
 .sidebar li {
-	padding: 20px;
+	padding: 15px;
 	border-radius: 7px;
 	cursor: pointer;
 	transition: all 0.3s ease;
+	font-size: 20px;
 	&:hover {
 		background-color: var(--accent);
 		text-decoration-color: var(--accent);

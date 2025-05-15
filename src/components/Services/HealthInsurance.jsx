@@ -411,10 +411,24 @@ const HealthInsurancePage = () => {
 		annualPremium: 0,
 	});
 
-	// For sticky sidebar tracking with a threshold that allows smoother transition
+	// Enhanced sticky sidebar behavior
+	const [sidebarPosition, setSidebarPosition] = useState({
+		isSticky: false,
+		shouldStop: false,
+	});
+
+	// Store sidebar height
+	const [sidebarHeight, setSidebarHeight] = useState(0);
+
+	// Container refs for tracking positions
+	const contentRef = React.useRef(null);
+	const sidebarRef = React.useRef(null);
+	const sidebarContainerRef = React.useRef(null);
+
+	// For sticky sidebar tracking with a threshold of 109px
 	const scrollTrigger = useScrollTrigger({
 		disableHysteresis: true,
-		threshold: 300,
+		threshold: 109, // Changed to 109px as specified
 	});
 
 	// Service data from backend
@@ -439,11 +453,12 @@ const HealthInsurancePage = () => {
 		{ id: "packages", label: "Packages", ref: packagesRef },
 		{ id: "faq", label: "FAQs", ref: faqRef },
 	];
-	
+
 	// Only include packages section if packages are available
-	const sections = service?.packages && service.packages.length > 0
-		? allSections
-		: allSections.filter(section => section.id !== "packages");
+	const sections =
+		service?.packages && service.packages.length > 0
+			? allSections
+			: allSections.filter((section) => section.id !== "packages");
 
 	// Fetch service data from backend
 	useEffect(() => {
@@ -468,6 +483,81 @@ const HealthInsurancePage = () => {
 		fetchServiceData();
 	}, [SERVICE_ID, showNotification]);
 
+	// Measure sidebar height after it renders
+	useEffect(() => {
+		if (sidebarRef.current) {
+			setSidebarHeight(sidebarRef.current.clientHeight);
+		}
+	}, [service]); // Re-measure when service data changes
+
+	// Enhanced scroll handler to control sidebar behavior
+	useEffect(() => {
+		const handleScroll = () => {
+			if (
+				!contentRef.current ||
+				!sidebarRef.current ||
+				!sidebarContainerRef.current
+			)
+				return;
+
+			const scrollPosition = window.scrollY;
+			const topThreshold = 109; // Specified threshold
+
+			// Get the content and sidebar boundaries
+			const contentTop =
+				contentRef.current.getBoundingClientRect().top + window.scrollY;
+			const contentBottom =
+				contentRef.current.getBoundingClientRect().bottom + window.scrollY;
+			const sidebarContainerTop = sidebarContainerRef.current.offsetTop;
+			const sidebarContainerHeight = sidebarContainerRef.current.offsetHeight;
+			const sidebarHeight = sidebarRef.current.clientHeight;
+			const windowHeight = window.innerHeight;
+
+			// Determine if sidebar should be sticky - only when content has scrolled to threshold
+			const isSticky =
+				scrollPosition > topThreshold &&
+				scrollPosition > sidebarContainerTop - topThreshold;
+
+			// Calculate where the sidebar should stop (at the bottom of the main content)
+			const stopPoint = contentBottom - sidebarHeight - 30; // 30px buffer from bottom
+
+			// Should sidebar stop following and anchor to bottom?
+			const shouldStop =
+				scrollPosition + topThreshold + sidebarHeight > contentBottom - 30;
+
+			setSidebarPosition({
+				isSticky,
+				shouldStop,
+			});
+
+			// Set active section
+			const activeSetionPos = scrollPosition + 200;
+			for (const section of sections) {
+				const element = section.ref.current;
+				if (element) {
+					const offsetTop = element.offsetTop;
+					const offsetBottom = offsetTop + element.offsetHeight;
+
+					if (activeSetionPos >= offsetTop && activeSetionPos < offsetBottom) {
+						setActiveSection(section.id);
+						break;
+					}
+				}
+			}
+		};
+
+		window.addEventListener("scroll", handleScroll);
+		handleScroll(); // Run once immediately to set initial state
+
+		// Call on window resize too
+		window.addEventListener("resize", handleScroll);
+
+		return () => {
+			window.removeEventListener("scroll", handleScroll);
+			window.removeEventListener("resize", handleScroll);
+		};
+	}, [sections, sidebarHeight]);
+
 	// Handle scrolling to section - improved for smoother scrolling
 	const scrollToSection = (sectionRef) => {
 		if (sectionRef && sectionRef.current) {
@@ -485,29 +575,6 @@ const HealthInsurancePage = () => {
 			}
 		}
 	};
-
-	// Update active section based on scroll position
-	useEffect(() => {
-		const handleScroll = () => {
-			const scrollPosition = window.scrollY + 200;
-
-			for (const section of sections) {
-				const element = section.ref.current;
-				if (element) {
-					const offsetTop = element.offsetTop;
-					const offsetBottom = offsetTop + element.offsetHeight;
-
-					if (scrollPosition >= offsetTop && scrollPosition < offsetBottom) {
-						setActiveSection(section.id);
-						break;
-					}
-				}
-			}
-		};
-
-		window.addEventListener("scroll", handleScroll);
-		return () => window.removeEventListener("scroll", handleScroll);
-	}, [sections]);
 
 	const handleAccordionChange = (panel) => (event, isExpanded) => {
 		setExpanded(isExpanded ? panel : false);
@@ -610,7 +677,9 @@ const HealthInsurancePage = () => {
 
 	return (
 		<ThemeProvider theme={theme}>
-			<Box sx={{ backgroundColor: "background.default", minHeight: "80vh" }}>
+			<Box
+				sx={{ backgroundColor: "background.default", minHeight: "80vh" }}
+				ref={contentRef}>
 				{/* Hero Banner */}
 				<HeroSection>
 					<Container maxWidth='xl' sx={{ mt: { xs: "80px", md: "160px" } }}>
@@ -630,7 +699,7 @@ const HealthInsurancePage = () => {
 										<Chip
 											icon={<ShieldIcon />}
 											label='Protect Your Future'
-								sx={{
+											sx={{
 												bgcolor: "accent.main",
 												color: "primary.main",
 												fontWeight: "bold",
@@ -685,15 +754,15 @@ const HealthInsurancePage = () => {
 											gap: 2,
 											flexWrap: { xs: "wrap", md: "nowrap" },
 										}}>
-									<CTAButton
-										variant='contained'
-										color='primary'
-										size='large'
-										endIcon={<ArrowForwardIcon />}
-										fullWidth={isMobile}
-										onClick={() => handleApplyNow(true)}>
-										{service?.ctaButtonText || "Get a Free Quote"}
-									</CTAButton>
+										<CTAButton
+											variant='contained'
+											color='primary'
+											size='large'
+											endIcon={<ArrowForwardIcon />}
+											fullWidth={isMobile}
+											onClick={() => handleApplyNow(true)}>
+											{service?.ctaButtonText || "Get a Free Quote"}
+										</CTAButton>
 										<CTAButton
 											variant='outlined'
 											color='primary'
@@ -713,9 +782,44 @@ const HealthInsurancePage = () => {
 				<Container maxWidth='xl' sx={{ py: { xs: 4, md: 8 } }}>
 					<Grid container spacing={4}>
 						{/* Sticky Sidebar Navigation - Desktop Only */}
-						<Grid item xs={12} md={3} lg={2.5}>
+						<Grid item xs={12} md={3} lg={2.5} ref={sidebarContainerRef}>
 							<Hidden mdDown>
-								<StickyNav trigger={scrollTrigger}>
+								<Box
+									ref={sidebarRef}
+									sx={{
+										width: "300px",
+										transition: "all 0.3s ease",
+										position: sidebarPosition.isSticky
+											? sidebarPosition.shouldStop
+												? "absolute"
+												: "fixed"
+											: "static",
+										top:
+											sidebarPosition.isSticky && !sidebarPosition.shouldStop
+												? "130px"
+												: "auto",
+										bottom: sidebarPosition.shouldStop ? "30px" : "auto",
+										maxHeight: "80vh",
+										overflow: "auto",
+										// Custom scrollbar styles
+										"&::-webkit-scrollbar": {
+											width: "4px",
+										},
+										"&::-webkit-scrollbar-track": {
+											background: "#f1f1f1",
+											borderRadius: "10px",
+										},
+										"&::-webkit-scrollbar-thumb": {
+											background: "#95b8a2",
+											borderRadius: "10px",
+										},
+										"&::-webkit-scrollbar-thumb:hover": {
+											background: "#1b321d",
+										},
+										// Firefox scrollbar
+										scrollbarWidth: "thin",
+										scrollbarColor: "#95b8a2 #f1f1f1",
+									}}>
 									<NavList component='nav'>
 										{sections.map((section) => (
 											<NavItem
@@ -745,6 +849,7 @@ const HealthInsurancePage = () => {
 											</NavItem>
 										))}
 									</NavList>
+
 									<Box
 										sx={{
 											mt: 4,
@@ -812,7 +917,7 @@ const HealthInsurancePage = () => {
 											Tax Benefits
 										</Typography>
 										<Typography variant='body2' color='primary' paragraph>
-											Enjoy tax benefits on premiums under Section 80C
+											Enjoy tax benefits on premiums under Section 80D
 										</Typography>
 										<Button
 											variant='contained'
@@ -822,7 +927,7 @@ const HealthInsurancePage = () => {
 											View Plans
 										</Button>
 									</Box>
-								</StickyNav>
+								</Box>
 							</Hidden>
 						</Grid>
 
@@ -842,7 +947,9 @@ const HealthInsurancePage = () => {
 
 							{/* Overview Section */}
 							<section ref={overviewRef} id='overview'>
-								<SectionBox id='overview-section'>
+								<SectionBox
+									id='overview-section'
+									style={{ paddingBottom: "90px" }}>
 									<Typography
 										variant='h3'
 										color='primary'
@@ -856,7 +963,7 @@ const HealthInsurancePage = () => {
 												content: '""',
 												position: "absolute",
 												width: "60%",
-												height: "4px",
+												height: "4px", 
 												bottom: "-10px",
 												left: "0",
 												backgroundColor: "accent.main",
@@ -872,26 +979,33 @@ const HealthInsurancePage = () => {
 												variant='body1'
 												paragraph
 												sx={{ fontSize: "1.05rem", lineHeight: 1.7 }}>
-												Health is the foundation of a happy and productive life. At FinShelter, we offer comprehensive
-												health insurance solutions to safeguard you and your family against unexpected medical
-												expenses. With our personalized plans, you can focus on your well-being while we handle your
-												financial security.
+												Health is the foundation of a happy and productive life.
+												At FinShelter, we offer comprehensive health insurance
+												solutions to safeguard you and your family against
+												unexpected medical expenses. With our personalized
+												plans, you can focus on your well-being while we handle
+												your financial security.
 											</Typography>
 											<Typography
 												variant='body1'
 												paragraph
 												sx={{ fontSize: "1.05rem", lineHeight: 1.7 }}>
-												Our health insurance is not just a necessity—it's a safety net that ensures peace of mind during
-												life's challenging moments. We provide coverage for hospitalization, treatments, and preventive care,
-												allowing you to access quality healthcare without worrying about the financial burden.
+												Our health insurance is not just a necessity—it's a
+												safety net that ensures peace of mind during life's
+												challenging moments. We provide coverage for
+												hospitalization, treatments, and preventive care,
+												allowing you to access quality healthcare without
+												worrying about the financial burden.
 											</Typography>
 											<Typography
 												variant='body1'
 												paragraph
 												sx={{ fontSize: "1.05rem", lineHeight: 1.7 }}>
-												At FinShelter, we believe that health insurance is more than just a policy—it's a promise to
-												yourself and your loved ones. Let us help you access quality healthcare and secure financial
-												stability, so you can focus on living a healthy and fulfilling life.
+												At FinShelter, we believe that health insurance is more
+												than just a policy—it's a promise to yourself and your
+												loved ones. Let us help you access quality healthcare
+												and secure financial stability, so you can focus on
+												living a healthy and fulfilling life.
 											</Typography>
 										</Grid>
 										<Grid item xs={12} md={5}>
@@ -899,14 +1013,16 @@ const HealthInsurancePage = () => {
 												sx={{
 													backgroundColor: "accent.main" + "15",
 													borderRadius: "12px",
-													p: 3,
+													p: { xs: 3, md: 3 },
 													height: "100%",
 													boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
 													border: "1px solid",
 													borderColor: "accent.main" + "30",
 													position: "relative",
 													overflow: "hidden",
-													marginTop: { xs: 0, md: "-70px" },
+													marginTop: { xs: 3, md: "-70px" },
+													marginBottom: { xs: 4, md: 0 },
+													paddingBottom: { xs: 5, md: 3 },
 													"&:after": {
 														content: '""',
 														position: "absolute",
@@ -946,29 +1062,29 @@ const HealthInsurancePage = () => {
 														<ListItem
 															key={index}
 															sx={{
-																	px: 0,
-																	py: 0.7,
-																	alignItems: "flex-start",
-																	transition: "transform 0.2s ease",
-																	"&:hover": {
-																			transform: "translateX(5px)",
-																		},
-																	}}>
+																px: 0,
+																py: 0.7,
+																alignItems: "flex-start",
+																transition: "transform 0.2s ease",
+																"&:hover": {
+																	transform: "translateX(5px)",
+																},
+															}}>
 															<ListItemIcon sx={{ minWidth: "36px" }}>
 																<CheckCircleOutlineIcon
 																	sx={{
-																			color: "primary.main",
-																			fontSize: "1.25rem",
-																		}}
+																		color: "primary.main",
+																		fontSize: "1.25rem",
+																	}}
 																/>
 															</ListItemIcon>
 															<ListItemText
 																primary={benefit}
 																primaryTypographyProps={{
-																			fontSize: "0.95rem",
-																			fontWeight: 400,
-																			color: "primary.main",
-																		}}
+																	fontSize: "0.95rem",
+																	fontWeight: 400,
+																	color: "primary.main",
+																}}
 															/>
 														</ListItem>
 													))}
@@ -988,7 +1104,7 @@ const HealthInsurancePage = () => {
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1005,51 +1121,93 @@ const HealthInsurancePage = () => {
 										Why Health Insurance Matters
 									</Typography>
 
-									<Grid container spacing={2} sx={{ mx: -1 }}>
+									<Grid container spacing={{ xs: 4, md: 2 }} sx={{ mx: -1 }}>
 										{[
 											{
 												title: "Financial Protection",
-												description: "Covers hospitalization, treatment costs, and other medical expenses, reducing the financial burden on you and your family.",
-												icon: <AccountBalanceWalletIcon sx={{ fontSize: 36, color: "primary.main" }} />
+												description:
+													"Covers hospitalization, treatment costs, and other medical expenses, reducing the financial burden on you and your family.",
+												icon: (
+													<AccountBalanceWalletIcon
+														sx={{ fontSize: 36, color: "primary.main" }}
+													/>
+												),
 											},
 											{
 												title: "Access to Quality Healthcare",
-												description: "Ensures that you can choose the best medical facilities without worrying about costs.",
-												icon: <FavoriteIcon sx={{ fontSize: 36, color: "primary.main" }} />
+												description:
+													"Ensures that you can choose the best medical facilities without worrying about costs.",
+												icon: (
+													<FavoriteIcon
+														sx={{ fontSize: 36, color: "primary.main" }}
+													/>
+												),
 											},
 											{
 												title: "Preventive Care",
-												description: "Many policies include annual check-ups and wellness benefits, encouraging a healthier lifestyle.",
-												icon: <SecurityIcon sx={{ fontSize: 36, color: "primary.main" }} />
+												description:
+													"Many policies include annual check-ups and wellness benefits, encouraging a healthier lifestyle.",
+												icon: (
+													<SecurityIcon
+														sx={{ fontSize: 36, color: "primary.main" }}
+													/>
+												),
 											},
 											{
 												title: "Peace of Mind",
-												description: "Offers reassurance that you're financially prepared for emergencies or long-term treatments.",
-												icon: <ShieldIcon sx={{ fontSize: 36, color: "primary.main" }} />
+												description:
+													"Offers reassurance that you're financially prepared for emergencies or long-term treatments.",
+												icon: (
+													<ShieldIcon
+														sx={{ fontSize: 36, color: "primary.main" }}
+													/>
+												),
 											},
 										].map((item, index) => (
-											<Grid item xs={12} sm={6} key={index} marginBottom="60px">
+											<Grid
+												item
+												xs={12}
+												sm={6}
+												key={index}
+												sx={{ mb: { xs: "40px", md: "60px" } }}>
 												<Card
 													sx={{
 														height: "100%",
-														p: 3,
+														p: { xs: 2.5, md: 3 },
 														border: "1px solid rgba(0,0,0,0.08)",
 														boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-														transition: "transform 0.3s ease, box-shadow 0.3s ease",
+														transition:
+															"transform 0.3s ease, box-shadow 0.3s ease",
 														"&:hover": {
 															transform: "translateY(-10px)",
 															boxShadow: "0 12px 20px rgba(0,0,0,0.1)",
 														},
 														overflow: "hidden",
-														
 													}}>
-													<Box sx={{ mb: 2, display: "flex", alignItems: "flex-start" }}>
+													<Box
+														sx={{
+															mb: 2,
+															display: "flex",
+															alignItems: "flex-start",
+														}}>
 														<Box sx={{ mr: 2, mt: 0.5 }}>{item.icon}</Box>
-														<Typography variant='h5' color='primary' sx={{ fontWeight: 600 }}>
+														<Typography
+															variant='h5'
+															color='primary'
+															sx={{
+																fontWeight: 600,
+																fontSize: { xs: "1.2rem", md: "1.5rem" },
+															}}>
 															{item.title}
 														</Typography>
 													</Box>
-													<Typography variant='body1' sx={{ color: "text.secondary", lineHeight: 1.7 }}>
+													<Typography
+														variant='body1'
+														sx={{
+															color: "text.secondary",
+															lineHeight: 1.7,
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}>
 														{item.description}
 													</Typography>
 												</Card>
@@ -1061,9 +1219,12 @@ const HealthInsurancePage = () => {
 
 							{/* Our Health Insurance Plans Section - NEW */}
 							<section id='our-offerings'>
-								<SectionBox 
+								<SectionBox
 									sx={{
-										background: "linear-gradient(to right, rgba(198, 219, 206, 0.4), rgba(198, 219, 206, 0.1))",
+										background:
+											"linear-gradient(to right, rgba(198, 219, 206, 0.4), rgba(198, 219, 206, 0.1))",
+										p: { xs: 2.5, md: 3 },
+										mb: { xs: 5, md: 4 },
 									}}>
 									<Typography
 										variant='h3'
@@ -1071,7 +1232,7 @@ const HealthInsurancePage = () => {
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1088,60 +1249,97 @@ const HealthInsurancePage = () => {
 										Our Health Insurance Plans
 									</Typography>
 
-									<Typography variant='body1' paragraph sx={{ mb: 4, maxWidth: "850px" }}>
-										FinShelter provides a wide range of health insurance policies designed to meet diverse healthcare needs:
+									<Typography
+										variant='body1'
+										paragraph
+										sx={{
+											mb: 4,
+											maxWidth: "850px",
+											fontSize: { xs: "0.95rem", md: "1rem" },
+										}}>
+										FinShelter provides a wide range of health insurance
+										policies designed to meet diverse healthcare needs:
 									</Typography>
 
-									<Grid container spacing={3}>
+									<Grid container spacing={{ xs: 4, md: 3 }}>
 										{[
 											{
 												title: "Individual Health Insurance",
-												description: "Tailored coverage for a single person, ensuring protection against medical costs.",
-												icon: <FavoriteIcon />
+												description:
+													"Tailored coverage for a single person, ensuring protection against medical costs.",
+												icon: <FavoriteIcon />,
 											},
 											{
 												title: "Family Floater Plans",
-												description: "A shared coverage plan that protects your entire family under a single policy.",
-												icon: <FamilyRestroomIcon />
+												description:
+													"A shared coverage plan that protects your entire family under a single policy.",
+												icon: <FamilyRestroomIcon />,
 											},
 											{
 												title: "Critical Illness Coverage",
-												description: "Specialized plans to cover high-cost treatments for critical illnesses such as cancer, heart disease, and more.",
-												icon: <SecurityIcon />
+												description:
+													"Specialized plans to cover high-cost treatments for critical illnesses such as cancer, heart disease, and more.",
+												icon: <SecurityIcon />,
 											},
 											{
 												title: "Cashless Hospitalization",
-												description: "Enjoy hassle-free treatment at network hospitals without upfront payments.",
-												icon: <LocalAtmIcon />
+												description:
+													"Enjoy hassle-free treatment at network hospitals without upfront payments.",
+												icon: <LocalAtmIcon />,
 											},
 											{
 												title: "Senior Citizen Plans",
-												description: "Designed specifically for elderly individuals, offering coverage for age-related medical needs.",
-												icon: <AccessTimeIcon />
+												description:
+													"Designed specifically for elderly individuals, offering coverage for age-related medical needs.",
+												icon: <AccessTimeIcon />,
 											},
 											{
 												title: "Top-Up Plans",
-												description: "Additional coverage to enhance your existing health insurance policy.",
-												icon: <AssessmentIcon />
+												description:
+													"Additional coverage to enhance your existing health insurance policy.",
+												icon: <AssessmentIcon />,
 											},
 										].map((offering, index) => (
-											<Grid item xs={12} sm={6} md={4} key={index}>
-												<Card sx={{ height: "100%" }}>
-													<CardContent sx={{ p: 3 }}>
-														<Box sx={{ mb: 2, display: "flex", alignItems: "center" }}>
-															<Avatar 
-																sx={{ 
-																	bgcolor: "primary.main", 
+											<Grid
+												item
+												xs={12}
+												sm={6}
+												md={4}
+												key={index}
+												sx={{ mb: { xs: 5, md: 0 } }}>
+												<Card sx={{ height: "100%", pb: { xs: 2, md: 0 } }}>
+													<CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+														<Box
+															sx={{
+																mb: 2,
+																display: "flex",
+																alignItems: "center",
+															}}>
+															<Avatar
+																sx={{
+																	bgcolor: "primary.main",
 																	color: "white",
-																	mr: 2
+																	mr: 2,
 																}}>
 																{offering.icon}
 															</Avatar>
-															<Typography variant='h5' color='primary' sx={{ fontWeight: 600 }}>
+															<Typography
+																variant='h5'
+																color='primary'
+																sx={{
+																	fontWeight: 600,
+																	fontSize: { xs: "1.1rem", md: "1.25rem" },
+																}}>
 																{offering.title}
 															</Typography>
 														</Box>
-														<Typography variant='body2' sx={{ color: "text.secondary" }}>
+														<Typography
+															variant='body2'
+															sx={{
+																color: "text.secondary",
+																fontSize: { xs: "0.85rem", md: "0.9rem" },
+																lineHeight: 1.6,
+															}}>
 															{offering.description}
 														</Typography>
 													</CardContent>
@@ -1154,7 +1352,7 @@ const HealthInsurancePage = () => {
 
 							{/* Why Choose FinShelter Section - NEW */}
 							<section id='why-finshelter'>
-								<SectionBox>
+								<SectionBox sx={{ p: { xs: 2.5, md: 3 } }}>
 									<Typography
 										variant='h3'
 										color='primary'
@@ -1178,107 +1376,154 @@ const HealthInsurancePage = () => {
 										Why Choose FinShelter?
 									</Typography>
 
-									<Grid container spacing={4} alignItems="flex-start">
+									<Grid container spacing={4} alignItems='flex-start'>
 										<Grid item xs={12} md={6}>
-											<Box sx={{ display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
-												<Typography variant='body1' paragraph sx={{ fontSize: "1.05rem", lineHeight: 1.7 }}>
-													At FinShelter, we aim to make health insurance simple and reliable. Our team evaluates your healthcare 
-													needs and helps you choose the most suitable plans. We offer policies that cover a wide range of 
-													medical expenses, from minor treatments to critical care.
+											<Box
+												sx={{
+													display: "flex",
+													flexDirection: "column",
+													justifyContent: "flex-start",
+												}}>
+												<Typography
+													variant='body1'
+													paragraph
+													sx={{ fontSize: "1.05rem", lineHeight: 1.7 }}>
+													At FinShelter, we aim to make health insurance simple
+													and reliable. Our team evaluates your healthcare needs
+													and helps you choose the most suitable plans. We offer
+													policies that cover a wide range of medical expenses,
+													from minor treatments to critical care.
 												</Typography>
 
-												<Typography variant='body1' paragraph sx={{ fontSize: "1.05rem", lineHeight: 1.7, mb: 0 }}>
-													We provide cost-effective health insurance plans without compromising on quality and benefits. 
-													Our seamless onboarding ensures that securing health insurance is quick and stress-free. We also assist 
-													you throughout the claims process to ensure timely and hassle-free reimbursements.
+												<Typography
+													variant='body1'
+													paragraph
+													sx={{ fontSize: "1.05rem", lineHeight: 1.7, mb: 0 }}>
+													We provide cost-effective health insurance plans
+													without compromising on quality and benefits. Our
+													seamless onboarding ensures that securing health
+													insurance is quick and stress-free. We also assist you
+													throughout the claims process to ensure timely and
+													hassle-free reimbursements.
 												</Typography>
 
 												{/* Decorative Image Element */}
-												<Box 
-													sx={{ 
-														mt: 4, 
-														display: "flex", 
+												<Box
+													sx={{
+														mt: 4,
+														display: "flex",
 														justifyContent: "center",
 														alignItems: "center",
-													}}
-												>
-													<Box 
-														sx={{ 
-															width: "100%", 
+													}}>
+													<Box
+														sx={{
+															width: "100%",
 															maxWidth: "250px",
 															height: "120px",
 															borderRadius: "10px",
 															position: "relative",
 															overflow: "hidden",
 															boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
-															background: "linear-gradient(135deg, rgba(27, 50, 29, 0.02), rgba(198, 219, 206, 0.2))",
+															background:
+																"linear-gradient(135deg, rgba(27, 50, 29, 0.02), rgba(198, 219, 206, 0.2))",
 															border: "1px solid rgba(198, 219, 206, 0.5)",
 															display: "flex",
 															alignItems: "center",
 															justifyContent: "center",
 															flexDirection: "column",
-														}}
-													>
-														<FavoriteIcon sx={{ fontSize: 40, color: "primary.main", opacity: 0.8, mb: 1 }} />
-														<Typography variant="body2" color="primary.main" sx={{ fontWeight: 600, textAlign: "center" }}>
+														}}>
+														<FavoriteIcon
+															sx={{
+																fontSize: 40,
+																color: "primary.main",
+																opacity: 0.8,
+																mb: 1,
+															}}
+														/>
+														<Typography
+															variant='body2'
+															color='primary.main'
+															sx={{ fontWeight: 600, textAlign: "center" }}>
 															Your Health, Our Priority
 														</Typography>
 													</Box>
 												</Box>
 											</Box>
 										</Grid>
-										
+
 										<Grid item xs={12} md={6}>
 											<Box sx={{ pl: { xs: 0, md: 2 } }}>
-												<List sx={{ display: "flex", flexDirection: "column", gap: 1, pt: 0 }}>
+												<List
+													sx={{
+														display: "flex",
+														flexDirection: "column",
+														gap: 1,
+														pt: 0,
+													}}>
 													{[
 														{
 															title: "Expert Recommendations",
-															description: "Our team evaluates your healthcare needs and helps you choose the most suitable plans."
+															description:
+																"Our team evaluates your healthcare needs and helps you choose the most suitable plans.",
 														},
 														{
 															title: "Comprehensive Coverage",
-															description: "We offer policies that cover a wide range of medical expenses, from minor treatments to critical care."
+															description:
+																"We offer policies that cover a wide range of medical expenses, from minor treatments to critical care.",
 														},
 														{
 															title: "Affordable Options",
-															description: "We provide cost-effective health insurance plans without compromising on quality and benefits."
+															description:
+																"We provide cost-effective health insurance plans without compromising on quality and benefits.",
 														},
 														{
 															title: "Effortless Process",
-															description: "Our seamless onboarding ensures that securing health insurance is quick and stress-free."
+															description:
+																"Our seamless onboarding ensures that securing health insurance is quick and stress-free.",
 														},
 														{
 															title: "Claims Support",
-															description: "We assist you throughout the claims process to ensure timely and hassle-free reimbursements."
+															description:
+																"We assist you throughout the claims process to ensure timely and hassle-free reimbursements.",
 														},
 													].map((item, index) => (
-														<ListItem 
-															key={index} 
-															sx={{ 
+														<ListItem
+															key={index}
+															sx={{
 																py: 1.5,
 																px: 0,
-																borderBottom: index !== 4 ? "1px solid #e0e0e0" : "none"
+																borderBottom:
+																	index !== 4 ? "1px solid #e0e0e0" : "none",
 															}}>
 															<ListItemIcon sx={{ minWidth: "44px" }}>
-																<Avatar 
-																	sx={{ 
-																		bgcolor: "primary.main", 
-																		width: 34, 
+																<Avatar
+																	sx={{
+																		bgcolor: "primary.main",
+																		width: 34,
 																		height: 34,
-																		fontSize: "0.9rem"
+																		fontSize: "0.9rem",
 																	}}>
 																	{index + 1}
 																</Avatar>
 															</ListItemIcon>
-															<ListItemText 
+															<ListItemText
 																primary={
-																	<Typography variant="h6" color="primary" sx={{ mb: 0.5, fontWeight: 600, fontSize: "1rem" }}>
+																	<Typography
+																		variant='h6'
+																		color='primary'
+																		sx={{
+																			mb: 0.5,
+																			fontWeight: 600,
+																			fontSize: "1rem",
+																		}}>
 																		{item.title}
 																	</Typography>
 																}
 																secondary={
-																	<Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.9rem" }}>
+																	<Typography
+																		variant='body2'
+																		color='text.secondary'
+																		sx={{ fontSize: "0.9rem" }}>
 																		{item.description}
 																	</Typography>
 																}
@@ -1294,9 +1539,10 @@ const HealthInsurancePage = () => {
 
 							{/* How We Work Section - NEW */}
 							<section id='how-it-works' ref={howItWorksRef}>
-								<SectionBox 
-									sx={{ 
-										background: "linear-gradient(135deg, rgba(27, 50, 29, 0.05), rgba(198, 219, 206, 0.2))" 
+								<SectionBox
+									sx={{
+										background:
+											"linear-gradient(135deg, rgba(27, 50, 29, 0.05), rgba(198, 219, 206, 0.2))",
 									}}>
 									<Typography
 										variant='h3'
@@ -1321,18 +1567,22 @@ const HealthInsurancePage = () => {
 										How It Works
 									</Typography>
 
-									<Typography variant='body1' paragraph sx={{ mb: 4, maxWidth: "850px" }}>
-										We follow a simple and streamlined process to ensure you get the right health coverage effortlessly:
+									<Typography
+										variant='body1'
+										paragraph
+										sx={{ mb: 4, maxWidth: "850px" }}>
+										We follow a simple and streamlined process to ensure you get
+										the right health coverage effortlessly:
 									</Typography>
 
 									<Box sx={{ position: "relative" }}>
 										<Grid container spacing={3}>
 											<Grid item xs={12} md={6}>
-												<Box 
-													sx={{ 
-														width: "100%", 
+												<Box
+													sx={{
+														width: "100%",
 														height: { xs: "300px", md: "460px" },
-														backgroundColor: "accent.main", 
+														backgroundColor: "accent.main",
 														borderRadius: "16px",
 														overflow: "hidden",
 														backgroundImage: "url('/images/loan1.jpg')",
@@ -1348,9 +1598,9 @@ const HealthInsurancePage = () => {
 															right: 0,
 															bottom: 0,
 															background: "rgba(27, 50, 29, 0.3)",
-															zIndex: 1
-														}
-													}} 
+															zIndex: 1,
+														},
+													}}
 												/>
 												{/* <Box 
 													sx={{ 
@@ -1373,16 +1623,21 @@ const HealthInsurancePage = () => {
 														Health Protection that Matters
 												</Box> */}
 											</Grid>
-											
+
 											<Grid item xs={12} md={6}>
 												<Box>
-													<Box sx={{ mb: 4, display: "flex", alignItems: "flex-start" }}>
-														<Box 
-															sx={{ 
-																width: 36, 
-																height: 36, 
-																borderRadius: "50%", 
-																bgcolor: "primary.main", 
+													<Box
+														sx={{
+															mb: 4,
+															display: "flex",
+															alignItems: "flex-start",
+														}}>
+														<Box
+															sx={{
+																width: 36,
+																height: 36,
+																borderRadius: "50%",
+																bgcolor: "primary.main",
 																color: "white",
 																display: "flex",
 																justifyContent: "center",
@@ -1390,27 +1645,38 @@ const HealthInsurancePage = () => {
 																fontWeight: "bold",
 																fontSize: "1.2rem",
 																mr: 2,
-																flexShrink: 0
+																flexShrink: 0,
 															}}>
 															1
 														</Box>
 														<Box>
-															<Typography variant="h5" color="primary" sx={{ fontWeight: 600, mb: 1 }}>
+															<Typography
+																variant='h5'
+																color='primary'
+																sx={{ fontWeight: 600, mb: 1 }}>
 																Needs Assessment
 															</Typography>
-															<Typography variant="body1" color="text.secondary">
-																Our experts work with you to evaluate your healthcare needs and financial situation.
+															<Typography
+																variant='body1'
+																color='text.secondary'>
+																Our experts work with you to evaluate your
+																healthcare needs and financial situation.
 															</Typography>
 														</Box>
 													</Box>
-													
-													<Box sx={{ mb: 4, display: "flex", alignItems: "flex-start" }}>
-														<Box 
-															sx={{ 
-																width: 36, 
-																height: 36, 
-																borderRadius: "50%", 
-																bgcolor: "primary.main", 
+
+													<Box
+														sx={{
+															mb: 4,
+															display: "flex",
+															alignItems: "flex-start",
+														}}>
+														<Box
+															sx={{
+																width: 36,
+																height: 36,
+																borderRadius: "50%",
+																bgcolor: "primary.main",
 																color: "white",
 																display: "flex",
 																justifyContent: "center",
@@ -1418,27 +1684,39 @@ const HealthInsurancePage = () => {
 																fontWeight: "bold",
 																fontSize: "1.2rem",
 																mr: 2,
-																flexShrink: 0
+																flexShrink: 0,
 															}}>
 															2
 														</Box>
 														<Box>
-															<Typography variant="h5" color="primary" sx={{ fontWeight: 600, mb: 1 }}>
+															<Typography
+																variant='h5'
+																color='primary'
+																sx={{ fontWeight: 600, mb: 1 }}>
 																Policy Selection
 															</Typography>
-															<Typography variant="body1" color="text.secondary">
-																Based on your requirements, we recommend tailored health insurance plans that offer the right balance of coverage and affordability.
+															<Typography
+																variant='body1'
+																color='text.secondary'>
+																Based on your requirements, we recommend
+																tailored health insurance plans that offer the
+																right balance of coverage and affordability.
 															</Typography>
 														</Box>
 													</Box>
-													
-													<Box sx={{ mb: 4, display: "flex", alignItems: "flex-start" }}>
-														<Box 
-															sx={{ 
-																width: 36, 
-																height: 36, 
-																borderRadius: "50%", 
-																bgcolor: "primary.main", 
+
+													<Box
+														sx={{
+															mb: 4,
+															display: "flex",
+															alignItems: "flex-start",
+														}}>
+														<Box
+															sx={{
+																width: 36,
+																height: 36,
+																borderRadius: "50%",
+																bgcolor: "primary.main",
 																color: "white",
 																display: "flex",
 																justifyContent: "center",
@@ -1446,27 +1724,34 @@ const HealthInsurancePage = () => {
 																fontWeight: "bold",
 																fontSize: "1.2rem",
 																mr: 2,
-																flexShrink: 0
+																flexShrink: 0,
 															}}>
 															3
 														</Box>
 														<Box>
-															<Typography variant="h5" color="primary" sx={{ fontWeight: 600, mb: 1 }}>
+															<Typography
+																variant='h5'
+																color='primary'
+																sx={{ fontWeight: 600, mb: 1 }}>
 																Seamless Enrollment
 															</Typography>
-															<Typography variant="body1" color="text.secondary">
-																We guide you through the documentation and approval process for a hassle-free experience.
+															<Typography
+																variant='body1'
+																color='text.secondary'>
+																We guide you through the documentation and
+																approval process for a hassle-free experience.
 															</Typography>
 														</Box>
 													</Box>
-													
-													<Box sx={{ display: "flex", alignItems: "flex-start" }}>
-														<Box 
-															sx={{ 
-																width: 36, 
-																height: 36, 
-																borderRadius: "50%", 
-																bgcolor: "primary.main", 
+
+													<Box
+														sx={{ display: "flex", alignItems: "flex-start" }}>
+														<Box
+															sx={{
+																width: 36,
+																height: 36,
+																borderRadius: "50%",
+																bgcolor: "primary.main",
 																color: "white",
 																display: "flex",
 																justifyContent: "center",
@@ -1474,48 +1759,61 @@ const HealthInsurancePage = () => {
 																fontWeight: "bold",
 																fontSize: "1.2rem",
 																mr: 2,
-																flexShrink: 0
+																flexShrink: 0,
 															}}>
 															4
 														</Box>
 														<Box>
-															<Typography variant="h5" color="primary" sx={{ fontWeight: 600, mb: 1 }}>
+															<Typography
+																variant='h5'
+																color='primary'
+																sx={{ fontWeight: 600, mb: 1 }}>
 																Ongoing Assistance
 															</Typography>
-															<Typography variant="body1" color="text.secondary">
-																From renewing policies to assisting with claims, we are always here to support you.
+															<Typography
+																variant='body1'
+																color='text.secondary'>
+																From renewing policies to assisting with claims,
+																we are always here to support you.
 															</Typography>
 														</Box>
 													</Box>
 												</Box>
 											</Grid>
 										</Grid>
-										
-										<Box 
-											sx={{ 
-												position: "absolute", 
-												bottom: -20, 
-												left: "50%", 
+
+										<Box
+											sx={{
+												position: "absolute",
+												bottom: -20,
+												left: "50%",
 												transform: "translateX(-50%)",
 												textAlign: "center",
 												zIndex: 2,
-												display: { xs: "block", md: "none" }
+												display: { xs: "none", md: "none" },
 											}}>
 											<Button
-												variant="contained"
-												color="primary"
-												size="large"
+												variant='contained'
+												color='primary'
+												size='large'
 												onClick={() => handleApplyNow(true)}
 												sx={{ px: 4 }}>
 												Contact Us Today
 											</Button>
 										</Box>
-										
-										<Box sx={{ display: { xs: "none", md: "flex" }, justifyContent: "center", mt: 6 }}>
+
+										<Box
+											sx={{
+												display: "flex",
+												justifyContent: "center",
+												mt: { xs: 8, md: 6 },
+												position: "relative",
+												zIndex: 1,
+											}}>
 											<Button
-												variant="contained"
-												color="primary"
-												size="large"
+												variant='contained'
+												color='primary'
+												size='large'
 												onClick={() => handleApplyNow(true)}
 												sx={{ px: 4 }}>
 												Contact Us Today
@@ -1533,10 +1831,10 @@ const HealthInsurancePage = () => {
 											variant='h3'
 											color='primary'
 											gutterBottom
-													sx={{
+											sx={{
 												mb: 1,
 												fontSize: { xs: "1.8rem", md: "2.2rem" },
-													position: "relative",
+												position: "relative",
 												display: "inline-block",
 												"&:after": {
 													content: '""',
@@ -1555,15 +1853,17 @@ const HealthInsurancePage = () => {
 											variant='subtitle1'
 											paragraph
 											sx={{ mb: 4, maxWidth: "850px" }}>
-											Choose the right coverage to protect your health and financial wellbeing. Our health insurance plans offer comprehensive coverage at affordable rates.
+											Choose the right coverage to protect your health and
+											financial wellbeing. Our health insurance plans offer
+											comprehensive coverage at affordable rates.
 										</Typography>
 
 										<Grid container spacing={3}>
 											{service.packages.map((pkg, index) => (
-											<Grid item xs={12} sm={6} md={4} key={index}>
+												<Grid item xs={12} sm={6} md={4} key={index}>
 													<PackageCard
 														featured={index === 1}
-																sx={{
+														sx={{
 															transform: index === 1 ? "scale(1.05)" : "none",
 															my: index === 1 ? 0 : 2,
 															position: "relative",
@@ -1572,15 +1872,15 @@ const HealthInsurancePage = () => {
 																index === 1
 																	? {
 																			content: '""',
-																	position: "absolute",
+																			position: "absolute",
 																			top: "-15px",
 																			right: "-10px",
 																			background: "primary.main",
-																	color: "white",
+																			color: "white",
 																			padding: "5px 12px",
-																	borderRadius: "20px",
+																			borderRadius: "20px",
 																			fontSize: "0.7rem",
-																	fontWeight: "bold",
+																			fontWeight: "bold",
 																			boxShadow:
 																				"0 4px 8px rgba(0, 0, 0, 0.15)",
 																			zIndex: 2,
@@ -1597,22 +1897,22 @@ const HealthInsurancePage = () => {
 																	alignItems: "flex-start",
 																}}>
 																<Box>
-															<Typography
-																variant='h5'
-																color='primary'
+																	<Typography
+																		variant='h5'
+																		color='primary'
 																		sx={{
 																			fontWeight: 600,
 																			mb: 0.5,
 																			fontSize: "1.4rem",
 																		}}>
-																{pkg.name}
-															</Typography>
+																		{pkg.name}
+																	</Typography>
 																	<Typography
 																		variant='body2'
 																		color='text.secondary'
 																		sx={{ mb: 2 }}>
 																		{pkg.shortDescription}
-															</Typography>
+																	</Typography>
 																</Box>
 																{index === 1 && (
 																	<Chip
@@ -1627,10 +1927,10 @@ const HealthInsurancePage = () => {
 																)}
 															</Box>
 
-																			<Typography
+															<Typography
 																variant='h4'
 																color='primary'
-																				sx={{
+																sx={{
 																	display: "flex",
 																	alignItems: "baseline",
 																	fontWeight: 700,
@@ -1643,8 +1943,8 @@ const HealthInsurancePage = () => {
 																	color='text.secondary'
 																	sx={{ ml: 1, fontWeight: 400 }}>
 																	/ year
-																			</Typography>
 																</Typography>
+															</Typography>
 
 															<Divider sx={{ mb: 2 }} />
 
@@ -1664,7 +1964,7 @@ const HealthInsurancePage = () => {
 																					fontSize: "1.2rem",
 																				}}
 																			/>
-															</ListItemIcon>
+																		</ListItemIcon>
 																		<ListItemText
 																			primary={feature}
 																			primaryTypographyProps={{
@@ -1685,7 +1985,7 @@ const HealthInsurancePage = () => {
 															</Button>
 														</CardActions>
 													</PackageCard>
-										</Grid>
+												</Grid>
 											))}
 										</Grid>
 									</SectionBox>
@@ -1694,14 +1994,14 @@ const HealthInsurancePage = () => {
 
 							{/* FAQ Section */}
 							<section ref={faqRef} id='faq'>
-								<SectionBox id='faq-section'>
+								<SectionBox id='faq-section' sx={{ p: { xs: 2.5, md: 3 } }}>
 									<Typography
 										variant='h3'
 										color='primary'
 										gutterBottom
-								sx={{
-									mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+										sx={{
+											mb: 4,
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1716,164 +2016,221 @@ const HealthInsurancePage = () => {
 											},
 										}}>
 										Frequently Asked Questions
-								</Typography>
+									</Typography>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel1a-content'
 											id='panel1a-header'>
-											<Typography variant='h6'>
-												What is term insurance?
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
+												What is health insurance?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography>
-												Term insurance is a type of life insurance policy that
-												provides coverage for a specific period or "term." If
-												the insured person passes away during the policy term,
-												the nominees receive the death benefit. If the insured
-												survives the term, there is no payout, unlike permanent
-												life insurance policies which include investment
-												components.
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
+												Health insurance is a type of coverage that pays for
+												medical and surgical expenses incurred by the insured.
+												It reimburses expenses for illnesses or injuries or pays
+												the care provider directly. Health insurance offers
+												protection against high medical costs and ensures that
+												you have access to quality healthcare when needed.
 											</Typography>
 										</AccordionDetails>
 									</Accordion>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel2a-content'
 											id='panel2a-header'>
-											<Typography variant='h6'>
-												How is term insurance different from other types of life
-												insurance?
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
+												What does health insurance typically cover?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography>
-												Term insurance differs from other types of life
-												insurance in several ways. It only provides death
-												benefits for a specific period without any investment or
-												cash value component. This makes term insurance much
-												more affordable than whole life or endowment policies.
-												It's designed purely for protection rather than as an
-												investment vehicle.
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
+												Health insurance typically covers hospitalization
+												expenses, pre and post-hospitalization costs, daycare
+												procedures, ambulance charges, and in some cases,
+												preventive healthcare check-ups. Specific coverage
+												depends on your policy type and the insurance provider.
+												It's important to carefully review your policy documents
+												to understand what is covered and what is not.
 											</Typography>
 										</AccordionDetails>
 									</Accordion>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel3a-content'
 											id='panel3a-header'>
-											<Typography variant='h6'>
-												How much coverage do I need?
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
+												How do I choose the right health insurance plan?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography paragraph>
-												The amount of coverage you need depends on several
-												factors including:
+											<Typography
+												paragraph
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
+												Choosing the right health insurance plan depends on
+												several factors including:
 											</Typography>
 											<List>
 												<ListItem>
 													<ListItemIcon>
 														<ArrowRightIcon color='primary' />
 													</ListItemIcon>
-													<ListItemText primary='Your current income and expected future earnings' />
-																		</ListItem>
-												<ListItem>
-													<ListItemIcon>
-														<ArrowRightIcon color='primary' />
-													</ListItemIcon>
-													<ListItemText primary='Outstanding debts (mortgage, loans, credit cards)' />
+													<ListItemText
+														primary='Your age, health condition, and medical history'
+														primaryTypographyProps={{
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}
+													/>
 												</ListItem>
 												<ListItem>
 													<ListItemIcon>
 														<ArrowRightIcon color='primary' />
 													</ListItemIcon>
-													<ListItemText primary='Number of dependents and their future needs (education, marriage)' />
+													<ListItemText
+														primary='Your family size and their healthcare needs'
+														primaryTypographyProps={{
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}
+													/>
 												</ListItem>
 												<ListItem>
 													<ListItemIcon>
 														<ArrowRightIcon color='primary' />
 													</ListItemIcon>
-													<ListItemText primary='Expected funeral and estate settlement costs' />
+													<ListItemText
+														primary='Coverage amount and sub-limits for specific treatments'
+														primaryTypographyProps={{
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}
+													/>
 												</ListItem>
-																</List>
-											<Typography>
-												A common rule of thumb is to have coverage that's 10-15
-												times your annual income, but our coverage calculator
-												can help you determine a more precise figure based on
-												your specific situation.
+												<ListItem>
+													<ListItemIcon>
+														<ArrowRightIcon color='primary' />
+													</ListItemIcon>
+													<ListItemText
+														primary='Network hospitals covered by the insurance provider'
+														primaryTypographyProps={{
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}
+													/>
+												</ListItem>
+											</List>
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
+												Our insurance experts can help you evaluate these
+												factors and recommend a plan that best suits your
+												requirements and budget.
 											</Typography>
 										</AccordionDetails>
 									</Accordion>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel4a-content'
 											id='panel4a-header'>
-											<Typography variant='h6'>
-												What happens if I outlive my term insurance policy?
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
+												What is a waiting period in health insurance?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography>
-												If you outlive your term insurance policy, the coverage
-												simply ends, and no benefits are paid out. However, many
-												term policies offer conversion options that allow you to
-												convert to a permanent life insurance policy without a
-												medical examination. Additionally, some policies offer a
-												return of premium rider (at an extra cost) that returns
-												all or part of the premiums paid if you outlive the
-												policy term.
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
+												A waiting period is the time you must wait after
+												purchasing a health insurance policy before you can
+												claim benefits for specific conditions or treatments.
+												Most policies have different waiting periods for
+												different conditions. For example, pre-existing diseases
+												typically have a waiting period of 2-4 years, while
+												maternity benefits may have a waiting period of 9-36
+												months. Emergency hospitalization due to accidents
+												usually doesn't have a waiting period.
 											</Typography>
 										</AccordionDetails>
 									</Accordion>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel5a-content'
 											id='panel5a-header'>
-											<Typography variant='h6'>
-												Can I get term insurance if I have health issues?
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
+												Can I get health insurance if I have pre-existing
+												conditions?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography>
-												Yes, it's possible to get term insurance even if you
-												have health issues, though it may affect your premiums
-												or coverage options. Insurance companies categorize
-												applicants based on their health risk. If you have
-												pre-existing conditions, you might be charged higher
-												premiums or offered modified coverage. Some insurers
-												specialize in providing coverage for people with
-												specific health conditions. In some cases, you might
-												need to consider guaranteed issue policies that don't
-												require medical exams, though these typically offer
-												lower coverage amounts at higher premiums.
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
+												Yes, you can get health insurance even if you have
+												pre-existing conditions. However, most insurance
+												policies have a waiting period for pre-existing
+												diseases, typically ranging from 2 to 4 years, during
+												which claims related to these conditions aren't covered.
+												It's important to disclose all pre-existing conditions
+												when applying for insurance to avoid claim rejection
+												later. Some insurers offer policies with reduced waiting
+												periods for pre-existing conditions, though they may
+												charge higher premiums.
 											</Typography>
 										</AccordionDetails>
 									</Accordion>
 
 									<Box sx={{ mt: 4, textAlign: "center" }}>
-										<Typography variant='body1' paragraph>
+										<Typography
+											variant='body1'
+											paragraph
+											sx={{ fontSize: { xs: "0.95rem", md: "1rem" } }}>
 											Have more questions? Our insurance experts are here to
 											help.
 										</Typography>
-															<Button
+										<Button
 											variant='outlined'
-																color='primary'
-																size='large'
+											color='primary'
+											size='large'
 											startIcon={<ContactSupportIcon />}
-											onClick={() => handleApplyNow(true)}>
+											onClick={() => handleApplyNow(true)}
+											sx={{ mt: { xs: 2, md: 0 } }}>
 											Contact Our Support Team
-															</Button>
+										</Button>
 									</Box>
 								</SectionBox>
 							</section>
@@ -1905,56 +2262,70 @@ const HealthInsurancePage = () => {
 
 								<Grid
 									container
-									spacing={3}
+									spacing={{ xs: 4, md: 3 }}
 									alignItems='center'
 									sx={{ position: "relative", zIndex: 2 }}>
 									<Grid item xs={12} md={8}>
-								<Typography
+										<Typography
 											variant='h3'
-											sx={{ mb: 2, fontWeight: 700, color: "white" }}>
-											Secure Your Family's Future Today
-								</Typography>
-								<Typography
+											sx={{
+												mb: 2,
+												fontWeight: 700,
+												color: "white",
+												fontSize: { xs: "1.6rem", md: "2rem" },
+											}}>
+											Secure Your Health Today
+										</Typography>
+										<Typography
 											variant='h6'
 											sx={{
 												mb: 3,
 												fontWeight: 400,
 												opacity: 0.9,
 												color: "white",
+												fontSize: { xs: "1.1rem", md: "1.3rem" },
 											}}>
-											Get comprehensive term insurance coverage at affordable
-											rates starting from just ₹500 per month.
-								</Typography>
-										<Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-										<Button
-											variant='contained'
-											size='large'
+											Get comprehensive health insurance coverage at affordable
+											rates starting from just ₹300 per month.
+										</Typography>
+										<Box
 											sx={{
+												display: "flex",
+												flexDirection: { xs: "column", sm: "row" },
+												flexWrap: "wrap",
+												gap: 2,
+											}}>
+											<Button
+												variant='contained'
+												size='large'
+												sx={{
 													bgcolor: "#c6dbce",
 													color: "#1b321d",
-												"&:hover": {
+													"&:hover": {
 														bgcolor: "#a9c6b2",
-												},
-												px: 4,
+													},
+													px: 4,
 													fontWeight: 600,
-											}}
-											onClick={() => handleApplyNow(true)}>
+													width: { xs: "100%", sm: "auto" },
+												}}
+												onClick={() => handleApplyNow(true)}>
 												Apply Now
-										</Button>
-										<Button
-											variant='outlined'
-											size='large'
-											sx={{
+											</Button>
+											<Button
+												variant='outlined'
+												size='large'
+												sx={{
 													borderColor: "white",
 													color: "white",
-												"&:hover": {
+													"&:hover": {
 														borderColor: "#c6dbce",
 														bgcolor: "rgba(255,255,255,0.1)",
-												},
-											}}
+													},
+													width: { xs: "100%", sm: "auto" },
+												}}
 												onClick={() => scrollToCalculator()}>
 												Calculate Coverage
-										</Button>
+											</Button>
 										</Box>
 									</Grid>
 									<Grid
@@ -1976,7 +2347,7 @@ const HealthInsurancePage = () => {
 											<ShieldIcon
 												sx={{ fontSize: 80, color: "#c6dbce", opacity: 0.9 }}
 											/>
-							</Box>
+										</Box>
 									</Grid>
 								</Grid>
 							</SectionBox>

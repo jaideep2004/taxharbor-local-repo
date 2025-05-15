@@ -19,7 +19,7 @@ const Home = () => {
 			<Section5 />
 			<Section9 />
 			<Section8 />
-			<Section11 />
+			{/* <Section11 /> */}
 		</>
 	);
 };

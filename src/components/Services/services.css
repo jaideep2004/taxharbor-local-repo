@@ -487,13 +487,39 @@ html {
 
 /* Responsive adjustments */
 @media (max-width: 600px) {
+	.borrow-loan-page {
+		margin-top: 40px !important;
+	}
+	
 	.borrow-loan-page .hero-section {
-		padding: 40px 0;
+		padding: 24px 0;
 	}
 	
 	.borrow-loan-page .MuiTabs-root {
 		max-width: 100%;
 		overflow-x: auto;
+	}
+	
+	.interest-rate-box {
+		margin-bottom: 16px;
+	}
+	
+	.calculator-form {
+		padding: 16px !important;
+	}
+	
+	.newsletter-form {
+		flex-direction: column;
+	}
+	
+	.newsletter-input {
+		border-radius: 4px;
+		margin-bottom: 8px;
+	}
+	
+	.newsletter-button {
+		border-radius: 4px;
+		padding: 8px;
 	}
 }
 
@@ -624,35 +650,6 @@ html {
 	margin-top: -80px;
 	visibility: hidden;
 	pointer-events: none;
-}
-
-/* Improved mobile responsiveness */
-@media (max-width: 600px) {
-	.borrow-loan-page .hero-section {
-		padding: 24px 0;
-	}
-	
-	.interest-rate-box {
-		margin-bottom: 16px;
-	}
-	
-	.calculator-form {
-		padding: 16px !important;
-	}
-	
-	.newsletter-form {
-		flex-direction: column;
-	}
-	
-	.newsletter-input {
-		border-radius: 4px;
-		margin-bottom: 8px;
-	}
-	
-	.newsletter-button {
-		border-radius: 4px;
-		padding: 8px;
-	}
 }
 
 /* Section container for tab navigation */

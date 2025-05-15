@@ -411,10 +411,24 @@ const WorkmenInsurancePage = () => {
 		annualPremium: 0,
 	});
 
-	// For sticky sidebar tracking with a threshold that allows smoother transition
+	// Enhanced sticky sidebar behavior
+	const [sidebarPosition, setSidebarPosition] = useState({
+		isSticky: false,
+		shouldStop: false,
+	});
+
+	// Store sidebar height
+	const [sidebarHeight, setSidebarHeight] = useState(0);
+
+	// Container refs for tracking positions
+	const contentRef = React.useRef(null);
+	const sidebarRef = React.useRef(null);
+	const sidebarContainerRef = React.useRef(null);
+
+	// For sticky sidebar tracking with a threshold of 109px
 	const scrollTrigger = useScrollTrigger({
 		disableHysteresis: true,
-		threshold: 300,
+		threshold: 109, // Changed to 109px as specified
 	});
 
 	// Service data from backend
@@ -486,6 +500,81 @@ const WorkmenInsurancePage = () => {
 		fetchServiceData();
 	}, [SERVICE_ID, showNotification]);
 
+	// Measure sidebar height after it renders
+	useEffect(() => {
+		if (sidebarRef.current) {
+			setSidebarHeight(sidebarRef.current.clientHeight);
+		}
+	}, [service]); // Re-measure when service data changes
+
+	// Enhanced scroll handler to control sidebar behavior
+	useEffect(() => {
+		const handleScroll = () => {
+			if (
+				!contentRef.current ||
+				!sidebarRef.current ||
+				!sidebarContainerRef.current
+			)
+				return;
+
+			const scrollPosition = window.scrollY;
+			const topThreshold = 109; // Specified threshold
+
+			// Get the content and sidebar boundaries
+			const contentTop =
+				contentRef.current.getBoundingClientRect().top + window.scrollY;
+			const contentBottom =
+				contentRef.current.getBoundingClientRect().bottom + window.scrollY;
+			const sidebarContainerTop = sidebarContainerRef.current.offsetTop;
+			const sidebarContainerHeight = sidebarContainerRef.current.offsetHeight;
+			const sidebarHeight = sidebarRef.current.clientHeight;
+			const windowHeight = window.innerHeight;
+
+			// Determine if sidebar should be sticky - only when content has scrolled to threshold
+			const isSticky =
+				scrollPosition > topThreshold &&
+				scrollPosition > sidebarContainerTop - topThreshold;
+
+			// Calculate where the sidebar should stop (at the bottom of the main content)
+			const stopPoint = contentBottom - sidebarHeight - 30; // 30px buffer from bottom
+
+			// Should sidebar stop following and anchor to bottom?
+			const shouldStop =
+				scrollPosition + topThreshold + sidebarHeight > contentBottom - 30;
+
+			setSidebarPosition({
+				isSticky,
+				shouldStop,
+			});
+
+			// Update active section based on scroll position
+			const activeSetionPos = scrollPosition + 200;
+			for (const section of sections) {
+				const element = section.ref.current;
+				if (element) {
+					const offsetTop = element.offsetTop;
+					const offsetBottom = offsetTop + element.offsetHeight;
+
+					if (activeSetionPos >= offsetTop && activeSetionPos < offsetBottom) {
+						setActiveSection(section.id);
+						break;
+					}
+				}
+			}
+		};
+
+		window.addEventListener("scroll", handleScroll);
+		handleScroll(); // Run once immediately to set initial state
+
+		// Call on window resize too
+		window.addEventListener("resize", handleScroll);
+
+		return () => {
+			window.removeEventListener("scroll", handleScroll);
+			window.removeEventListener("resize", handleScroll);
+		};
+	}, [sections, sidebarHeight]);
+
 	// Handle scrolling to section - improved for smoother scrolling
 	const scrollToSection = (sectionRef) => {
 		if (sectionRef && sectionRef.current) {
@@ -503,29 +592,6 @@ const WorkmenInsurancePage = () => {
 			}
 		}
 	};
-
-	// Update active section based on scroll position
-	useEffect(() => {
-		const handleScroll = () => {
-			const scrollPosition = window.scrollY + 200;
-
-			for (const section of sections) {
-				const element = section.ref.current;
-				if (element) {
-					const offsetTop = element.offsetTop;
-					const offsetBottom = offsetTop + element.offsetHeight;
-
-					if (scrollPosition >= offsetTop && scrollPosition < offsetBottom) {
-						setActiveSection(section.id);
-						break;
-					}
-				}
-			}
-		};
-
-		window.addEventListener("scroll", handleScroll);
-		return () => window.removeEventListener("scroll", handleScroll);
-	}, [sections]);
 
 	const handleAccordionChange = (panel) => (event, isExpanded) => {
 		setExpanded(isExpanded ? panel : false);
@@ -628,7 +694,9 @@ const WorkmenInsurancePage = () => {
 
 	return (
 		<ThemeProvider theme={theme}>
-			<Box sx={{ backgroundColor: "background.default", minHeight: "80vh" }}>
+			<Box
+				sx={{ backgroundColor: "background.default", minHeight: "80vh" }}
+				ref={contentRef}>
 				{/* Hero Banner */}
 				<HeroSection>
 					<Container maxWidth='xl' sx={{ mt: { xs: "80px", md: "160px" } }}>
@@ -733,9 +801,44 @@ const WorkmenInsurancePage = () => {
 				<Container maxWidth='xl' sx={{ py: { xs: 4, md: 8 } }}>
 					<Grid container spacing={4}>
 						{/* Sticky Sidebar Navigation - Desktop Only */}
-						<Grid item xs={12} md={3} lg={2.5}>
+						<Grid item xs={12} md={3} lg={2.5} ref={sidebarContainerRef}>
 							<Hidden mdDown>
-								<StickyNav trigger={scrollTrigger}>
+								<Box
+									ref={sidebarRef}
+									sx={{
+										width: "300px",
+										transition: "all 0.3s ease",
+										position: sidebarPosition.isSticky
+											? sidebarPosition.shouldStop
+												? "absolute"
+												: "fixed"
+											: "static",
+										top:
+											sidebarPosition.isSticky && !sidebarPosition.shouldStop
+												? "130px"
+												: "auto",
+										bottom: sidebarPosition.shouldStop ? "30px" : "auto",
+										maxHeight: "80vh",
+										overflow: "auto",
+										// Custom scrollbar styles
+										"&::-webkit-scrollbar": {
+											width: "4px",
+										},
+										"&::-webkit-scrollbar-track": {
+											background: "#f1f1f1",
+											borderRadius: "10px",
+										},
+										"&::-webkit-scrollbar-thumb": {
+											background: "#95b8a2",
+											borderRadius: "10px",
+										},
+										"&::-webkit-scrollbar-thumb:hover": {
+											background: "#1b321d",
+										},
+										// Firefox scrollbar
+										scrollbarWidth: "thin",
+										scrollbarColor: "#95b8a2 #f1f1f1",
+									}}>
 									<NavList component='nav'>
 										{sections.map((section) => (
 											<NavItem
@@ -852,7 +955,7 @@ const WorkmenInsurancePage = () => {
 											</Button>
 										)}
 									</Box>
-								</StickyNav>
+								</Box>
 							</Hidden>
 						</Grid>
 
@@ -872,14 +975,16 @@ const WorkmenInsurancePage = () => {
 
 							{/* Overview Section */}
 							<section ref={overviewRef} id='overview'>
-								<SectionBox id='overview-section'>
+								<SectionBox
+									id='overview-section'
+									style={{ paddingBottom: "90px" }}>
 									<Typography
 										variant='h3'
 										color='primary'
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -901,7 +1006,10 @@ const WorkmenInsurancePage = () => {
 											<Typography
 												variant='body1'
 												paragraph
-												sx={{ fontSize: "1.05rem", lineHeight: 1.7 }}>
+												sx={{
+													fontSize: { xs: "1rem", md: "1.05rem" },
+													lineHeight: 1.7,
+												}}>
 												At FinShelter, we understand the importance of
 												protecting your workforce and ensuring the well-being of
 												your employees. Workmen Compensation Insurance provides
@@ -912,7 +1020,10 @@ const WorkmenInsurancePage = () => {
 											<Typography
 												variant='body1'
 												paragraph
-												sx={{ fontSize: "1.05rem", lineHeight: 1.7 }}>
+												sx={{
+													fontSize: { xs: "1rem", md: "1.05rem" },
+													lineHeight: 1.7,
+												}}>
 												With FinShelter's reliable insurance solutions, you can
 												safeguard your employees while complying with statutory
 												requirements. Workmen Compensation Insurance is a vital
@@ -922,7 +1033,10 @@ const WorkmenInsurancePage = () => {
 											<Typography
 												variant='body1'
 												paragraph
-												sx={{ fontSize: "1.05rem", lineHeight: 1.7 }}>
+												sx={{
+													fontSize: { xs: "1rem", md: "1.05rem" },
+													lineHeight: 1.7,
+												}}>
 												Investing in Workmen Compensation Insurance is more than
 												a legal obligation—it's a commitment to your employees
 												and the longevity of your business. With FinShelter, you
@@ -935,14 +1049,16 @@ const WorkmenInsurancePage = () => {
 												sx={{
 													backgroundColor: "accent.main" + "15",
 													borderRadius: "12px",
-													p: 3,
+													p: { xs: 3, md: 3 },
 													height: "100%",
 													boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
 													border: "1px solid",
 													borderColor: "accent.main" + "30",
 													position: "relative",
 													overflow: "hidden",
-													marginTop: { xs: 0, md: "-70px" },
+													marginTop: { xs: 3, md: "-70px" },
+													marginBottom: { xs: 4, md: 0 },
+													paddingBottom: { xs: 5, md: 3 },
 													"&:after": {
 														content: '""',
 														position: "absolute",
@@ -968,7 +1084,11 @@ const WorkmenInsurancePage = () => {
 													variant='h5'
 													color='primary'
 													gutterBottom
-													sx={{ mb: 2, fontWeight: 600 }}>
+													sx={{
+														mb: 2,
+														fontWeight: 600,
+														fontSize: { xs: "1.3rem", md: "1.5rem" },
+													}}>
 													Why Workmen Compensation Insurance Matters
 												</Typography>
 												<List sx={{ pl: 1, position: "relative", zIndex: 1 }}>
@@ -1000,7 +1120,7 @@ const WorkmenInsurancePage = () => {
 															<ListItemText
 																primary={benefit}
 																primaryTypographyProps={{
-																	fontSize: "0.95rem",
+																	fontSize: { xs: "0.9rem", md: "0.95rem" },
 																	fontWeight: 400,
 																	color: "primary.main",
 																}}
@@ -1016,14 +1136,14 @@ const WorkmenInsurancePage = () => {
 
 							{/* Why Choose Vehicle Insurance Section */}
 							<section id='why-choose'>
-								<SectionBox>
+								<SectionBox sx={{ mb: { xs: 5, md: 4 } }}>
 									<Typography
 										variant='h3'
 										color='primary'
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1040,7 +1160,7 @@ const WorkmenInsurancePage = () => {
 										Coverage Offered
 									</Typography>
 
-									<Grid container spacing={2} sx={{ mx: -1 }}>
+									<Grid container spacing={{ xs: 4, md: 2 }} sx={{ mx: -1 }}>
 										{[
 											{
 												title: "Medical Expenses",
@@ -1093,11 +1213,16 @@ const WorkmenInsurancePage = () => {
 												),
 											},
 										].map((item, index) => (
-											<Grid item xs={12} sm={6} key={index} marginBottom='60px'>
+											<Grid
+												item
+												xs={12}
+												sm={6}
+												key={index}
+												sx={{ mb: { xs: "40px", md: "60px" } }}>
 												<Card
 													sx={{
 														height: "100%",
-														p: 3,
+														p: { xs: 2.5, md: 3 },
 														border: "1px solid rgba(0,0,0,0.08)",
 														boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
 														transition:
@@ -1118,13 +1243,20 @@ const WorkmenInsurancePage = () => {
 														<Typography
 															variant='h5'
 															color='primary'
-															sx={{ fontWeight: 600 }}>
+															sx={{
+																fontWeight: 600,
+																fontSize: { xs: "1.2rem", md: "1.5rem" },
+															}}>
 															{item.title}
 														</Typography>
 													</Box>
 													<Typography
 														variant='body1'
-														sx={{ color: "text.secondary", lineHeight: 1.7 }}>
+														sx={{
+															color: "text.secondary",
+															lineHeight: 1.7,
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}>
 														{item.description}
 													</Typography>
 												</Card>
@@ -1140,6 +1272,7 @@ const WorkmenInsurancePage = () => {
 									sx={{
 										background:
 											"linear-gradient(to right, rgba(198, 219, 206, 0.4), rgba(198, 219, 206, 0.1))",
+										mb: { xs: 5, md: 4 },
 									}}>
 									<Typography
 										variant='h3'
@@ -1147,7 +1280,7 @@ const WorkmenInsurancePage = () => {
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1167,12 +1300,16 @@ const WorkmenInsurancePage = () => {
 									<Typography
 										variant='body1'
 										paragraph
-										sx={{ mb: 4, maxWidth: "850px" }}>
+										sx={{
+											mb: 4,
+											maxWidth: "850px",
+											fontSize: { xs: "0.95rem", md: "1rem" },
+										}}>
 										At FinShelter, we aim to provide employers with dependable,
 										cost-effective solutions that protect their workforce:
 									</Typography>
 
-									<Grid container spacing={3}>
+									<Grid container spacing={{ xs: 4, md: 3 }}>
 										{[
 											{
 												title: "Expert Guidance",
@@ -1199,9 +1336,15 @@ const WorkmenInsurancePage = () => {
 												icon: <ShieldIcon />,
 											},
 										].map((offering, index) => (
-											<Grid item xs={12} sm={6} md={3} key={index}>
-												<Card sx={{ height: "100%" }}>
-													<CardContent sx={{ p: 3 }}>
+											<Grid
+												item
+												xs={12}
+												sm={6}
+												md={3}
+												key={index}
+												sx={{ mb: { xs: 5, md: 0 } }}>
+												<Card sx={{ height: "100%", pb: { xs: 2, md: 0 } }}>
+													<CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
 														<Box
 															sx={{
 																mb: 2,
@@ -1219,13 +1362,20 @@ const WorkmenInsurancePage = () => {
 															<Typography
 																variant='h5'
 																color='primary'
-																sx={{ fontWeight: 600 }}>
+																sx={{
+																	fontWeight: 600,
+																	fontSize: { xs: "1.1rem", md: "1.25rem" },
+																}}>
 																{offering.title}
 															</Typography>
 														</Box>
 														<Typography
 															variant='body2'
-															sx={{ color: "text.secondary" }}>
+															sx={{
+																color: "text.secondary",
+																fontSize: { xs: "0.85rem", md: "0.9rem" },
+																lineHeight: 1.6,
+															}}>
 															{offering.description}
 														</Typography>
 													</CardContent>
@@ -1238,14 +1388,14 @@ const WorkmenInsurancePage = () => {
 
 							{/* Why Choose FinShelter Section */}
 							<section id='types' ref={typesRef}>
-								<SectionBox>
+								<SectionBox sx={{ mb: { xs: 5, md: 4 } }}>
 									<Typography
 										variant='h3'
 										color='primary'
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1274,7 +1424,10 @@ const WorkmenInsurancePage = () => {
 												<Typography
 													variant='body1'
 													paragraph
-													sx={{ fontSize: "1.05rem", lineHeight: 1.7 }}>
+													sx={{
+														fontSize: { xs: "1rem", md: "1.05rem" },
+														lineHeight: 1.7,
+													}}>
 													Investing in Workmen Compensation Insurance is more
 													than a legal obligation—it's a commitment to your
 													employees and the longevity of your business. With
@@ -1286,7 +1439,11 @@ const WorkmenInsurancePage = () => {
 												<Typography
 													variant='body1'
 													paragraph
-													sx={{ fontSize: "1.05rem", lineHeight: 1.7, mb: 0 }}>
+													sx={{
+														fontSize: { xs: "1rem", md: "1.05rem" },
+														lineHeight: 1.7,
+														mb: 0,
+													}}>
 													Our insurance plans provide comprehensive coverage for
 													a range of scenarios, including medical expenses,
 													disability benefits, death benefits, legal expenses,
@@ -1379,7 +1536,7 @@ const WorkmenInsurancePage = () => {
 														<ListItem
 															key={index}
 															sx={{
-																py: 0,
+																py: 1.5,
 																px: 0,
 																borderBottom:
 																	index !== 4 ? "1px solid #e0e0e0" : "none",
@@ -1403,7 +1560,7 @@ const WorkmenInsurancePage = () => {
 																		sx={{
 																			mb: 0.5,
 																			fontWeight: 600,
-																			fontSize: "1rem",
+																			fontSize: { xs: "1rem", md: "1.1rem" },
 																		}}>
 																		{item.title}
 																	</Typography>
@@ -1412,7 +1569,9 @@ const WorkmenInsurancePage = () => {
 																	<Typography
 																		variant='body2'
 																		color='text.secondary'
-																		sx={{ fontSize: "0.9rem" }}>
+																		sx={{
+																			fontSize: { xs: "0.85rem", md: "0.9rem" },
+																		}}>
 																		{item.description}
 																	</Typography>
 																}
@@ -1432,6 +1591,7 @@ const WorkmenInsurancePage = () => {
 									sx={{
 										background:
 											"linear-gradient(135deg, rgba(27, 50, 29, 0.05), rgba(198, 219, 206, 0.2))",
+										mb: { xs: 5, md: 4 },
 									}}>
 									<Typography
 										variant='h3'
@@ -1439,7 +1599,7 @@ const WorkmenInsurancePage = () => {
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1459,7 +1619,11 @@ const WorkmenInsurancePage = () => {
 									<Typography
 										variant='body1'
 										paragraph
-										sx={{ mb: 4, maxWidth: "850px" }}>
+										sx={{
+											mb: 4,
+											maxWidth: "850px",
+											fontSize: { xs: "0.95rem", md: "1rem" },
+										}}>
 										We follow a simple and streamlined process to ensure you get
 										the right coverage for your workforce:
 									</Typography>
@@ -1522,12 +1686,17 @@ const WorkmenInsurancePage = () => {
 															<Typography
 																variant='h5'
 																color='primary'
-																sx={{ fontWeight: 600, mb: 1 }}>
+																sx={{
+																	fontWeight: 600,
+																	mb: 1,
+																	fontSize: { xs: "1.1rem", md: "1.25rem" },
+																}}>
 																Needs Assessment
 															</Typography>
 															<Typography
 																variant='body1'
-																color='text.secondary'>
+																color='text.secondary'
+																sx={{ fontSize: { xs: "0.9rem", md: "1rem" } }}>
 																Our team evaluates your business requirements
 																and risks to determine the most suitable
 																coverage.
@@ -1562,12 +1731,17 @@ const WorkmenInsurancePage = () => {
 															<Typography
 																variant='h5'
 																color='primary'
-																sx={{ fontWeight: 600, mb: 1 }}>
+																sx={{
+																	fontWeight: 600,
+																	mb: 1,
+																	fontSize: { xs: "1.1rem", md: "1.25rem" },
+																}}>
 																Policy Customization
 															</Typography>
 															<Typography
 																variant='body1'
-																color='text.secondary'>
+																color='text.secondary'
+																sx={{ fontSize: { xs: "0.9rem", md: "1rem" } }}>
 																We tailor the insurance plan to align with your
 																workforce size, industry, and operational risks.
 															</Typography>
@@ -1601,12 +1775,17 @@ const WorkmenInsurancePage = () => {
 															<Typography
 																variant='h5'
 																color='primary'
-																sx={{ fontWeight: 600, mb: 1 }}>
+																sx={{
+																	fontWeight: 600,
+																	mb: 1,
+																	fontSize: { xs: "1.1rem", md: "1.25rem" },
+																}}>
 																Seamless Enrollment
 															</Typography>
 															<Typography
 																variant='body1'
-																color='text.secondary'>
+																color='text.secondary'
+																sx={{ fontSize: { xs: "0.9rem", md: "1rem" } }}>
 																Benefit from our simplified documentation and
 																approval process for quick implementation.
 															</Typography>
@@ -1636,12 +1815,17 @@ const WorkmenInsurancePage = () => {
 															<Typography
 																variant='h5'
 																color='primary'
-																sx={{ fontWeight: 600, mb: 1 }}>
+																sx={{
+																	fontWeight: 600,
+																	mb: 1,
+																	fontSize: { xs: "1.1rem", md: "1.25rem" },
+																}}>
 																Claims Assistance
 															</Typography>
 															<Typography
 																variant='body1'
-																color='text.secondary'>
+																color='text.secondary'
+																sx={{ fontSize: { xs: "0.9rem", md: "1rem" } }}>
 																In the event of an incident, our dedicated
 																claims team provides prompt and efficient
 																support to resolve issues.
@@ -1654,29 +1838,11 @@ const WorkmenInsurancePage = () => {
 
 										<Box
 											sx={{
-												position: "absolute",
-												bottom: -20,
-												left: "50%",
-												transform: "translateX(-50%)",
-												textAlign: "center",
-												zIndex: 2,
-												display: { xs: "block", md: "none" },
-											}}>
-											<Button
-												variant='contained'
-												color='primary'
-												size='large'
-												onClick={() => handleApplyNow(true)}
-												sx={{ px: 4 }}>
-												Contact Us Today
-											</Button>
-										</Box>
-
-										<Box
-											sx={{
-												display: { xs: "none", md: "flex" },
+												display: "flex",
 												justifyContent: "center",
-												mt: 6,
+												mt: { xs: 8, md: 6 },
+												position: "relative",
+												zIndex: 1,
 											}}>
 											<Button
 												variant='contained'
@@ -1694,14 +1860,16 @@ const WorkmenInsurancePage = () => {
 							{/* Packages Section - Only render if packages exist */}
 							{service?.packages && service.packages.length > 0 && (
 								<section ref={packagesRef} id='packages'>
-									<SectionBox id='packages-section'>
+									<SectionBox
+										id='packages-section'
+										sx={{ mb: { xs: 5, md: 4 } }}>
 										<Typography
 											variant='h3'
 											color='primary'
 											gutterBottom
 											sx={{
 												mb: 1,
-												fontSize: { xs: "1.8rem", md: "2.2rem" },
+												fontSize: { xs: "1.6rem", md: "2.2rem" },
 												position: "relative",
 												display: "inline-block",
 												"&:after": {
@@ -1720,15 +1888,25 @@ const WorkmenInsurancePage = () => {
 										<Typography
 											variant='subtitle1'
 											paragraph
-											sx={{ mb: 4, maxWidth: "850px" }}>
-											Choose the right coverage to safeguard your vehicle and
-											financial future. Our insurance plans offer comprehensive
+											sx={{
+												mb: 4,
+												maxWidth: "850px",
+												fontSize: { xs: "0.95rem", md: "1rem" },
+											}}>
+											Choose the right coverage to safeguard your workforce and
+											your business. Our insurance plans offer comprehensive
 											protection at affordable rates.
 										</Typography>
 
-										<Grid container spacing={3}>
+										<Grid container spacing={{ xs: 6, md: 3 }}>
 											{service.packages.map((pkg, index) => (
-												<Grid item xs={12} sm={6} md={4} key={index}>
+												<Grid
+													item
+													xs={12}
+													sm={6}
+													md={4}
+													key={index}
+													sx={{ mb: { xs: 9, md: 0 } }}>
 													<PackageCard
 														featured={index === 1}
 														sx={{
@@ -1756,7 +1934,7 @@ const WorkmenInsurancePage = () => {
 																	: {},
 														}}
 														onClick={() => handlePackageSelect(pkg)}>
-														<CardContent sx={{ p: 3 }}>
+														<CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
 															<Box
 																sx={{
 																	mb: 2,
@@ -1771,14 +1949,17 @@ const WorkmenInsurancePage = () => {
 																		sx={{
 																			fontWeight: 600,
 																			mb: 0.5,
-																			fontSize: "1.4rem",
+																			fontSize: { xs: "1.2rem", md: "1.4rem" },
 																		}}>
 																		{pkg.name}
 																	</Typography>
 																	<Typography
 																		variant='body2'
 																		color='text.secondary'
-																		sx={{ mb: 2 }}>
+																		sx={{
+																			mb: 2,
+																			fontSize: { xs: "0.85rem", md: "0.9rem" },
+																		}}>
 																		{pkg.shortDescription}
 																	</Typography>
 																</Box>
@@ -1803,13 +1984,18 @@ const WorkmenInsurancePage = () => {
 																	alignItems: "baseline",
 																	fontWeight: 700,
 																	mb: 3,
+																	fontSize: { xs: "1.5rem", md: "2rem" },
 																}}>
 																₹{pkg.price}
 																<Typography
 																	component='span'
 																	variant='subtitle2'
 																	color='text.secondary'
-																	sx={{ ml: 1, fontWeight: 400 }}>
+																	sx={{
+																		ml: 1,
+																		fontWeight: 400,
+																		fontSize: { xs: "0.8rem", md: "0.9rem" },
+																	}}>
 																	/ year
 																</Typography>
 															</Typography>
@@ -1817,33 +2003,37 @@ const WorkmenInsurancePage = () => {
 															<Divider sx={{ mb: 2 }} />
 
 															<List sx={{ mb: 2 }}>
-																{pkg.features.map((feature, idx) => (
-																	<ListItem
-																		key={idx}
-																		sx={{
-																			px: 0,
-																			py: 0.5,
-																			alignItems: "flex-start",
-																		}}>
-																		<ListItemIcon sx={{ minWidth: "32px" }}>
-																			<CheckCircleOutlineIcon
-																				sx={{
-																					color: "success.main",
-																					fontSize: "1.2rem",
+																{pkg.features &&
+																	pkg.features.map((feature, idx) => (
+																		<ListItem
+																			key={idx}
+																			sx={{
+																				px: 0,
+																				py: 0.5,
+																				alignItems: "flex-start",
+																			}}>
+																			<ListItemIcon sx={{ minWidth: "32px" }}>
+																				<CheckCircleOutlineIcon
+																					sx={{
+																						color: "success.main",
+																						fontSize: "1.2rem",
+																					}}
+																				/>
+																			</ListItemIcon>
+																			<ListItemText
+																				primary={feature}
+																				primaryTypographyProps={{
+																					fontSize: {
+																						xs: "0.85rem",
+																						md: "0.9rem",
+																					},
 																				}}
 																			/>
-																		</ListItemIcon>
-																		<ListItemText
-																			primary={feature}
-																			primaryTypographyProps={{
-																				fontSize: "0.9rem",
-																			}}
-																		/>
-																	</ListItem>
-																))}
+																		</ListItem>
+																	))}
 															</List>
 														</CardContent>
-														<CardActions sx={{ px: 3, pb: 3 }}>
+														<CardActions sx={{ px: 3, pb: { xs: 4, md: 3 } }}>
 															<Button
 																variant='contained'
 																color='primary'
@@ -1869,7 +2059,7 @@ const WorkmenInsurancePage = () => {
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1886,151 +2076,203 @@ const WorkmenInsurancePage = () => {
 										Frequently Asked Questions
 									</Typography>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel1a-content'
 											id='panel1a-header'>
-											<Typography variant='h6'>
-												What is Workmen Compensatione?
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
+												What is Workmen Compensation?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography>
-												Vehicle insurance is a type of life insurance policy
-												that provides coverage for a specific period or "term."
-												If the insured person passes away during the policy
-												term, the nominees receive the death benefit. If the
-												insured survives the term, there is no payout, unlike
-												permanent life insurance policies which include
-												investment components.
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
+												Workmen Compensation Insurance is a type of business
+												insurance that provides financial coverage to employees
+												who suffer from work-related injuries or illnesses. It
+												helps employers fulfill their legal obligations while
+												ensuring that injured workers receive proper medical
+												care and compensation for lost wages.
 											</Typography>
 										</AccordionDetails>
 									</Accordion>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel2a-content'
 											id='panel2a-header'>
-											<Typography variant='h6'>
-												How is Vehicle insurance different from other types of
-												life insurance?
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
+												Is Workmen Compensation Insurance mandatory?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography>
-												Vehicle insurance differs from other types of life
-												insurance in several ways. It only provides death
-												benefits for a specific period without any investment or
-												cash value component. This makes term insurance much
-												more affordable than whole life or endowment policies.
-												It's designed purely for protection rather than as an
-												investment vehicle.
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
+												Yes, in most states and industries, Workmen Compensation
+												Insurance is mandatory for businesses with employees.
+												The specific requirements vary by location, industry,
+												and the number of employees, but generally, businesses
+												must provide this coverage to comply with legal
+												obligations and protect their workforce.
 											</Typography>
 										</AccordionDetails>
 									</Accordion>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel3a-content'
 											id='panel3a-header'>
-											<Typography variant='h6'>
-												How much coverage do I need?
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
+												What does Workmen Compensation Insurance cover?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography paragraph>
-												The amount of coverage you need depends on several
-												factors including:
+											<Typography
+												paragraph
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
+												Workmen Compensation Insurance typically covers:
 											</Typography>
 											<List>
 												<ListItem>
 													<ListItemIcon>
 														<ArrowRightIcon color='primary' />
 													</ListItemIcon>
-													<ListItemText primary='Your current income and expected future earnings' />
+													<ListItemText
+														primary='Medical expenses for work-related injuries or illnesses'
+														primaryTypographyProps={{
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}
+													/>
 												</ListItem>
 												<ListItem>
 													<ListItemIcon>
 														<ArrowRightIcon color='primary' />
 													</ListItemIcon>
-													<ListItemText primary='Outstanding debts (mortgage, loans, credit cards)' />
+													<ListItemText
+														primary='Lost wages during recovery periods'
+														primaryTypographyProps={{
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}
+													/>
 												</ListItem>
 												<ListItem>
 													<ListItemIcon>
 														<ArrowRightIcon color='primary' />
 													</ListItemIcon>
-													<ListItemText primary='Number of dependents and their future needs (education, marriage)' />
+													<ListItemText
+														primary='Rehabilitation costs for injured employees'
+														primaryTypographyProps={{
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}
+													/>
 												</ListItem>
 												<ListItem>
 													<ListItemIcon>
 														<ArrowRightIcon color='primary' />
 													</ListItemIcon>
-													<ListItemText primary='Expected funeral and estate settlement costs' />
+													<ListItemText
+														primary='Death benefits to the dependents of deceased workers'
+														primaryTypographyProps={{
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}
+													/>
+												</ListItem>
+												<ListItem>
+													<ListItemIcon>
+														<ArrowRightIcon color='primary' />
+													</ListItemIcon>
+													<ListItemText
+														primary='Legal expenses related to workplace injury claims'
+														primaryTypographyProps={{
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}
+													/>
 												</ListItem>
 											</List>
-											<Typography>
-												A common rule of thumb is to have coverage that's 10-15
-												times your annual income, but our coverage calculator
-												can help you determine a more precise figure based on
-												your specific situation.
-											</Typography>
 										</AccordionDetails>
 									</Accordion>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel4a-content'
 											id='panel4a-header'>
-											<Typography variant='h6'>
-												What happens if I outlive my term insurance policy?
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
+												How is the premium for Workmen Compensation calculated?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography>
-												If you outlive your term insurance policy, the coverage
-												simply ends, and no benefits are paid out. However, many
-												term policies offer conversion options that allow you to
-												convert to a permanent life insurance policy without a
-												medical examination. Additionally, some policies offer a
-												return of premium rider (at an extra cost) that returns
-												all or part of the premiums paid if you outlive the
-												policy term.
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
+												The premium for Workmen Compensation Insurance is
+												typically calculated based on several factors including
+												the type of industry, the nature of work performed, the
+												number of employees, the total payroll, past claims
+												history, and the level of risk associated with the
+												business operations. Higher-risk industries generally
+												pay higher premiums.
 											</Typography>
 										</AccordionDetails>
 									</Accordion>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel5a-content'
 											id='panel5a-header'>
-											<Typography variant='h6'>
-												Can I get term insurance if I have health issues?
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
+												What should I do if an employee is injured at work?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography>
-												Yes, it's possible to get term insurance even if you
-												have health issues, though it may affect your premiums
-												or coverage options. Insurance companies categorize
-												applicants based on their health risk. If you have
-												pre-existing conditions, you might be charged higher
-												premiums or offered modified coverage. Some insurers
-												specialize in providing coverage for people with
-												specific health conditions. In some cases, you might
-												need to consider guaranteed issue policies that don't
-												require medical exams, though these typically offer
-												lower coverage amounts at higher premiums.
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
+												If an employee is injured at work, you should
+												immediately provide necessary medical assistance,
+												document the incident thoroughly, notify your insurance
+												provider promptly, file the required reports with the
+												appropriate government agencies, and maintain open
+												communication with both the injured employee and the
+												insurance company throughout the claims process. Our
+												team at FinShelter can guide you through these steps to
+												ensure proper handling of the situation.
 											</Typography>
 										</AccordionDetails>
 									</Accordion>
 
 									<Box sx={{ mt: 4, textAlign: "center" }}>
-										<Typography variant='body1' paragraph>
+										<Typography
+											variant='body1'
+											paragraph
+											sx={{ fontSize: { xs: "0.95rem", md: "1rem" } }}>
 											Have more questions? Our insurance experts are here to
 											help.
 										</Typography>
@@ -2039,7 +2281,8 @@ const WorkmenInsurancePage = () => {
 											color='primary'
 											size='large'
 											startIcon={<ContactSupportIcon />}
-											onClick={() => handleApplyNow(true)}>
+											onClick={() => handleApplyNow(true)}
+											sx={{ mt: { xs: 2, md: 0 } }}>
 											Contact Our Support Team
 										</Button>
 									</Box>
@@ -2073,14 +2316,19 @@ const WorkmenInsurancePage = () => {
 
 								<Grid
 									container
-									spacing={3}
+									spacing={{ xs: 4, md: 3 }}
 									alignItems='center'
 									sx={{ position: "relative", zIndex: 2 }}>
 									<Grid item xs={12} md={8}>
 										<Typography
 											variant='h3'
-											sx={{ mb: 2, fontWeight: 700, color: "white" }}>
-											Secure Your Family's Future Today
+											sx={{
+												mb: 2,
+												fontWeight: 700,
+												color: "white",
+												fontSize: { xs: "1.6rem", md: "2rem" },
+											}}>
+											Protect Your Workforce Today
 										</Typography>
 										<Typography
 											variant='h6'
@@ -2089,9 +2337,10 @@ const WorkmenInsurancePage = () => {
 												fontWeight: 400,
 												opacity: 0.9,
 												color: "white",
+												fontSize: { xs: "1.1rem", md: "1.3rem" },
 											}}>
-											Get comprehensive vehicle insurance coverage at affordable
-											rates starting from just ₹500 per month.
+											Get comprehensive workmen compensation coverage at
+											affordable rates to secure your business and employees.
 										</Typography>
 										<Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
 											<Button

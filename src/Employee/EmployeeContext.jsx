@@ -377,14 +377,12 @@ export const EmployeeProvider = ({ children }) => {
 
 			if (response.data.success) {
 				// Update the local state to reflect the changes
-				setLeads(prevLeads => 
-					prevLeads.map(lead => 
-						lead._id === leadId 
-							? { ...lead, status: 'approved' } 
-							: lead
+				setLeads((prevLeads) =>
+					prevLeads.map((lead) =>
+						lead._id === leadId ? { ...lead, status: "approved" } : lead
 					)
 				);
-				
+
 				showNotification("Lead approved successfully", "success");
 				// Refresh leads list
 				fetchAssignedLeads();
@@ -395,7 +393,10 @@ export const EmployeeProvider = ({ children }) => {
 		} catch (err) {
 			console.error("Error approving lead:", err);
 			setError(err.response?.data?.message || "Failed to approve lead");
-			showNotification(err.response?.data?.message || "Failed to approve lead", "error");
+			showNotification(
+				err.response?.data?.message || "Failed to approve lead",
+				"error"
+			);
 			return false;
 		} finally {
 			setLoading(false);
@@ -407,26 +408,31 @@ export const EmployeeProvider = ({ children }) => {
 		try {
 			setLoading(true);
 			const token = localStorage.getItem("employeeToken");
-			
+
 			const response = await axios.put(
 				`https://195-35-45-82.sslip.io:8000/api/employees/leads/${leadId}/reject`,
 				{ reason },
 				{
 					headers: {
 						Authorization: `Bearer ${token}`,
-					}
+					},
 				}
 			);
-			
+
 			// Update the lead in the UI
-			setLeads(prevLeads =>
-				prevLeads.map(lead =>
+			setLeads((prevLeads) =>
+				prevLeads.map((lead) =>
 					lead._id === leadId
-						? { ...lead, status: 'rejected', rejectReason: reason, rejectedAt: new Date() }
+						? {
+								...lead,
+								status: "rejected",
+								rejectReason: reason,
+								rejectedAt: new Date(),
+						  }
 						: lead
 				)
 			);
-			
+
 			showNotification("Lead rejected successfully", "success");
 			return true;
 		} catch (error) {
@@ -446,48 +452,57 @@ export const EmployeeProvider = ({ children }) => {
 		try {
 			setLoading(true);
 			const token = localStorage.getItem("employeeToken");
-			
+
 			// Create form data
 			const formData = new FormData();
-			
+
 			// Add files
 			for (let i = 0; i < files.length; i++) {
-				formData.append('documents', files[i]);
+				formData.append("documents", files[i]);
 			}
-			
+
 			// Add note and payment details
-			if (note) formData.append('note', note);
+			if (note) formData.append("note", note);
 			if (paymentDetails) {
-				if (paymentDetails.amount) formData.append('paymentAmount', paymentDetails.amount);
-				if (paymentDetails.method) formData.append('paymentMethod', paymentDetails.method);
-				if (paymentDetails.reference) formData.append('paymentReference', paymentDetails.reference);
+				if (paymentDetails.amount)
+					formData.append("paymentAmount", paymentDetails.amount);
+				if (paymentDetails.method)
+					formData.append("paymentMethod", paymentDetails.method);
+				if (paymentDetails.reference)
+					formData.append("paymentReference", paymentDetails.reference);
 			}
-			
+
 			const response = await axios.post(
 				`https://195-35-45-82.sslip.io:8000/api/employees/leads/${leadId}/documents`,
 				formData,
 				{
 					headers: {
 						Authorization: `Bearer ${token}`,
-						'Content-Type': 'multipart/form-data'
-					}
+						"Content-Type": "multipart/form-data",
+					},
 				}
 			);
-			
+
 			// Update the lead in the UI
-			setLeads(prevLeads =>
-				prevLeads.map(lead =>
+			setLeads((prevLeads) =>
+				prevLeads.map((lead) =>
 					lead._id === leadId
-						? { 
-							...lead, 
-							documents: [...(lead.documents || []), ...response.data.lead.documents],
-							employeeNotes: [...(lead.employeeNotes || []), ...(response.data.lead.employeeNotes || [])],
-							paymentDetails: response.data.lead.paymentDetails
+						? {
+								...lead,
+								documents: [
+									...(lead.documents || []),
+									...response.data.lead.documents,
+								],
+								employeeNotes: [
+									...(lead.employeeNotes || []),
+									...(response.data.lead.employeeNotes || []),
+								],
+								paymentDetails: response.data.lead.paymentDetails,
 						  }
 						: lead
 				)
 			);
-			
+
 			showNotification("Documents uploaded successfully", "success");
 			return true;
 		} catch (error) {
@@ -502,7 +517,11 @@ export const EmployeeProvider = ({ children }) => {
 		}
 	};
 
-	const updateServiceDelayReason = async (serviceId, delayReason, customerId) => {
+	const updateServiceDelayReason = async (
+		serviceId,
+		delayReason,
+		customerId
+	) => {
 		setLoading(true);
 		try {
 			const response = await axios.post(
@@ -514,7 +533,7 @@ export const EmployeeProvider = ({ children }) => {
 					},
 				}
 			);
-			
+
 			showNotification("Delay reason updated successfully", "success");
 			return response.data;
 		} catch (error) {

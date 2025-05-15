@@ -22,16 +22,18 @@ const Section1 = () => {
 		<div id='tax-section1' style={boxStyle1}>
 			<div className='tax-section1-wrap'>
 				<div className='tax-section1-right'>
-					<p className='p-tag2' data-aos='fade-right' data-aos-duration='1000'>
-						WE'RE FINSHELTER
-					</p>
+					<p
+						className='p-tag2'
+						data-aos='fade-right'
+						data-aos-duration='1000'></p>
 					<div
 						className='head-wrap1'
 						data-aos='fade-down'
 						data-aos-duration='1000'>
 						<h1>
-							Assisted Tax Filing <br />
-							Platform For
+							Your one-stop platform
+							<br className="desktop-break" /> for simplified financial
+							<br className="desktop-break" /> service
 						</h1>
 					</div>
 					<p>
@@ -44,7 +46,10 @@ const Section1 = () => {
 								className='tax5-btn'
 								data-aos='fade-up'
 								data-aos-duration='800'>
-								Schedule Free Call <i className='fa-solid fa-arrow-right'></i>
+								Register Today{" "}
+								<i
+									className='fa-solid fa-arrow-right'
+									style={{ marginLeft: "7px" }}></i>
 							</button>
 						</NavLink>
 					</div>

@@ -99,6 +99,11 @@ const LoanTypeButton = styled(ToggleButton)(({ theme }) => ({
 	borderRadius: "8px",
 	padding: theme.spacing(1, 2),
 	border: "1px solid #e0e0e0",
+	fontSize: "0.95rem",
+	[theme.breakpoints.down("sm")]: {
+		padding: theme.spacing(0.75, 1),
+		fontSize: "0.8rem",
+	},
 	"&.Mui-selected": {
 		backgroundColor: "rgba(149,184,162,0.15)",
 		color: "#1b321d",
@@ -364,47 +369,84 @@ const EMICalculator = () => {
 			backgroundIcon={<PaymentsIcon sx={{ fontSize: 180 }} />}
 		>
 			<StyledCard>
-				<CardContent sx={{ padding: { xs: 2, md: 4 } }}>
-					<Grid container spacing={4}>
+				<CardContent sx={{ padding: { xs: 5, md: 6 } }}>
+					<Grid container spacing={{ xs: 5, md: 6 }}>
 						<Grid item xs={12} md={6}>
 							<Box sx={{ mb: 4 }}>
-								<Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: "#1b321d" }}>
+								<Typography 
+									variant="h5" 
+									gutterBottom 
+									sx={{ 
+										fontWeight: 600, 
+										color: "#1b321d",
+										fontSize: { xs: "1.25rem", md: "1.5rem" }
+									}}>
 									Loan Details
 								</Typography>
 								<Divider sx={{ mb: 3 }} />
 
 								<Box sx={{ mb: 3 }}>
-									<Typography sx={{ mb: 1, fontWeight: 500 }}>Loan Type</Typography>
-									<ToggleButtonGroup
-										value={loanType}
-										exclusive
-										onChange={handleLoanTypeChange}
-										aria-label="loan type"
-										sx={{ mb: 1, width: "100%" }}
-									>
-										<LoanTypeButton value="home" aria-label="home loan">
-											Home Loan
-										</LoanTypeButton>
-										<LoanTypeButton value="car" aria-label="car loan">
-											Car Loan
-										</LoanTypeButton>
-										<LoanTypeButton value="personal" aria-label="personal loan">
-											Personal
-										</LoanTypeButton>
-										<LoanTypeButton value="education" aria-label="education loan">
-											Education
-										</LoanTypeButton>
-										<LoanTypeButton value="business" aria-label="business loan">
-											Business
-										</LoanTypeButton>
-									</ToggleButtonGroup>
+									<Typography 
+										sx={{ 
+											mb: 1, 
+											fontWeight: 500,
+											fontSize: { xs: "0.95rem", md: "1rem" }
+										}}>
+										Loan Type
+									</Typography>
+									{isMobile ? (
+										<Grid container spacing={1} sx={{ mb: 1 }}>
+											{Object.entries(loanTypeLabels).map(([key, label]) => (
+												<Grid item xs={6} key={key} sx={{ mb: 1 }}>
+													<LoanTypeButton
+														fullWidth
+														value={key}
+														selected={loanType === key}
+														onClick={(e) => handleLoanTypeChange(e, key)}
+														aria-label={label}
+													>
+														{key === "personal" ? "Personal" : key === "business" ? "Business" : label}
+													</LoanTypeButton>
+												</Grid>
+											))}
+										</Grid>
+									) : (
+										<ToggleButtonGroup
+											value={loanType}
+											exclusive
+											onChange={handleLoanTypeChange}
+											aria-label="loan type"
+											sx={{ mb: 1, width: "100%" }}
+										>
+											<LoanTypeButton value="home" aria-label="home loan">
+												Home Loan
+											</LoanTypeButton>
+											<LoanTypeButton value="car" aria-label="car loan">
+												Car Loan
+											</LoanTypeButton>
+											<LoanTypeButton value="personal" aria-label="personal loan">
+												Personal
+											</LoanTypeButton>
+											<LoanTypeButton value="education" aria-label="education loan">
+												Education
+											</LoanTypeButton>
+											<LoanTypeButton value="business" aria-label="business loan">
+												Business
+											</LoanTypeButton>
+										</ToggleButtonGroup>
+									)}
 								</Box>
 
-								<Grid container spacing={3}>
+								<Grid container spacing={{ xs: 2, md: 3 }}>
 									<Grid item xs={12}>
 										<Typography
 											variant='subtitle1'
-											sx={{ mb: 1, display: "flex", alignItems: "center" }}>
+											sx={{ 
+												mb: 1, 
+												display: "flex", 
+												alignItems: "center",
+												fontSize: { xs: "0.95rem", md: "1rem" }
+											}}>
 											<CurrencyInr fontSize='small' sx={{ mr: 1 }} />
 											Loan Amount
 										</Typography>
@@ -420,6 +462,11 @@ const EMICalculator = () => {
 											inputProps={{
 												min: loanLimits[loanType].min,
 												max: loanLimits[loanType].max,
+											}}
+											sx={{ 
+												"& .MuiInputBase-input": {
+													fontSize: { xs: "0.95rem", md: "1rem" }
+												}
 											}}
 										/>
 										<Box sx={{ px: 1 }}>
@@ -450,7 +497,12 @@ const EMICalculator = () => {
 									<Grid item xs={12}>
 										<Typography
 											variant='subtitle1'
-											sx={{ mb: 1, display: "flex", alignItems: "center" }}>
+											sx={{ 
+												mb: 1, 
+												display: "flex", 
+												alignItems: "center",
+												fontSize: { xs: "0.95rem", md: "1rem" }
+											}}>
 											<Bank fontSize='small' sx={{ mr: 1 }} />
 											Interest Rate (% p.a.)
 										</Typography>
@@ -469,6 +521,11 @@ const EMICalculator = () => {
 												min: interestRateLimits[loanType].min,
 												max: interestRateLimits[loanType].max,
 												step: 0.1,
+											}}
+											sx={{ 
+												"& .MuiInputBase-input": {
+													fontSize: { xs: "0.95rem", md: "1rem" }
+												}
 											}}
 										/>
 										<Box sx={{ px: 1 }}>
@@ -499,7 +556,12 @@ const EMICalculator = () => {
 									<Grid item xs={12}>
 										<Typography
 											variant='subtitle1'
-											sx={{ mb: 1, display: "flex", alignItems: "center" }}>
+											sx={{ 
+												mb: 1, 
+												display: "flex", 
+												alignItems: "center",
+												fontSize: { xs: "0.95rem", md: "1rem" }
+											}}>
 											<CalendarMonth fontSize='small' sx={{ mr: 1 }} />
 											Loan Tenure (Years)
 										</Typography>
@@ -518,6 +580,11 @@ const EMICalculator = () => {
 												min: tenureLimits[loanType].min,
 												max: tenureLimits[loanType].max,
 												step: 1,
+											}}
+											sx={{ 
+												"& .MuiInputBase-input": {
+													fontSize: { xs: "0.95rem", md: "1rem" }
+												}
 											}}
 										/>
 										<Box sx={{ px: 1 }}>
@@ -549,26 +616,43 @@ const EMICalculator = () => {
 						</Grid>
 
 						<Grid item xs={12} md={6}>
-							<ResultCard elevation={3}>
+							<ResultCard elevation={3} sx={{ padding: { xs: 2, md: 3 } }}>
 								<Box sx={{ mb: 3 }}>
 									<Typography
 										variant='h5'
 										gutterBottom
-										sx={{ fontWeight: 600, color: "#1b321d" }}>
+										sx={{ 
+											fontWeight: 600, 
+											color: "#1b321d",
+											fontSize: { xs: "1.25rem", md: "1.5rem" }
+										}}>
 										{loanTypeLabels[loanType]} EMI Details
 									</Typography>
-									<Typography variant='body2' color='text.secondary' gutterBottom>
-										Loan Amount: {formatCurrency(loanAmount)} | Interest:{" "}
-										{interestRate}% | Tenure: {loanTenure} Years
+									<Typography 
+										variant='body2' 
+										color='text.secondary' 
+										gutterBottom
+										sx={{ 
+											fontSize: { xs: "0.8rem", md: "0.875rem" },
+											display: "flex",
+											flexDirection: { xs: "column", sm: "row" },
+											"& > span": {
+												mr: { xs: 0, sm: 1 },
+												mb: { xs: 0.5, sm: 0 }
+											}
+										}}>
+										<span>Loan Amount: {formatCurrency(loanAmount)}</span> 
+										<span>Interest: {interestRate}%</span> 
+										<span>Tenure: {loanTenure} Years</span>
 									</Typography>
 								</Box>
 
-								<Grid container spacing={3}>
+								<Grid container spacing={{ xs: 2, md: 3 }}>
 									<Grid item xs={12} sm={6}>
 										<Paper
 											elevation={0}
 											sx={{
-												p: 2,
+												p: { xs: 1.5, md: 2 },
 												borderRadius: 2,
 												border: "1px solid rgba(149,184,162,0.3)",
 												backgroundColor: "rgba(149,184,162,0.05)",
@@ -576,12 +660,17 @@ const EMICalculator = () => {
 											<Typography
 												variant='subtitle2'
 												color='text.secondary'
-												gutterBottom>
+												gutterBottom
+												sx={{ fontSize: { xs: "0.8rem", md: "0.875rem" } }}>
 												Monthly EMI
 											</Typography>
 											<Typography
 												variant='h4'
-												sx={{ fontWeight: 700, color: "#1b321d" }}>
+												sx={{ 
+													fontWeight: 700, 
+													color: "#1b321d",
+													fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2.125rem" } 
+												}}>
 												{formatCurrency(Math.round(emi))}
 											</Typography>
 										</Paper>
@@ -591,7 +680,7 @@ const EMICalculator = () => {
 										<Paper
 											elevation={0}
 											sx={{
-												p: 2,
+												p: { xs: 1.5, md: 2 },
 												borderRadius: 2,
 												border: "1px solid rgba(149,184,162,0.3)",
 												backgroundColor: "rgba(149,184,162,0.05)",
@@ -599,12 +688,17 @@ const EMICalculator = () => {
 											<Typography
 												variant='subtitle2'
 												color='text.secondary'
-												gutterBottom>
+												gutterBottom
+												sx={{ fontSize: { xs: "0.8rem", md: "0.875rem" } }}>
 												Total Interest
 											</Typography>
 											<Typography
 												variant='h4'
-												sx={{ fontWeight: 700, color: "#1b321d" }}>
+												sx={{ 
+													fontWeight: 700, 
+													color: "#1b321d",
+													fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2.125rem" } 
+												}}>
 												{formatCurrency(Math.round(totalInterest))}
 											</Typography>
 										</Paper>
@@ -614,7 +708,7 @@ const EMICalculator = () => {
 										<Paper
 											elevation={0}
 											sx={{
-												p: 2,
+												p: { xs: 1.5, md: 2 },
 												borderRadius: 2,
 												border: "1px solid rgba(27,50,29,0.2)",
 												backgroundColor: "rgba(27,50,29,0.05)",
@@ -622,19 +716,24 @@ const EMICalculator = () => {
 											<Typography
 												variant='subtitle2'
 												color='text.secondary'
-												gutterBottom>
+												gutterBottom
+												sx={{ fontSize: { xs: "0.8rem", md: "0.875rem" } }}>
 												Total Payment (Principal + Interest)
 											</Typography>
 											<Typography
 												variant='h4'
-												sx={{ fontWeight: 700, color: "#1b321d" }}>
+												sx={{ 
+													fontWeight: 700, 
+													color: "#1b321d",
+													fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2.125rem" } 
+												}}>
 												{formatCurrency(Math.round(totalPayment))}
 											</Typography>
 										</Paper>
 									</Grid>
 
 									<Grid item xs={12}>
-										<Box sx={{ height: 250 }}>
+										<Box sx={{ height: { xs: 220, sm: 250 } }}>
 											<Chart
 												options={chartOptions}
 												series={chartSeries}
@@ -663,17 +762,31 @@ const EMICalculator = () => {
 												expandIcon={<ChevronDown />}
 												sx={{
 													borderRadius: "8px",
+													padding: { xs: 1, md: 1.5 },
 													"&.Mui-expanded": {
 														borderBottomLeftRadius: 0,
 														borderBottomRightRadius: 0,
 													},
 												}}>
-												<Typography variant='subtitle1' sx={{ fontWeight: 600 }}>
-													View Yearly Payment Schedule
-												</Typography>
+													<Typography 
+														variant='subtitle1' 
+														sx={{ 
+															fontWeight: 600,
+															fontSize: { xs: "0.9rem", md: "1rem" }
+														}}>
+															View Yearly Payment Schedule
+													</Typography>
 											</AccordionSummary>
 											<AccordionDetails sx={{ p: 0 }}>
-												<TableContainer sx={{ maxHeight: 400 }} component={Box}>
+												<TableContainer 
+													sx={{ 
+														maxHeight: { xs: 300, md: 400 },
+														"& .MuiTableCell-root": {
+															padding: { xs: "8px 6px", md: "16px" },
+															fontSize: { xs: "0.75rem", md: "0.875rem" }
+														}
+													}} 
+													component={Box}>
 													<Table stickyHeader size='small'>
 														<TableHead>
 															<TableRow>
@@ -716,6 +829,7 @@ const EMICalculator = () => {
 														sx={{
 															color: "#1b321d",
 															borderColor: "#1b321d",
+															fontSize: { xs: "0.8rem", md: "0.875rem" },
 															"&:hover": {
 																borderColor: "#1b321d",
 																backgroundColor: "rgba(27,50,29,0.05)",
@@ -733,10 +847,18 @@ const EMICalculator = () => {
 											sx={{
 												mt: 2,
 												display: "flex",
+												flexDirection: { xs: "column", sm: "row" },
 												justifyContent: "space-between",
-												alignItems: "center",
+												alignItems: { xs: "flex-start", sm: "center" },
+												gap: { xs: 2, sm: 0 }
 											}}>
-											<Typography variant='body2' color='text.secondary'>
+											<Typography 
+												variant='body2' 
+												color='text.secondary'
+												sx={{ 
+													fontSize: { xs: "0.75rem", md: "0.875rem" },
+													maxWidth: { xs: "100%", sm: "60%" }
+												}}>
 												<Information
 													fontSize='small'
 													sx={{ verticalAlign: "middle", mr: 0.5 }}
@@ -744,19 +866,19 @@ const EMICalculator = () => {
 												Interest rates and loan terms are subject to change based on
 												market conditions.
 											</Typography>
-											<Tooltip title='Apply for this loan'>
-												<Button
-													variant='contained'
-													disableElevation
-													sx={{
-														backgroundColor: "#1b321d",
-														"&:hover": {
-															backgroundColor: "#2c4c38",
-														},
-													}}>
-													Apply Now
-												</Button>
-											</Tooltip>
+											<Button
+												variant='contained'
+												disableElevation
+												sx={{
+													backgroundColor: "#1b321d",
+													fontSize: { xs: "0.85rem", md: "0.875rem" },
+													width: { xs: "100%", sm: "auto" },
+													"&:hover": {
+														backgroundColor: "#2c4c38",
+													},
+												}}>
+												Apply Now
+											</Button>
 										</Box>
 									</Grid>
 								</Grid>

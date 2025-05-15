@@ -93,33 +93,37 @@ const theme = createTheme({
 			fontWeight: 700,
 			fontSize: "2.5rem",
 			"@media (max-width:600px)": {
-				fontSize: "2.2rem",
+				fontSize: "1.8rem",
 			},
 		},
 		h2: {
 			fontWeight: 700,
 			fontSize: "2.2rem",
 			"@media (max-width:600px)": {
-				fontSize: "2rem",
+				fontSize: "1.6rem",
 			},
 		},
 		h3: {
 			fontWeight: 600,
 			fontSize: "2rem",
 			"@media (max-width:600px)": {
-				fontSize: "1.75rem",
+				fontSize: "1.5rem",
 			},
 		},
 		h4: {
 			fontWeight: 600,
 			fontSize: "1.5rem",
 			"@media (max-width:600px)": {
-				fontSize: "1.25rem",
+				fontSize: "1.2rem",
 			},
 		},
 		body1: {
 			fontSize: "1.1rem",
 			lineHeight: 1.7,
+			"@media (max-width:600px)": {
+				fontSize: "0.95rem",
+				lineHeight: 1.6,
+			},
 		},
 		button: {
 			textTransform: "none",
@@ -139,6 +143,8 @@ const StyledButton = styled(Button)(({ theme }) => ({
 	[theme.breakpoints.down("sm")]: {
 		padding: "10px 20px",
 		fontSize: "0.85rem",
+		width: "100%", // Full width buttons on mobile
+		marginBottom: "10px", // Space between stacked buttons
 	},
 }));
 
@@ -206,12 +212,15 @@ const GradientCard = styled(Card)(({ theme }) => ({
 		opacity: 0.6,
 		transition: "opacity 0.3s ease",
 	},
+	[theme.breakpoints.down("sm")]: {
+		marginBottom: "20px", // Add spacing between cards on mobile
+	},
 }));
 
 // Enhanced feature box with subtle gradient
 const FeatureBox = styled(Box)(({ theme }) => ({
 	textAlign: "center",
-	padding: 3,
+	padding: theme.spacing(3),
 	transition: "all 0.3s ease",
 	borderRadius: "8px",
 	border: "1px solid #eaeaea",
@@ -244,6 +253,10 @@ const FeatureBox = styled(Box)(({ theme }) => ({
 		transform: "translateY(100%)",
 		transition: "transform 0.4s ease",
 	},
+	[theme.breakpoints.down("sm")]: {
+		padding: theme.spacing(2), // Less padding on mobile
+		marginBottom: "15px", // Additional spacing between feature boxes
+	},
 }));
 
 // New styled component for the sidebar
@@ -257,6 +270,11 @@ const SidebarNav = styled(Box)(({ theme }) => ({
 	overflow: "hidden",
 	"& .MuiList-root": {
 		padding: 0,
+	},
+	[theme.breakpoints.down("md")]: {
+		position: "relative",
+		top: 0,
+		marginBottom: "20px",
 	},
 }));
 
@@ -288,6 +306,36 @@ const ContentSection = styled(Box)(({ theme }) => ({
 	marginTop: { xs: "30px", md: 0 },
 }));
 
+// Mobile menu component for section navigation on small screens
+const MobileSectionMenu = ({ activeTab, handleTabChange }) => {
+	return (
+		<Box sx={{ mb: 4, mt: 2, display: { xs: 'block', md: 'none' } }}>
+			<FormControl fullWidth variant="outlined" sx={{ backgroundColor: "#fff", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+				<Select
+					value={activeTab}
+					onChange={(e) => handleTabChange(e, e.target.value)}
+					sx={{ 
+						'& .MuiSelect-select': { 
+							py: 1.5, 
+							fontWeight: 500,
+							color: 'primary.main'
+						}
+					}}
+				>
+					<MenuItem value={0}>About Mutual Funds</MenuItem>
+					<MenuItem value={1}>Investment Types</MenuItem>
+					<MenuItem value={2}>How It Works</MenuItem>
+					<MenuItem value={3}>Features & Benefits</MenuItem>
+					<MenuItem value={4}>Portfolio Options</MenuItem>
+					<MenuItem value={5}>Eligibility</MenuItem>
+					<MenuItem value={6}>FAQ's</MenuItem>
+					<MenuItem value={7}>Return Calculator</MenuItem>
+				</Select>
+			</FormControl>
+		</Box>
+	);
+};
+
 const MutualFundsPage = () => {
 	// Service ID from backend - update this for Investments page
 	const SERVICE_ID = "SER117"; // Replace with your actual service ID for investments
@@ -302,6 +350,17 @@ const MutualFundsPage = () => {
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const calculatorRef = useRef(null);
 	const heroRef = useRef(null);
+	
+	// Enhanced sticky sidebar behavior 
+	const [sidebarPosition, setSidebarPosition] = useState({
+		isSticky: false,
+		shouldStop: false
+	});
+	
+	// Refs for tracking content and sidebar positions
+	const contentRef = useRef(null);
+	const sidebarRef = useRef(null);
+	const sidebarContainerRef = useRef(null);
 
 	// Service data from backend
 	const [service, setService] = useState(null);
@@ -320,6 +379,44 @@ const MutualFundsPage = () => {
 
 	// Additional state for tab height
 	const [tabHeight, setTabHeight] = useState(0);
+
+	// Enhanced scroll handler to control sidebar behavior
+	useEffect(() => {
+		const handleSidebarScroll = () => {
+			if (!contentRef.current || !sidebarRef.current || !sidebarContainerRef.current) return;
+			
+			const scrollPosition = window.scrollY;
+			const topThreshold = 109; // Specified threshold
+			
+			// Get the content and sidebar boundaries
+			const contentTop = contentRef.current.getBoundingClientRect().top + window.scrollY;
+			const contentBottom = contentRef.current.getBoundingClientRect().bottom + window.scrollY;
+			const sidebarContainerTop = sidebarContainerRef.current.offsetTop;
+			const sidebarHeight = sidebarRef.current.clientHeight;
+			
+			// Determine if sidebar should be sticky - only when content has scrolled to threshold
+			const isSticky = scrollPosition > topThreshold && scrollPosition > sidebarContainerTop - topThreshold;
+			
+			// Should sidebar stop following and anchor to bottom?
+			const shouldStop = scrollPosition + topThreshold + sidebarHeight > contentBottom - 30;
+			
+			setSidebarPosition({
+				isSticky,
+				shouldStop
+			});
+		};
+
+		window.addEventListener("scroll", handleSidebarScroll);
+		handleSidebarScroll(); // Run once immediately to set initial state
+		
+		// Call on window resize too
+		window.addEventListener("resize", handleSidebarScroll);
+		
+		return () => {
+			window.removeEventListener("scroll", handleSidebarScroll);
+			window.removeEventListener("resize", handleSidebarScroll);
+		};
+	}, []);
 
 	// Scroll listener for fixed tabs
 	useEffect(() => {
@@ -575,15 +672,15 @@ const MutualFundsPage = () => {
 
 	return (
 		<ThemeProvider theme={theme}>
-			<Box className='service-page mutual-funds-page'>
+			<Box className='service-page mutual-funds-page' ref={contentRef}>
 				{/* Hero Section with background image */}
 				<Box
 					ref={heroRef}
 					className='service-hero'
 					sx={{
 						backgroundColor: "#f8f9fa",
-						pt: "196px",
-						pb: 6,
+						pt: { xs: "120px", md: "196px" }, // Responsive padding top
+						pb: { xs: 4, md: 6 }, // Responsive padding bottom
 						position: "relative",
 						overflow: "hidden",
 						"&::before": {
@@ -594,8 +691,8 @@ const MutualFundsPage = () => {
 							right: 0,
 							bottom: 0,
 							backgroundImage: "url('/images/mutualFunds.jpg')",
-						backgroundSize: "cover",
-						backgroundPosition: "center",
+							backgroundSize: "cover",
+							backgroundPosition: "center",
 							opacity: 0.8,
 							zIndex: 0,
 						},
@@ -624,10 +721,11 @@ const MutualFundsPage = () => {
 									component='h1'
 									sx={{
 										fontWeight: 700,
-										fontSize: { xs: "2.5rem", sm: "3rem", md: "3.5rem" },
+										fontSize: { xs: "2.2rem", sm: "2.5rem", md: "3.5rem" },
 										color: "#ffffff", // Changed to white
 										mb: 2,
 										textShadow: "1px 1px 3px rgba(0,0,0,0.5)",
+										textAlign: { xs: "center", md: "left" }, // Center on mobile
 									}}>
 									{service?.name || "Mutual Funds"}
 								</Typography>
@@ -638,6 +736,8 @@ const MutualFundsPage = () => {
 										mb: 3,
 										color: "#ffffff", // Changed to white
 										textShadow: "1px 1px 2px rgba(0,0,0,0.5)",
+										textAlign: { xs: "center", md: "left" }, // Center on mobile
+										fontSize: { xs: "1.2rem", md: "1.5rem" }, // Smaller on mobile
 									}}>
 									{service?.tagline ||
 										"Grow your wealth with professionally managed investments"}
@@ -646,17 +746,24 @@ const MutualFundsPage = () => {
 									variant='body1'
 									paragraph
 									sx={{
-										fontSize: "1.1rem",
+										fontSize: { xs: "1rem", md: "1.1rem" },
 										lineHeight: 1.7,
 										mb: 4,
 										maxWidth: "600px",
 										color: "#ffffff", // Changed to white
 										textShadow: "1px 1px 1px rgba(0,0,0,0.5)",
+										textAlign: { xs: "center", md: "left" }, // Center on mobile
+										mx: { xs: "auto", md: 0 }, // Center on mobile
 									}}>
 									{service?.shortDescription ||
 										"Build a diversified investment portfolio tailored to your financial goals with our expert-managed mutual fund solutions."}
 								</Typography>
-								<Stack direction='row' spacing={2}>
+								<Stack 
+									direction={{ xs: 'column', sm: 'row' }} 
+									spacing={2} 
+									sx={{ 
+										justifyContent: { xs: 'center', md: 'flex-start' } // Center on mobile
+									}}>
 									<StyledButton
 										variant='contained'
 										color='primary'
@@ -676,7 +783,7 @@ const MutualFundsPage = () => {
 											px: 3,
 											fontWeight: 500,
 											color: "#ffffff",
-												borderColor: "#ffffff",
+											borderColor: "#ffffff",
 											"&:hover": {
 												borderColor: "#c6dbce",
 												backgroundColor: "rgba(255, 255, 255, 0.1)",
@@ -700,17 +807,21 @@ const MutualFundsPage = () => {
 				</Box>
 
 				{/* Content Sections */}
-				<Container maxWidth='xl' sx={{ py: 6 }}>
-					{/* Tabs navigation */}
+				<Container maxWidth='xl' sx={{ py: { xs: 3, md: 6 } }}>
+					{/* Mobile navigation dropdown */}
+					<MobileSectionMenu activeTab={activeTab} handleTabChange={handleTabChange} />
+					
+					{/* Tabs navigation - visible on desktop/tablet */}
 					<Box id='tabs-spacer' sx={{ height: tabHeight, display: "none" }} />
 					<Box
 						id='sticky-tabs-container'
-										sx={{
+						sx={{
 							backgroundColor: "#fff",
 							zIndex: 10,
 							width: "100%",
 							transition: "all 0.3s ease",
 							boxShadow: "none",
+							display: { xs: "none", md: "block" }, // Hide on mobile
 							"&.fixed-tabs": {
 								position: "fixed",
 								top: "100px", // Set top position to 100px
@@ -720,8 +831,8 @@ const MutualFundsPage = () => {
 								"& .MuiTabs-indicator": {
 									bottom: 0,
 								},
-											},
-										}}>
+							},
+						}}>
 						<Container maxWidth='xl'>
 							<Tabs
 								value={activeTab}
@@ -748,28 +859,53 @@ const MutualFundsPage = () => {
 						</Container>
 					</Box>
 
-					<Grid container spacing={4} sx={{ mt: 3 }}>
+					<Grid container spacing={4} sx={{ mt: { xs: 0, md: 3 } }}>
 						{/* Sidebar - Hidden on mobile */}
 						<Grid
 							item
 							md={3}
 							sx={{
 								display: { xs: "none", md: "block" },
-							}}>
-								<Box
-									sx={{
-									position: "sticky",
-									top: "100px",
+							}}
+							ref={sidebarContainerRef}>
+							<Box
+								ref={sidebarRef}
+								sx={{
+									transition: "all 0.3s ease",
+									position: sidebarPosition.isSticky ? 
+										(sidebarPosition.shouldStop ? "absolute" : "fixed") :
+										"static",
+									top: sidebarPosition.isSticky && !sidebarPosition.shouldStop ? "180px" : "auto",
+									bottom: sidebarPosition.shouldStop ? "30px" : "auto",
+									width: "300px",
 									bgcolor: "#fff",
 									borderRadius: "8px",
 									boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
 									overflow: "hidden",
-									maxHeight: "calc(100vh - 120px)", // Limit height for scrolling
-									overflowY: "auto", // Add scrolling if needed
+									maxHeight: "80vh",
+									overflowY: "auto",
+									// Custom scrollbar styles
+									"&::-webkit-scrollbar": {
+										width: "4px",
+									},
+									"&::-webkit-scrollbar-track": {
+										background: "#f1f1f1",
+										borderRadius: "10px",
+									},
+									"&::-webkit-scrollbar-thumb": {
+										background: "#95b8a2",
+										borderRadius: "10px",
+									},
+									"&::-webkit-scrollbar-thumb:hover": {
+										background: "#1b321d",
+									},
+									// Firefox scrollbar
+									scrollbarWidth: "thin",
+									scrollbarColor: "#95b8a2 #f1f1f1",
 								}}>
 								<List
 									component='nav'
-										sx={{
+									sx={{
 										p: 0,
 										"& .MuiListItemButton-root:hover": {
 											bgcolor: alpha(theme.palette.primary.main, 0.08),
@@ -921,720 +1057,867 @@ const MutualFundsPage = () => {
 								<Box
 									ref={aboutInvestmentRef}
 									className='section-content'
-									sx={{ mb: 8 }}>
-										<Typography
-											variant='h3'
-											gutterBottom
-											color='primary'
+									sx={{ mb: { xs: 5, md: 8 } }}>
+									<Typography
+										variant='h3'
+										gutterBottom
+										color='primary'
+										sx={{
+											fontWeight: 700,
+											position: "relative",
+											display: "inline-block",
+											paddingBottom: "15px",
+											marginBottom: "30px",
+											color: "#1b321d",
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
+											"&::after": {
+												content: '""',
+												position: "absolute",
+												bottom: 0,
+												left: 0,
+												width: "80px",
+												height: "3px",
+												background:
+													"linear-gradient(to right, #1b321d 30%, #c6dbce 100%)",
+											},
+										}}>
+										FinShelter: Your Partner in Smarter Investing
+									</Typography>
+
+									<Typography
+										variant='body1'
+										paragraph
+										sx={{
+											fontSize: { xs: "0.95rem", md: "1.1rem" },
+											lineHeight: 1.7,
+											color: "#555",
+											mb: 3,
+										}}>
+										At FinShelter, we believe that financial growth isn't just about
+										numbers—it's about building the life you've always envisioned. Our
+										Mutual Fund Distribution Services are here to guide you on a journey
+										to financial freedom, whether you're saving for your dream home,
+										planning for retirement, or creating a legacy for future generations.
+									</Typography>
+
+									<Typography
+										variant='h4'
+										gutterBottom
+										sx={{
+											fontWeight: 600,
+											color: "#1b321d",
+											mt: 4,
+											mb: 2,
+											fontSize: { xs: "1.2rem", md: "1.5rem" },
+										}}>
+										Why Mutual Funds? Think Growth. Think Balance. Think Freedom.
+									</Typography>
+
+									<Typography
+										variant='body1'
+										paragraph
+										sx={{
+											fontSize: "1.1rem",
+											lineHeight: 1.7,
+											color: "#555",
+											mb: 3,
+										}}>
+										Mutual funds are the powerhouse of wealth creation, offering a
+										unique blend of flexibility, accessibility, and professional expertise.
+										Here's why they're a game-changer:
+									</Typography>
+
+								<Grid container spacing={{ xs: 2, md: 4 }} sx={{ mt: 2 }}>
+									<Grid item xs={12} md={6}>
+										<Paper
+											elevation={0}
 											sx={{
-												fontWeight: 700,
-												position: "relative",
-												display: "inline-block",
-												paddingBottom: "15px",
-												marginBottom: "30px",
-												color: "#1b321d",
-												"&::after": {
-													content: '""',
-													position: "absolute",
-													bottom: 0,
-													left: 0,
-													width: "80px",
-													height: "3px",
-													background:
-														"linear-gradient(to right, #1b321d 30%, #c6dbce 100%)",
+												p: { xs: 2, md: 3 },
+												height: "100%",
+												border: "1px solid #eaeaea",
+												borderRadius: "8px",
+												transition:
+													"transform 0.3s ease, box-shadow 0.3s ease",
+												"&:hover": {
+													transform: "translateY(-5px)",
+													boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
 												},
 											}}>
-											FinShelter: Your Partner in Smarter Investing
-										</Typography>
-
-										<Typography
-											variant='body1'
-											paragraph
-											sx={{
-												fontSize: "1.1rem",
-												lineHeight: 1.7,
-												color: "#555",
-												mb: 3,
-											}}>
-											At FinShelter, we believe that financial growth isn't just about
-											numbers—it's about building the life you've always envisioned. Our
-											Mutual Fund Distribution Services are here to guide you on a journey
-											to financial freedom, whether you're saving for your dream home,
-											planning for retirement, or creating a legacy for future generations.
-										</Typography>
-
-										<Typography
-											variant='h4'
-											gutterBottom
-											sx={{
-												fontWeight: 600,
-												color: "#1b321d",
-												mt: 4,
-												mb: 2,
-											}}>
-											Why Mutual Funds? Think Growth. Think Balance. Think Freedom.
-										</Typography>
-
-										<Typography
-											variant='body1'
-											paragraph
-											sx={{
-												fontSize: "1.1rem",
-												lineHeight: 1.7,
-												color: "#555",
-												mb: 3,
-											}}>
-											Mutual funds are the powerhouse of wealth creation, offering a
-											unique blend of flexibility, accessibility, and professional expertise.
-											Here's why they're a game-changer:
-										</Typography>
-
-									<Grid container spacing={4} sx={{ mt: 2 }}>
-										<Grid item xs={12} md={6}>
-											<Paper
-												elevation={0}
-														sx={{
-													p: 3,
-													height: "100%",
-													border: "1px solid #eaeaea",
-															borderRadius: "8px",
-													transition:
-														"transform 0.3s ease, box-shadow 0.3s ease",
-															"&:hover": {
-														transform: "translateY(-5px)",
-														boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-													},
-												}}>
-												<Box
-													sx={{
-														display: "flex",
-														alignItems: "center",
-														mb: 2,
-													}}>
-													<Box
-														sx={{
-															mr: 2,
-															bgcolor: alpha(theme.palette.primary.main, 0.1),
-															borderRadius: "50%",
-															width: 50,
-															height: 50,
-															display: "flex",
-															alignItems: "center",
-															justifyContent: "center",
-															color: theme.palette.primary.main,
-														}}>
-														<AutoGraphIcon fontSize='medium' />
-													</Box>
-											<Typography
-														variant='h6'
-														sx={{ fontWeight: 600, color: "#1b321d" }}>
-														Power of Compounding
-											</Typography>
-												</Box>
-												<Typography variant='body2' color='text.secondary'>
-													Let your money grow exponentially over time. Start small, dream big.
-													Watch as your investments multiply through the magic of compounding returns.
-												</Typography>
-											</Paper>
-										</Grid>
-
-										<Grid item xs={12} md={6}>
-											<Paper
-												elevation={0}
-												sx={{
-													p: 3,
-													height: "100%",
-													border: "1px solid #eaeaea",
-													borderRadius: "8px",
-													transition:
-														"transform 0.3s ease, box-shadow 0.3s ease",
-													"&:hover": {
-														transform: "translateY(-5px)",
-														boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-													},
-												}}>
 											<Box
 												sx={{
-														display: "flex",
-														alignItems: "center",
-														mb: 2,
-													}}>
-													<Box
-														sx={{
-															mr: 2,
-															bgcolor: alpha(theme.palette.primary.main, 0.1),
-															borderRadius: "50%",
-															width: 50,
-															height: 50,
-															display: "flex",
-															alignItems: "center",
-															justifyContent: "center",
-															color: theme.palette.primary.main,
-														}}>
-														<PeopleAltIcon fontSize='medium' />
-													</Box>
-														<Typography
-														variant='h6'
-														sx={{ fontWeight: 600, color: "#1b321d" }}>
-														Diversification Done Right
-														</Typography>
-													</Box>
-												<Typography variant='body2' color='text.secondary'>
-													Spread your investments across different sectors, reducing risk while 
-													amplifying opportunities. This strategic approach protects your portfolio 
-													during market fluctuations.
-												</Typography>
-											</Paper>
-										</Grid>
-
-										<Grid item xs={12} md={6}>
-											<Paper
-												elevation={0}
-												sx={{
-													p: 3,
-													height: "100%",
-													border: "1px solid #eaeaea",
-													borderRadius: "8px",
-													transition:
-														"transform 0.3s ease, box-shadow 0.3s ease",
-													"&:hover": {
-														transform: "translateY(-5px)",
-														boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-													},
+													display: "flex",
+													alignItems: { xs: "flex-start", sm: "center" },
+													flexDirection: { xs: "column", sm: "row" },
+													mb: 2,
 												}}>
 												<Box
 													sx={{
+														mr: { xs: 0, sm: 2 },
+														mb: { xs: 1, sm: 0 },
+														bgcolor: alpha(theme.palette.primary.main, 0.1),
+														borderRadius: "50%",
+														width: 50,
+														height: 50,
 														display: "flex",
 														alignItems: "center",
-														mb: 2,
+														justifyContent: "center",
+														color: theme.palette.primary.main,
 													}}>
-													<Box
-														sx={{
-															mr: 2,
-															bgcolor: alpha(theme.palette.primary.main, 0.1),
-															borderRadius: "50%",
-															width: 50,
-															height: 50,
-															display: "flex",
-															alignItems: "center",
-															justifyContent: "center",
-															color: theme.palette.primary.main,
-														}}>
-														<GroupIcon fontSize='medium' />
-													</Box>
-														<Typography
-														variant='h6'
-														sx={{ fontWeight: 600, color: "#1b321d" }}>
-														Expert Management
-														</Typography>
-													</Box>
-												<Typography variant='body2' color='text.secondary'>
-													Skilled fund managers make informed decisions so you can focus on what 
-													matters most. Benefit from their market expertise, research capabilities, 
-													and strategic investment insights.
-												</Typography>
-											</Paper>
-										</Grid>
-
-										<Grid item xs={12} md={6}>
-											<Paper
-												elevation={0}
-												sx={{
-													p: 3,
-													height: "100%",
-													border: "1px solid #eaeaea",
-													borderRadius: "8px",
-													transition:
-														"transform 0.3s ease, box-shadow 0.3s ease",
-													"&:hover": {
-														transform: "translateY(-5px)",
-														boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-													},
-												}}>
-												<Box
-													sx={{
-														display: "flex",
-														alignItems: "center",
-														mb: 2,
-													}}>
-													<Box
-														sx={{
-															mr: 2,
-															bgcolor: alpha(theme.palette.primary.main, 0.1),
-															borderRadius: "50%",
-															width: 50,
-															height: 50,
-															display: "flex",
-															alignItems: "center",
-															justifyContent: "center",
-															color: theme.palette.primary.main,
-														}}>
-														<BalanceIcon fontSize='medium' />
-													</Box>
-														<Typography
-														variant='h6'
-														sx={{ fontWeight: 600, color: "#1b321d" }}>
-														Adaptable for Everyone
-														</Typography>
+													<AutoGraphIcon fontSize='medium' />
 												</Box>
-												<Typography variant='body2' color='text.secondary'>
-													Whether you're cautious or daring, there's a fund designed just for you.
-													From conservative debt options to high-growth equity funds, find the perfect 
-													match for your risk appetite.
-														</Typography>
-											</Paper>
-										</Grid>
+												<Typography
+													variant='h6'
+													sx={{ 
+														fontWeight: 600, 
+														color: "#1b321d",
+														fontSize: { xs: "1.1rem", md: "1.25rem" }
+													}}>
+													Power of Compounding
+												</Typography>
+											</Box>
+											<Typography 
+												variant='body2' 
+												color='text.secondary'
+												sx={{ fontSize: { xs: "0.85rem", md: "0.9rem" } }}>
+												Let your money grow exponentially over time. Start small, dream big.
+												Watch as your investments multiply through the magic of compounding returns.
+											</Typography>
+										</Paper>
 									</Grid>
-													</Box>
 
-								{/* Investment Types Section */}
-								<Box
-									ref={investmentTypesRef}
-									className='section-content'
-									sx={{ mb: 8 }}>
-										<Typography
-											variant='h3'
-											gutterBottom
-											color='primary'
+									<Grid item xs={12} md={6}>
+										<Paper
+											elevation={0}
 											sx={{
-												fontWeight: 700,
-												position: "relative",
-												display: "inline-block",
-												paddingBottom: "15px",
-												marginBottom: "30px",
-												color: "#1b321d",
-												"&::after": {
-													content: '""',
-													position: "absolute",
-													bottom: 0,
-													left: 0,
-													width: "80px",
-													height: "3px",
-													background:
-														"linear-gradient(to right, #1b321d 30%, #c6dbce 100%)",
+												p: { xs: 2, md: 3 },
+												height: "100%",
+												border: "1px solid #eaeaea",
+												borderRadius: "8px",
+												transition:
+													"transform 0.3s ease, box-shadow 0.3s ease",
+												"&:hover": {
+													transform: "translateY(-5px)",
+													boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
 												},
 											}}>
-										Your Tailor-Made Portfolio
-										</Typography>
-
-										<Typography
-											variant='body1'
-											paragraph
-											sx={{
-												fontSize: "1.1rem",
-												lineHeight: 1.7,
-												color: "#555",
-												mb: 4,
-											}}>
-										Based on your needs, we handpick funds from top-performing categories to create a portfolio
-										that perfectly aligns with your financial goals, risk appetite, and investment horizon.
-										</Typography>
-
-									{/* Fund Types Cards */}
-									<Grid container spacing={3} sx={{ mt: 2 }}>
-										<Grid item xs={12} md={6} lg={4}>
-											<GradientCard>
-												<CardContent sx={{ p: 3, flexGrow: 1 }}>
-													<Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-														<Box
-														sx={{
-																backgroundColor: alpha(
-																	theme.palette.primary.main,
-																	0.1
-																),
-																borderRadius: "50%",
-																p: 1,
-																mr: 2,
-															display: "flex",
-																alignItems: "center",
-																justifyContent: "center",
-															}}>
-															<TrendingUpIcon
-																fontSize='medium'
-																sx={{ color: theme.palette.primary.main }}
-															/>
-														</Box>
-														<Typography
-															variant='h6'
-															component='h3'
-															sx={{ fontWeight: 600, color: "#1b321d" }}>
-															Equity Funds
-														</Typography>
-													</Box>
-													<Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
-														High-growth potential for long-term investors. These funds invest 
-														primarily in stocks, offering substantial returns over time while 
-														managing market fluctuations through diversification.
-													</Typography>
-													<Box
-																	sx={{
-																		display: "flex",
-																		alignItems: "center",
-															mt: 2,
-															backgroundColor: alpha(
-																theme.palette.primary.main,
-																0.05
-															),
-															p: 1.5,
-															borderRadius: "8px",
-														}}>
-														<CheckCircleIcon
-															fontSize='small'
-															sx={{ color: theme.palette.primary.main, mr: 1 }}
-														/>
-														<Typography variant='body2' sx={{ fontWeight: 500 }}>
-															Ideal for: Long-term wealth creation
-														</Typography>
-													</Box>
-												</CardContent>
-											</GradientCard>
-										</Grid>
-
-										<Grid item xs={12} md={6} lg={4}>
-											<GradientCard>
-												<CardContent sx={{ p: 3, flexGrow: 1 }}>
-													<Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-														<Box
-																		sx={{
-																backgroundColor: alpha(
-																	theme.palette.primary.main,
-																	0.1
-																),
-																			borderRadius: "50%",
-																p: 1,
-																mr: 2,
-																			display: "flex",
-																			alignItems: "center",
-																			justifyContent: "center",
-																		}}>
-															<ShieldIcon
-																fontSize='medium'
-																sx={{ color: theme.palette.primary.main }}
-															/>
-																	</Box>
-																		<Typography
-															variant='h6'
-																			component='h3'
-															sx={{ fontWeight: 600, color: "#1b321d" }}>
-															Debt Funds
-														</Typography>
-													</Box>
-													<Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
-														Stability-focused investments for predictable returns. These funds 
-														invest in fixed-income securities like government bonds, corporate 
-														bonds, and money market instruments.
-													</Typography>
-													<Box
-																			sx={{
-															display: "flex",
-															alignItems: "center",
-															mt: 2,
-															backgroundColor: alpha(
-																theme.palette.primary.main,
-																0.05
-															),
-															p: 1.5,
-															borderRadius: "8px",
-														}}>
-														<CheckCircleIcon
-															fontSize='small'
-															sx={{ color: theme.palette.primary.main, mr: 1 }}
-														/>
-														<Typography variant='body2' sx={{ fontWeight: 500 }}>
-															Ideal for: Income generation & stability
-																		</Typography>
-													</Box>
-												</CardContent>
-											</GradientCard>
-										</Grid>
-
-										<Grid item xs={12} md={6} lg={4}>
-											<GradientCard>
-												<CardContent sx={{ p: 3, flexGrow: 1 }}>
-													<Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-														<Box
-															sx={{
-																backgroundColor: alpha(
-																	theme.palette.primary.main,
-																	0.1
-																),
-																borderRadius: "50%",
-																p: 1,
-																mr: 2,
-																display: "flex",
-																alignItems: "center",
-																justifyContent: "center",
-															}}>
-															<BalanceIcon
-																fontSize='medium'
-																sx={{ color: theme.palette.primary.main }}
-															/>
-														</Box>
-																		<Typography
-															variant='h6'
-															component='h3'
-															sx={{ fontWeight: 600, color: "#1b321d" }}>
-															Hybrid Funds
-														</Typography>
-													</Box>
-													<Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
-														A smart mix of equity and debt for balanced growth. These funds 
-														provide a middle path by investing in both stocks and bonds, 
-														offering moderate growth with reduced volatility.
-													</Typography>
-													<Box
-																			sx={{
-															display: "flex",
-															alignItems: "center",
-															mt: 2,
-															backgroundColor: alpha(
-																theme.palette.primary.main,
-																0.05
-															),
-															p: 1.5,
-															borderRadius: "8px",
-														}}>
-														<CheckCircleIcon
-															fontSize='small'
-															sx={{ color: theme.palette.primary.main, mr: 1 }}
-														/>
-														<Typography variant='body2' sx={{ fontWeight: 500 }}>
-															Ideal for: Balanced risk-return profile
-																		</Typography>
-													</Box>
-												</CardContent>
-											</GradientCard>
-										</Grid>
-
-										<Grid item xs={12} md={6} lg={4}>
-											<GradientCard>
-												<CardContent sx={{ p: 3, flexGrow: 1 }}>
-													<Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-																		<Box
-																			sx={{
-																backgroundColor: alpha(
-																	theme.palette.primary.main,
-																	0.1
-																),
-																borderRadius: "50%",
-																p: 1,
-																mr: 2,
-																				display: "flex",
-																alignItems: "center",
-																justifyContent: "center",
-															}}>
-															<AccountBalanceIcon
-																fontSize='medium'
-																sx={{ color: theme.palette.primary.main }}
-															/>
-														</Box>
-														<Typography
-															variant='h6'
-															component='h3'
-															sx={{ fontWeight: 600, color: "#1b321d" }}>
-															Tax-Saving Funds (ELSS)
-														</Typography>
-													</Box>
-													<Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
-														Grow wealth while saving on taxes. ELSS funds offer tax benefits 
-														under Section 80C with a shorter lock-in period of just 3 years 
-														compared to other tax-saving instruments.
-													</Typography>
-													<Box
-																				sx={{
-															display: "flex",
-															alignItems: "center",
-															mt: 2,
-															backgroundColor: alpha(
-																theme.palette.primary.main,
-																0.05
-															),
-															p: 1.5,
-															borderRadius: "8px",
-														}}>
-														<CheckCircleIcon
-															fontSize='small'
-															sx={{ color: theme.palette.primary.main, mr: 1 }}
-														/>
-														<Typography variant='body2' sx={{ fontWeight: 500 }}>
-															Ideal for: Tax optimization & growth
-														</Typography>
-																		</Box>
-														</CardContent>
-											</GradientCard>
-										</Grid>
-
-										<Grid item xs={12} md={6} lg={4}>
-											<GradientCard>
-												<CardContent sx={{ p: 3, flexGrow: 1 }}>
-													<Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-														<Box
-											sx={{
-																backgroundColor: alpha(
-																	theme.palette.primary.main,
-																	0.1
-																),
-																borderRadius: "50%",
-																p: 1,
-																mr: 2,
-																display: "flex",
-																alignItems: "center",
-																justifyContent: "center",
-															}}>
-															<MoneyIcon
-																fontSize='medium'
-																sx={{ color: theme.palette.primary.main }}
-															/>
-														</Box>
-											<Typography
-															variant='h6'
-															component='h3'
-															sx={{ fontWeight: 600, color: "#1b321d" }}>
-															Liquid Funds
-											</Typography>
-													</Box>
-													<Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
-														Emergency-ready investments with easy access. These funds invest in 
-														very short-term securities and provide high liquidity, allowing you 
-														to withdraw your money quickly when needed.
-											</Typography>
-													<Box
-														sx={{
-															display: "flex",
-															alignItems: "center",
-															mt: 2,
-															backgroundColor: alpha(
-																theme.palette.primary.main,
-																0.05
-															),
-															p: 1.5,
-															borderRadius: "8px",
-														}}>
-														<CheckCircleIcon
-															fontSize='small'
-															sx={{ color: theme.palette.primary.main, mr: 1 }}
-														/>
-														<Typography variant='body2' sx={{ fontWeight: 500 }}>
-															Ideal for: Short-term needs & emergency funds
-														</Typography>
-									</Box>
-												</CardContent>
-											</GradientCard>
-										</Grid>
-									</Grid>
-								</Box>
-
-								{/* Features & Benefits Section */}
-								<Box
-									ref={featuresRef}
-									className='section-content'
-									sx={{ mb: 8 }}>
-										<Typography
-											variant='h3'
-											gutterBottom
-											color='primary'
-											sx={{
-												fontWeight: 700,
-												position: "relative",
-												display: "inline-block",
-												paddingBottom: "15px",
-												marginBottom: "30px",
-												color: "#1b321d",
-												"&::after": {
-													content: '""',
-													position: "absolute",
-													bottom: 0,
-													left: 0,
-													width: "80px",
-													height: "3px",
-													background:
-														"linear-gradient(to right, #1b321d 30%, #c6dbce 100%)",
-												},
-											}}>
-										Innovative Features You Won't Find Elsewhere
-										</Typography>
-
-										<Typography
-											variant='body1'
-											paragraph
-											sx={{
-												fontSize: "1.1rem",
-												lineHeight: 1.7,
-												color: "#555",
-												mb: 4,
-											}}>
-										Our commitment to your financial success goes beyond standard offerings. 
-										Discover exclusive features designed to enhance your investment experience 
-										and maximize your potential for wealth creation.
-										</Typography>
-
-									<Grid container spacing={4} sx={{ mb: 6 }}>
-										<Grid item xs={12} md={6}>
-													<Paper
-												elevation={0}
-														sx={{
-													p: 3,
-													height: "100%",
-															border: "1px solid #eaeaea",
-													borderRadius: "8px",
-													transition:
-														"transform 0.3s ease, box-shadow 0.3s ease",
-															"&:hover": {
-														transform: "translateY(-5px)",
-														boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-															},
-														}}>
+											<Box
+												sx={{
+													display: "flex",
+													alignItems: { xs: "flex-start", sm: "center" },
+													flexDirection: { xs: "column", sm: "row" },
+													mb: 2,
+												}}>
 												<Box
-																sx={{
-																	display: "flex",
-																	alignItems: "center",
-														mb: 2,
-																}}>
-																<Box
-																	sx={{
-															mr: 2,
+													sx={{
+														mr: { xs: 0, sm: 2 },
+														mb: { xs: 1, sm: 0 },
+														bgcolor: alpha(theme.palette.primary.main, 0.1),
+														borderRadius: "50%",
+														width: 50,
+														height: 50,
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														color: theme.palette.primary.main,
+													}}>
+													<PeopleAltIcon fontSize='medium' />
+												</Box>
+												<Typography
+													variant='h6'
+													sx={{ 
+														fontWeight: 600, 
+														color: "#1b321d",
+														fontSize: { xs: "1.1rem", md: "1.25rem" }
+													}}>
+													Diversification Done Right
+												</Typography>
+											</Box>
+											<Typography 
+												variant='body2' 
+												color='text.secondary'
+												sx={{ fontSize: { xs: "0.85rem", md: "0.9rem" } }}>
+												Spread your investments across different sectors, reducing risk while 
+												amplifying opportunities. This strategic approach protects your portfolio 
+												during market fluctuations.
+											</Typography>
+										</Paper>
+									</Grid>
+
+									<Grid item xs={12} md={6}>
+										<Paper
+											elevation={0}
+											sx={{
+												p: { xs: 2, md: 3 },
+												height: "100%",
+												border: "1px solid #eaeaea",
+												borderRadius: "8px",
+												transition:
+													"transform 0.3s ease, box-shadow 0.3s ease",
+												"&:hover": {
+													transform: "translateY(-5px)",
+													boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+												},
+											}}>
+											<Box
+												sx={{
+													display: "flex",
+													alignItems: { xs: "flex-start", sm: "center" },
+													flexDirection: { xs: "column", sm: "row" },
+													mb: 2,
+												}}>
+												<Box
+													sx={{
+														mr: { xs: 0, sm: 2 },
+														mb: { xs: 1, sm: 0 },
+														bgcolor: alpha(theme.palette.primary.main, 0.1),
+														borderRadius: "50%",
+														width: 50,
+														height: 50,
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														color: theme.palette.primary.main,
+													}}>
+													<GroupIcon fontSize='medium' />
+												</Box>
+												<Typography
+													variant='h6'
+													sx={{ 
+														fontWeight: 600, 
+														color: "#1b321d",
+														fontSize: { xs: "1.1rem", md: "1.25rem" }
+													}}>
+													Expert Management
+												</Typography>
+											</Box>
+											<Typography 
+												variant='body2' 
+												color='text.secondary'
+												sx={{ fontSize: { xs: "0.85rem", md: "0.9rem" } }}>
+												Skilled fund managers make informed decisions so you can focus on what 
+												matter most. Benefit from their market expertise, research capabilities, 
+												and strategic investment insights.
+											</Typography>
+										</Paper>
+									</Grid>
+
+									<Grid item xs={12} md={6}>
+										<Paper
+											elevation={0}
+											sx={{
+												p: { xs: 2, md: 3 },
+												height: "100%",
+												border: "1px solid #eaeaea",
+												borderRadius: "8px",
+												transition:
+													"transform 0.3s ease, box-shadow 0.3s ease",
+												"&:hover": {
+													transform: "translateY(-5px)",
+													boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+												},
+											}}>
+											<Box
+												sx={{
+													display: "flex",
+													alignItems: { xs: "flex-start", sm: "center" },
+													flexDirection: { xs: "column", sm: "row" },
+													mb: 2,
+												}}>
+												<Box
+													sx={{
+														mr: { xs: 0, sm: 2 },
+														mb: { xs: 1, sm: 0 },
+														bgcolor: alpha(theme.palette.primary.main, 0.1),
+														borderRadius: "50%",
+														width: 50,
+														height: 50,
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														color: theme.palette.primary.main,
+													}}>
+													<BalanceIcon fontSize='medium' />
+												</Box>
+												<Typography
+													variant='h6'
+													sx={{ 
+														fontWeight: 600, 
+														color: "#1b321d",
+														fontSize: { xs: "1.1rem", md: "1.25rem" }
+													}}>
+													Adaptable for Everyone
+												</Typography>
+											</Box>
+											<Typography 
+												variant='body2' 
+												color='text.secondary'
+												sx={{ fontSize: { xs: "0.85rem", md: "0.9rem" } }}>
+												Whether you're cautious or daring, there's a fund designed just for you.
+												From conservative debt options to high-growth equity funds, find the perfect 
+												match for your risk appetite.
+											</Typography>
+										</Paper>
+									</Grid>
+								</Grid>
+												</Box>
+
+							{/* Investment Types Section */}
+							<Box
+								ref={investmentTypesRef}
+								className='section-content'
+								sx={{ mb: { xs: 5, md: 8 } }}>
+								<Typography
+									variant='h3'
+									gutterBottom
+									color='primary'
+									sx={{
+										fontWeight: 700,
+										position: "relative",
+										display: "inline-block",
+										paddingBottom: "15px",
+										marginBottom: "30px",
+										color: "#1b321d",
+										fontSize: { xs: "1.6rem", md: "2.2rem" },
+										"&::after": {
+											content: '""',
+											position: "absolute",
+											bottom: 0,
+											left: 0,
+											width: "80px",
+											height: "3px",
+											background:
+												"linear-gradient(to right, #1b321d 30%, #c6dbce 100%)",
+										},
+									}}>
+								Your Tailor-Made Portfolio
+								</Typography>
+
+								<Typography
+									variant='body1'
+									paragraph
+									sx={{
+										fontSize: { xs: "0.95rem", md: "1.1rem" },
+										lineHeight: 1.7,
+										color: "#555",
+										mb: 4,
+									}}>
+								Based on your needs, we handpick funds from top-performing categories to create a portfolio
+								that perfectly aligns with your financial goals, risk appetite, and investment horizon.
+								</Typography>
+
+							{/* Fund Types Cards */}
+							<Grid container spacing={{ xs: 2, md: 3 }} sx={{ mt: 2 }}>
+								<Grid item xs={12} sm={6} lg={4}>
+									<GradientCard>
+										<CardContent sx={{ p: { xs: 2, md: 3 }, flexGrow: 1 }}>
+											<Box sx={{ 
+												display: "flex", 
+												alignItems: { xs: "flex-start", sm: "center" },
+												flexDirection: { xs: "column", sm: "row" }, 
+												mb: 2 
+											}}>
+												<Box
+													sx={{
+														backgroundColor: alpha(
+															theme.palette.primary.main,
+																0.1
+														),
+														borderRadius: "50%",
+														p: 1,
+														mr: { xs: 0, sm: 2 },
+														mb: { xs: 1, sm: 0 },
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+													}}>
+														<TrendingUpIcon
+															fontSize='medium'
+															sx={{ color: theme.palette.primary.main }}
+														/>
+												</Box>
+												<Typography
+													variant='h6'
+													component='h3'
+													sx={{ 
+														fontWeight: 600, 
+														color: "#1b321d",
+														fontSize: { xs: "1.1rem", md: "1.25rem" }
+													}}>
+														Equity Funds
+												</Typography>
+											</Box>
+											<Typography 
+												variant='body2' 
+												color='text.secondary' 
+												sx={{ 
+													mb: 2,
+													fontSize: { xs: "0.85rem", md: "0.9rem" }
+												}}>
+												High-growth potential for long-term investors. These funds invest 
+												primarily in stocks, offering substantial returns over time while 
+												managing market fluctuations through diversification.
+											</Typography>
+											<Box
+												sx={{
+													display: "flex",
+													alignItems: "center",
+													mt: 2,
+													backgroundColor: alpha(
+														theme.palette.primary.main,
+															0.05
+													),
+													p: { xs: 1, md: 1.5 },
+													borderRadius: "8px",
+												}}>
+												<CheckCircleIcon
+													fontSize='small'
+													sx={{ color: theme.palette.primary.main, mr: 1 }}
+												/>
+												<Typography 
+													variant='body2' 
+													sx={{ 
+														fontWeight: 500,
+														fontSize: { xs: "0.8rem", md: "0.9rem" }
+													}}>
+														Ideal for: Long-term wealth creation
+												</Typography>
+											</Box>
+										</CardContent>
+									</GradientCard>
+								</Grid>
+
+								<Grid item xs={12} sm={6} lg={4}>
+									<GradientCard>
+										<CardContent sx={{ p: { xs: 2, md: 3 }, flexGrow: 1 }}>
+											<Box sx={{ 
+												display: "flex", 
+												alignItems: { xs: "flex-start", sm: "center" },
+												flexDirection: { xs: "column", sm: "row" }, 
+												mb: 2 
+											}}>
+												<Box
+													sx={{
+														backgroundColor: alpha(
+															theme.palette.primary.main,
+																0.1
+														),
+														borderRadius: "50%",
+														p: 1,
+														mr: { xs: 0, sm: 2 },
+														mb: { xs: 1, sm: 0 },
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+													}}>
+														<ShieldIcon
+															fontSize='medium'
+															sx={{ color: theme.palette.primary.main }}
+														/>
+												</Box>
+												<Typography
+													variant='h6'
+													component='h3'
+													sx={{ 
+														fontWeight: 600, 
+														color: "#1b321d",
+														fontSize: { xs: "1.1rem", md: "1.25rem" }
+													}}>
+														Debt Funds
+												</Typography>
+											</Box>
+											<Typography 
+												variant='body2' 
+												color='text.secondary' 
+												sx={{ 
+													mb: 2,
+													fontSize: { xs: "0.85rem", md: "0.9rem" }
+												}}>
+												Stability-focused investments for predictable returns. These funds 
+												invest in fixed-income securities like government bonds, corporate 
+												bonds, and money market instruments.
+											</Typography>
+											<Box
+												sx={{
+													display: "flex",
+													alignItems: "center",
+													mt: 2,
+													backgroundColor: alpha(
+														theme.palette.primary.main,
+															0.05
+													),
+													p: { xs: 1, md: 1.5 },
+													borderRadius: "8px",
+												}}>
+												<CheckCircleIcon
+													fontSize='small'
+													sx={{ color: theme.palette.primary.main, mr: 1 }}
+												/>
+												<Typography 
+													variant='body2' 
+													sx={{ 
+														fontWeight: 500,
+														fontSize: { xs: "0.8rem", md: "0.9rem" }
+													}}>
+														Ideal for: Income generation & stability
+												</Typography>
+											</Box>
+										</CardContent>
+									</GradientCard>
+								</Grid>
+
+								<Grid item xs={12} sm={6} lg={4}>
+									<GradientCard>
+										<CardContent sx={{ p: { xs: 2, md: 3 }, flexGrow: 1 }}>
+											<Box sx={{ 
+												display: "flex", 
+												alignItems: { xs: "flex-start", sm: "center" },
+												flexDirection: { xs: "column", sm: "row" }, 
+												mb: 2 
+											}}>
+												<Box
+													sx={{
+														backgroundColor: alpha(
+															theme.palette.primary.main,
+																0.1
+														),
+														borderRadius: "50%",
+														p: 1,
+														mr: { xs: 0, sm: 2 },
+														mb: { xs: 1, sm: 0 },
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+													}}>
+														<BalanceIcon
+															fontSize='medium'
+															sx={{ color: theme.palette.primary.main }}
+														/>
+												</Box>
+												<Typography
+													variant='h6'
+													component='h3'
+													sx={{ 
+														fontWeight: 600, 
+														color: "#1b321d",
+														fontSize: { xs: "1.1rem", md: "1.25rem" }
+													}}>
+														Hybrid Funds
+												</Typography>
+											</Box>
+											<Typography 
+												variant='body2' 
+												color='text.secondary' 
+												sx={{ 
+													mb: 2,
+													fontSize: { xs: "0.85rem", md: "0.9rem" }
+												}}>
+												A smart mix of equity and debt for balanced growth. These funds 
+												provide a middle path by investing in both stocks and bonds, 
+												offering moderate growth with reduced volatility.
+											</Typography>
+											<Box
+												sx={{
+													display: "flex",
+													alignItems: "center",
+													mt: 2,
+													backgroundColor: alpha(
+														theme.palette.primary.main,
+															0.05
+													),
+													p: { xs: 1, md: 1.5 },
+													borderRadius: "8px",
+												}}>
+												<CheckCircleIcon
+													fontSize='small'
+													sx={{ color: theme.palette.primary.main, mr: 1 }}
+												/>
+												<Typography 
+													variant='body2' 
+													sx={{ 
+														fontWeight: 500,
+														fontSize: { xs: "0.8rem", md: "0.9rem" }
+													}}>
+														Ideal for: Balanced risk-return profile
+												</Typography>
+											</Box>
+										</CardContent>
+									</GradientCard>
+								</Grid>
+
+								<Grid item xs={12} sm={6} lg={4}>
+									<GradientCard>
+										<CardContent sx={{ p: { xs: 2, md: 3 }, flexGrow: 1 }}>
+											<Box sx={{ 
+												display: "flex", 
+												alignItems: { xs: "flex-start", sm: "center" },
+												flexDirection: { xs: "column", sm: "row" }, 
+												mb: 2 
+											}}>
+												<Box
+													sx={{
+														backgroundColor: alpha(
+															theme.palette.primary.main,
+																0.1
+														),
+														borderRadius: "50%",
+														p: 1,
+														mr: { xs: 0, sm: 2 },
+														mb: { xs: 1, sm: 0 },
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+													}}>
+														<AccountBalanceIcon
+															fontSize='medium'
+															sx={{ color: theme.palette.primary.main }}
+														/>
+												</Box>
+												<Typography
+													variant='h6'
+													component='h3'
+													sx={{ 
+														fontWeight: 600, 
+														color: "#1b321d",
+														fontSize: { xs: "1.1rem", md: "1.25rem" }
+													}}>
+														Tax-Saving Funds (ELSS)
+												</Typography>
+											</Box>
+											<Typography 
+												variant='body2' 
+												color='text.secondary' 
+												sx={{ 
+													mb: 2,
+													fontSize: { xs: "0.85rem", md: "0.9rem" }
+												}}>
+												Grow wealth while saving on taxes. ELSS funds offer tax benefits 
+												under Section 80C with a shorter lock-in period of just 3 years 
+												compared to other tax-saving instruments.
+											</Typography>
+											<Box
+												sx={{
+													display: "flex",
+													alignItems: "center",
+													mt: 2,
+													backgroundColor: alpha(
+														theme.palette.primary.main,
+															0.05
+													),
+													p: { xs: 1, md: 1.5 },
+													borderRadius: "8px",
+												}}>
+												<CheckCircleIcon
+													fontSize='small'
+													sx={{ color: theme.palette.primary.main, mr: 1 }}
+												/>
+												<Typography 
+													variant='body2' 
+													sx={{ 
+														fontWeight: 500,
+														fontSize: { xs: "0.8rem", md: "0.9rem" }
+													}}>
+														Ideal for: Tax optimization & growth
+												</Typography>
+											</Box>
+										</CardContent>
+									</GradientCard>
+								</Grid>
+
+								<Grid item xs={12} sm={6} lg={4}>
+									<GradientCard>
+										<CardContent sx={{ p: { xs: 2, md: 3 }, flexGrow: 1 }}>
+											<Box sx={{ 
+												display: "flex", 
+												alignItems: { xs: "flex-start", sm: "center" },
+												flexDirection: { xs: "column", sm: "row" }, 
+												mb: 2 
+											}}>
+												<Box
+													sx={{
+														backgroundColor: alpha(
+															theme.palette.primary.main,
+																0.1
+														),
+														borderRadius: "50%",
+														p: 1,
+														mr: { xs: 0, sm: 2 },
+														mb: { xs: 1, sm: 0 },
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+													}}>
+														<MoneyIcon
+															fontSize='medium'
+															sx={{ color: theme.palette.primary.main }}
+														/>
+												</Box>
+												<Typography
+													variant='h6'
+													component='h3'
+													sx={{ 
+														fontWeight: 600, 
+														color: "#1b321d",
+														fontSize: { xs: "1.1rem", md: "1.25rem" }
+													}}>
+														Liquid Funds
+												</Typography>
+											</Box>
+											<Typography 
+												variant='body2' 
+												color='text.secondary' 
+												sx={{ 
+													mb: 2,
+													fontSize: { xs: "0.85rem", md: "0.9rem" }
+												}}>
+												Emergency-ready investments with easy access. These funds invest in 
+												very short-term securities and provide high liquidity, allowing you 
+												to withdraw your money quickly when needed.
+											</Typography>
+											<Box
+												sx={{
+													display: "flex",
+													alignItems: "center",
+													mt: 2,
+													backgroundColor: alpha(
+														theme.palette.primary.main,
+															0.05
+													),
+													p: { xs: 1, md: 1.5 },
+													borderRadius: "8px",
+												}}>
+												<CheckCircleIcon
+													fontSize='small'
+													sx={{ color: theme.palette.primary.main, mr: 1 }}
+												/>
+												<Typography 
+													variant='body2' 
+													sx={{ 
+														fontWeight: 500,
+														fontSize: { xs: "0.8rem", md: "0.9rem" }
+													}}>
+														Ideal for: Short-term needs & emergency funds
+												</Typography>
+											</Box>
+										</CardContent>
+									</GradientCard>
+								</Grid>
+							</Grid>
+							</Box>
+
+							{/* Features & Benefits Section */}
+							<Box
+								ref={featuresRef}
+								className='section-content'
+								sx={{ mb: { xs: 5, md: 8 } }}>
+									<Typography
+										variant='h3'
+										gutterBottom
+										color='primary'
+										sx={{
+											fontWeight: 700,
+											position: "relative",
+											display: "inline-block",
+											paddingBottom: "15px",
+											marginBottom: "30px",
+											color: "#1b321d",
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
+											"&::after": {
+												content: '""',
+												position: "absolute",
+												bottom: 0,
+												left: 0,
+												width: "80px",
+												height: "3px",
+												background:
+													"linear-gradient(to right, #1b321d 30%, #c6dbce 100%)",
+											},
+										}}>
+									Innovative Features You Won't Find Elsewhere
+									</Typography>
+
+									<Typography
+										variant='body1'
+										paragraph
+										sx={{
+											fontSize: { xs: "0.95rem", md: "1.1rem" },
+											lineHeight: 1.7,
+											color: "#555",
+											mb: 4,
+										}}>
+									Our commitment to your financial success goes beyond standard offerings. 
+									Discover exclusive features designed to enhance your investment experience 
+									and maximize your potential for wealth creation.
+									</Typography>
+
+								<Grid container spacing={{ xs: 3, md: 4 }} sx={{ mb: 6 }}>
+									<Grid item xs={12} md={6}>
+										<Paper
+											elevation={0}
+											sx={{
+												p: { xs: 2, md: 3 },
+												height: "100%",
+												border: "1px solid #eaeaea",
+												borderRadius: "8px",
+												transition:
+													"transform 0.3s ease, box-shadow 0.3s ease",
+												"&:hover": {
+													transform: "translateY(-5px)",
+													boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+												},
+											}}>
+											<Box
+												sx={{
+													display: "flex",
+													alignItems: { xs: "flex-start", sm: "center" },
+													flexDirection: { xs: "column", sm: "row" },
+													mb: 2,
+												}}>
+												<Box
+													sx={{
+															mr: { xs: 0, sm: 2 },
+															mb: { xs: 1, sm: 0 },
 															bgcolor: alpha(theme.palette.primary.main, 0.1),
 															borderRadius: "50%",
 															width: 50,
 															height: 50,
-																		display: "flex",
-																		alignItems: "center",
-																		justifyContent: "center",
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
 															color: theme.palette.primary.main,
-														}}>
-														<DescriptionIcon fontSize='medium' />
-																</Box>
-																	<Typography
-														variant='h6'
-														sx={{ fontWeight: 600, color: "#1b321d" }}>
-														Goal-Based Planning
+															}}>
+															<DescriptionIcon fontSize='medium' />
+															</Box>
+																<Typography
+															variant='h6'
+															sx={{ fontWeight: 600, color: "#1b321d" }}>
+															Goal-Based Planning
 																	</Typography>
 																</Box>
-												<Typography variant='body2' color='text.secondary'>
-													Start with your dreams and work backward. Want to buy a car in five years? 
-													Planning a child's education fund? We design your investments around your 
-													timeline and aspirations, creating a clear path to your financial goals.
-												</Typography>
-													</Paper>
-										</Grid>
+											<Typography variant='body2' color='text.secondary'>
+												Start with your dreams and work backward. Want to buy a car in five years? 
+												Planning a child's education fund? We design your investments around your 
+												timeline and aspirations, creating a clear path to your financial goals.
+											</Typography>
+										</Paper>
+									</Grid>
 
-										<Grid item xs={12} md={6}>
-											<Paper
-												elevation={0}
-											sx={{
-													p: 3,
-													height: "100%",
-													border: "1px solid #eaeaea",
-													borderRadius: "8px",
-													transition:
-														"transform 0.3s ease, box-shadow 0.3s ease",
-													"&:hover": {
-														transform: "translateY(-5px)",
-														boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-												},
-											}}>
-												<Box
-													sx={{
+									<Grid item xs={12} md={6}>
+										<Paper
+											elevation={0}
+										sx={{
+												p: 3,
+												height: "100%",
+												border: "1px solid #eaeaea",
+												borderRadius: "8px",
+												transition:
+													"transform 0.3s ease, box-shadow 0.3s ease",
+												"&:hover": {
+													transform: "translateY(-5px)",
+													boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+										},
+									}}>
+											<Box
+												sx={{
 														display: "flex",
 														alignItems: "center",
 														mb: 2,
@@ -1659,30 +1942,30 @@ const MutualFundsPage = () => {
 														Portfolio Growth Dashboard
 													</Typography>
 									</Box>
-												<Typography variant='body2' color='text.secondary'>
-													Stay in control with real-time performance updates on your investments. 
-													Visualize your progress through easy-to-understand graphs and data, 
-													all accessible through our intuitive mobile app and web dashboard.
-												</Typography>
-											</Paper>
-										</Grid>
+											<Typography variant='body2' color='text.secondary'>
+												Stay in control with real-time performance updates on your investments. 
+												Visualize your progress through easy-to-understand graphs and data, 
+												all accessible through our intuitive mobile app and web dashboard.
+											</Typography>
+										</Paper>
+									</Grid>
 
-										<Grid item xs={12} md={6}>
-											<Paper
-												elevation={0}
-											sx={{
-													p: 3,
-													height: "100%",
-													border: "1px solid #eaeaea",
-													borderRadius: "8px",
-													transition:
-														"transform 0.3s ease, box-shadow 0.3s ease",
-													"&:hover": {
-														transform: "translateY(-5px)",
-														boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-												},
-											}}>
-												<Box
+									<Grid item xs={12} md={6}>
+										<Paper
+											elevation={0}
+										sx={{
+												p: 3,
+												height: "100%",
+												border: "1px solid #eaeaea",
+												borderRadius: "8px",
+												transition:
+													"transform 0.3s ease, box-shadow 0.3s ease",
+												"&:hover": {
+													transform: "translateY(-5px)",
+													boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+										},
+									}}>
+											<Box
 											sx={{
 														display: "flex",
 														alignItems: "center",
@@ -1708,31 +1991,31 @@ const MutualFundsPage = () => {
 														Thematic Investment Options
 										</Typography>
 												</Box>
-												<Typography variant='body2' color='text.secondary'>
-													Explore funds based on what matters most to you—invest in green energy, 
-													innovation, or sectors aligned with your values. Our thematic investment 
-													options let you support causes you believe in while growing your wealth.
-												</Typography>
-											</Paper>
-										</Grid>
+											<Typography variant='body2' color='text.secondary'>
+												Explore funds based on what matters most to you—invest in green energy, 
+												innovation, or sectors aligned with your values. Our thematic investment 
+												options let you support causes you believe in while growing your wealth.
+											</Typography>
+										</Paper>
+									</Grid>
 
-										<Grid item xs={12} md={6}>
-													<Paper
-												elevation={0}
-														sx={{
-													p: 3,
-													height: "100%",
-													border: "1px solid #eaeaea",
-															borderRadius: "8px",
-													transition:
-														"transform 0.3s ease, box-shadow 0.3s ease",
-															"&:hover": {
-																transform: "translateY(-5px)",
-														boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-															},
-														}}>
-												<Box
-																sx={{
+									<Grid item xs={12} md={6}>
+												<Paper
+											elevation={0}
+													sx={{
+												p: 3,
+												height: "100%",
+														border: "1px solid #eaeaea",
+												borderRadius: "8px",
+												transition:
+													"transform 0.3s ease, box-shadow 0.3s ease",
+														"&:hover": {
+													transform: "translateY(-5px)",
+													boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+														},
+													}}>
+											<Box
+															sx={{
 																	display: "flex",
 																	alignItems: "center",
 														mb: 2,
@@ -1757,17 +2040,17 @@ const MutualFundsPage = () => {
 														Personalized Guidance
 													</Typography>
 												</Box>
-												<Typography variant='body2' color='text.secondary'>
-													Access your dedicated financial advisor anytime for questions, advice, 
-													or portfolio tweaks. We're committed to providing ongoing support 
-													throughout your investment journey, ensuring you're never alone in 
-													making financial decisions.
-												</Typography>
-											</Paper>
+											<Typography variant='body2' color='text.secondary'>
+												Access your dedicated financial advisor anytime for questions, advice, 
+												or portfolio tweaks. We're committed to providing ongoing support 
+												throughout your investment journey, ensuring you're never alone in 
+												making financial decisions.
+											</Typography>
+										</Paper>
 															</Grid>
-									</Grid>
+								</Grid>
 
-									{/* Why FinShelter */}
+								{/* Why FinShelter */}
 																	<Typography
 										variant='h4'
 																		gutterBottom

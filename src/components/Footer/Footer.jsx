@@ -1,130 +1,193 @@
 import React from "react";
 import "./footer.css";
 import { NavLink } from "react-router-dom";
+import { SERVICE_PATHS } from "../../utils/serviceRouteMap";
 
 const Footer = () => {
+	// Group services by category
+	const taxFiling = [
+		{ name: "ITR Filing", path: SERVICE_PATHS["itr filing"] },
+		{ name: "GST Filing", path: SERVICE_PATHS["gst"] },
+		{ name: "TDS Return Filing", path: SERVICE_PATHS["tds returns"] },
+	];
+
+	const taxPlanning = [
+		{ name: "Tax Planner", path: SERVICE_PATHS["tax planning"] },
+		{ name: "Income Tax", path: SERVICE_PATHS["income tax"] },
+		{ name: "PF and ESI", path: SERVICE_PATHS["pf and esi"] },
+	];
+
+	const registrations = [
+		{
+			name: "Business Registration",
+			path: SERVICE_PATHS["business registration"],
+		},
+		{
+			name: "Company Registration",
+			path: SERVICE_PATHS["company registration"],
+		},
+		{ name: "MSME Registration", path: SERVICE_PATHS["msme registration"] },
+	];
+
+	const loans = [
+		{ name: "Business Loan", path: SERVICE_PATHS["business loan"] },
+		{ name: "Personal Loan", path: SERVICE_PATHS["personal loan"] },
+		{ name: "Home Loan", path: SERVICE_PATHS["home loan"] },
+		{ name: "Gold Loan", path: SERVICE_PATHS["gold loan"] },
+	];
+
+	const insurance = [
+		{ name: "Term Insurance", path: SERVICE_PATHS["term insurance"] },
+		{ name: "Health Insurance", path: SERVICE_PATHS["health insurance"] },
+		{ name: "Vehicle Insurance", path: SERVICE_PATHS["vehicle insurance"] },
+	];
+
 	return (
-		<footer className='footer' style={{ position: "absolute", width: "100%" }}>
-			{/* Footer Columns */}
-			<div className='footer-columns'>
-				<div className='footer-column' id='first-f-col'>
-					<h3 style={{ fontFamily: "Agbalumo" }}>FinShelter</h3>
-					<p>
-						Taxation is the cornerstone of a functioning society, enabling
-						governments to fund essential services.
-					</p>
-
-					<a href='mailto:Info@thefinshelter.com'>
-						<p>Info@thefinshelter.com</p>
-					</a>
-					<div className='footer-social'>
-						<a href='https://www.instagram.com/finshelter/'>
-							<i class='fa-brands fa-instagram fa-2xl'> </i>
-						</a>
-						<a href='https://www.facebook.com/profile.php?id=61575009025557'>
-							<i class='fa-brands fa-facebook fa-2xl'></i>
-						</a>
-						<a href='https://wa.me/919537601955'>
-							<i class='fa-brands fa-whatsapp fa-2xl'></i>
-						</a>
+		<footer className='footer'>
+			{/* Top Footer Section - Logo, Contact, Quick Links */}
+			<div className='footer-top'>
+				<div className='container'>
+					{/* Logo and Description */}
+					<div className='footer-column'>
+						<h3 style={{ fontFamily: "Agbalumo" }}>FinShelter</h3>
+						<p>
+							Robust financial services like taxation, loans, insurance, and
+							mutual funds are the pillars of economic growth — empowering
+							individuals, supporting governments, and securing futures.
+						</p>
 					</div>
-				</div>
-				<div className='footer-column'>
-					<h4>Legal</h4>
-					<ul>
-						<li>
-							<NavLink to='/terms-conditions'>Terms & Conditions</NavLink>
-						</li>
-						<li>
-							<NavLink to='/privacy-policy'>Privacy Policy</NavLink>
-						</li>
-						<li>
-							<NavLink to='/refund-policy'>Refund Policy</NavLink>
-						</li>
-						<li>
-							<NavLink to='/contact-us'>Contact Us</NavLink>
-						</li>
-					</ul>
-				</div>
-				<div className='footer-column'>
-					<h4>Services</h4>
-					<ul>
-						<li>
-							<a href='#consulting'>Consulting</a>
-						</li>
-						<li>
-							<a href='#development'>Development</a>
-						</li>
-						<li>
-							<a href='#design'>Design</a>
-						</li>
-						<li>
-							<a href='#marketing'>Marketing</a>
-						</li>
-					</ul>
-				</div>
 
-				<div className='footer-column'>
-					<h4>Resources</h4>
-					<ul>
-						<li>
-							<a href='#docs'>Documentation</a>
-						</li>
-						<li>
-							<a href='#guides'>Guides</a>
-						</li>
-						<li>
-							<a href='#partners'>Partners</a>
-						</li>
-						<li>
-							<a href='#community'>Community</a>
-						</li>
-					</ul>
-				</div>
-			</div>
+					{/* Contact Us */}
+					<div className='footer-column'>
+						<h4>Contact Us</h4>
+						<ul>
+							<li>
+								<a href='mailto:Info@thefinshelter.com'>
+									Info@thefinshelter.com
+								</a>
+							</li>
+							<li>
+								<a href='tel:+919537601955'>+91 95376 01955</a>
+							</li>
+						</ul>
+					</div>
 
-			{/* Social Icons Row */}
-			<div className='footer-social-icons'>
-				<div style={{ display: "flex", flexDirection: "column" }}>
-					<h3 style={{ color: "white", fontSize: "28px" }}>FinShelter</h3>
-					<div
-						style={{
-							display: "flex",
-							flexDirection: "row",
-							marginTop: "10px",
-						}}>
-						<a
-							href='https://www.facebook.com/profile.php?id=61575009025557'
-							target='_blank'
-							rel='noopener noreferrer'>
-							<i className='fab fa-facebook-f fa-xl'></i>
-						</a>
+					{/* Quick Links */}
+					<div className='footer-column'>
+						<h4>Quick Links</h4>
+						<ul>
+							<li>
+								<NavLink to='/terms-conditions'>Terms & Conditions</NavLink>
+							</li>
+							<li>
+								<NavLink to='/data-policy'>Privacy Policy</NavLink>
+							</li>
+							<li>
+								<NavLink to='/refund-policy'>Refund Policy</NavLink>
+							</li>
+							<li>
+								<NavLink to='/contact'>Contact Us</NavLink>
+							</li>
+						</ul>
+					</div>
 
-						<a
-							href='https://www.instagram.com/finshelter/'
-							target='_blank'
-							rel='noopener noreferrer'>
-							<i className='fab fa-instagram fa-xl'></i>
-						</a>
-						{/* <a
-							href='https://linkedin.com'
-							target='_blank'
-							rel='noopener noreferrer'>
-							<i className='fab fa-linkedin-in'></i>
-						</a> */}
-						<a
-							href='https://wa.me/919537601955'
-							target='_blank'
-							rel='noopener noreferrer'>
-							<i className='fab fa-whatsapp fa-xl'></i>
-						</a>
+					{/* Social Media */}
+					<div className='footer-column'>
+						<h4>Follow Us</h4>
+						<div className='footer-social'>
+							<a
+								href='https://www.instagram.com/finshelter/'
+								target='_blank'
+								rel='noopener noreferrer'>
+								<i className='fa-brands fa-instagram fa-xl'></i>
+							</a>
+							<a
+								href='https://www.facebook.com/profile.php?id=61575009025557'
+								target='_blank'
+								rel='noopener noreferrer'>
+								<i className='fa-brands fa-facebook fa-xl'></i>
+							</a>
+							<a
+								href='https://wa.me/919537601955'
+								target='_blank'
+								rel='noopener noreferrer'>
+								<i className='fa-brands fa-whatsapp fa-xl'></i>
+							</a>
+							<a href='#' target='_blank' rel='noopener noreferrer'>
+								<i className='fa-brands fa-linkedin fa-xl'></i>
+							</a>
+						</div>
 					</div>
 				</div>
 			</div>
 
-			{/* Copyright Row */}
+			{/* Services Section */}
+			<div className='footer-services'>
+				<div className='container'>
+					<div className='services-group'>
+						<h4>Tax Filing</h4>
+						<ul>
+							{taxFiling.map((service, index) => (
+								<li key={index}>
+									<NavLink to={service.path}>{service.name}</NavLink>
+								</li>
+							))}
+						</ul>
+					</div>
+
+					<div className='services-group'>
+						<h4>Tax Planning</h4>
+						<ul>
+							{taxPlanning.map((service, index) => (
+								<li key={index}>
+									<NavLink to={service.path}>{service.name}</NavLink>
+								</li>
+							))}
+						</ul>
+					</div>
+
+					<div className='services-group'>
+						<h4>Registration</h4>
+						<ul>
+							{registrations.map((service, index) => (
+								<li key={index}>
+									<NavLink to={service.path}>{service.name}</NavLink>
+								</li>
+							))}
+						</ul>
+					</div>
+
+					<div className='services-group'>
+						<h4>Loans</h4>
+						<ul>
+							{loans.map((service, index) => (
+								<li key={index}>
+									<NavLink to={service.path}>{service.name}</NavLink>
+								</li>
+							))}
+						</ul>
+					</div>
+
+					<div className='services-group'>
+						<h4>Insurance</h4>
+						<ul>
+							{insurance.map((service, index) => (
+								<li key={index}>
+									<NavLink to={service.path}>{service.name}</NavLink>
+								</li>
+							))}
+						</ul>
+					</div>
+				</div>
+			</div>
+
+			{/* Copyright Section */}
 			<div className='footer-copyright'>
-				&copy; {new Date().getFullYear()} FINSHELTER. All rights reserved.
+				<div className='container'>
+					<p>
+						&copy; {new Date().getFullYear()} FINSHELTER. All rights reserved.
+					</p>
+				</div>
 			</div>
 		</footer>
 	);

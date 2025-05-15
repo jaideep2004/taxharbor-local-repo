@@ -106,6 +106,32 @@ export const CustomerAuthProvider = ({ children }) => {
 		}
 	};
 
+	// Google login method
+	const googleLogin = async (userData) => {
+		setLoading(true);
+		setError(null);
+		
+		try {
+			const { data } = await axios.post(
+				"https://195-35-45-82.sslip.io:8000/api/customers/google-register",
+				userData
+			);
+			
+			const { token, userId } = data;
+			if (!token) throw new Error("Token not received from server.");
+			
+			localStorage.setItem("customerToken", token);
+			setIsLoggedIn(true);
+			await fetchCustomerDashboard();
+			return { success: true, userId, email: userData.email };
+		} catch (err) {
+			handleErrorResponse(err, "Google login failed");
+			return { success: false, message: err.message };
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	const fetchCustomerDashboard = async () => {
 		const token = localStorage.getItem("customerToken");
 
@@ -534,6 +560,52 @@ export const CustomerAuthProvider = ({ children }) => {
 		}
 	};
 
+	// Function to handle forgot password request
+	const forgotPassword = async (email) => {
+		setLoading(true);
+		setError(null);
+
+		try {
+			const { data } = await axios.post(
+				"https://195-35-45-82.sslip.io:8000/api/customers/forgot-password",
+				{ email }
+			);
+			
+			return { success: true, message: data.message || "Password reset email sent successfully." };
+		} catch (err) {
+			handleErrorResponse(err, "Failed to send password reset email");
+			return { 
+				success: false, 
+				message: err.response?.data?.message || err.message || "Failed to send password reset email" 
+			};
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	// Function to handle reset password with token
+	const resetPassword = async (token, newPassword) => {
+		setLoading(true);
+		setError(null);
+
+		try {
+			const { data } = await axios.post(
+				"https://195-35-45-82.sslip.io:8000/api/customers/reset-password",
+				{ token, password: newPassword }
+			);
+			
+			return { success: true, message: data.message || "Password reset successful. You can now log in with your new password." };
+		} catch (err) {
+			handleErrorResponse(err, "Failed to reset password");
+			return { 
+				success: false, 
+				message: err.response?.data?.message || err.message || "Failed to reset password" 
+			};
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	return (
 		<CustomerAuthContext.Provider
 			value={{
@@ -563,6 +635,7 @@ export const CustomerAuthProvider = ({ children }) => {
 				formData,
 				isEditing,
 				login,
+				googleLogin,
 				logout,
 				fetchCustomerDashboard,
 				getAllServicesForCDash,
@@ -612,6 +685,8 @@ export const CustomerAuthProvider = ({ children }) => {
 					}
 				},
 				updateBankDetails,
+				forgotPassword,
+				resetPassword,
 			}}>
 			{loading && (
 				<div

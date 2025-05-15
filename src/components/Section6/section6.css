@@ -23,6 +23,7 @@
 	align-items: center;
 	justify-content: center;
 	gap: 10px;
+	min-height: 248px;
 	/* border-right: 1px solid lightgray; */
 	padding: 10px 30px;
 	p {

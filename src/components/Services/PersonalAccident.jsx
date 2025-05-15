@@ -435,10 +435,24 @@ const PersonalAccidentPage = () => {
 		annualPremium: 0,
 	});
 
-	// For sticky sidebar tracking with a threshold that allows smoother transition
+	// Enhanced sticky sidebar behavior
+	const [sidebarPosition, setSidebarPosition] = useState({
+		isSticky: false,
+		shouldStop: false,
+	});
+
+	// Store sidebar height
+	const [sidebarHeight, setSidebarHeight] = useState(0);
+
+	// Container refs for tracking positions
+	const contentRef = React.useRef(null);
+	const sidebarRef = React.useRef(null);
+	const sidebarContainerRef = React.useRef(null);
+
+	// For sticky sidebar tracking with a threshold of 109px
 	const scrollTrigger = useScrollTrigger({
 		disableHysteresis: true,
-		threshold: 300,
+		threshold: 109, // Changed to 109px as specified
 	});
 
 	// Service data from backend
@@ -513,6 +527,81 @@ const PersonalAccidentPage = () => {
 		fetchServiceData();
 	}, [SERVICE_ID, showNotification]);
 
+	// Measure sidebar height after it renders
+	useEffect(() => {
+		if (sidebarRef.current) {
+			setSidebarHeight(sidebarRef.current.clientHeight);
+		}
+	}, [service]); // Re-measure when service data changes
+
+	// Enhanced scroll handler to control sidebar behavior
+	useEffect(() => {
+		const handleScroll = () => {
+			if (
+				!contentRef.current ||
+				!sidebarRef.current ||
+				!sidebarContainerRef.current
+			)
+				return;
+
+			const scrollPosition = window.scrollY;
+			const topThreshold = 109; // Specified threshold
+
+			// Get the content and sidebar boundaries
+			const contentTop =
+				contentRef.current.getBoundingClientRect().top + window.scrollY;
+			const contentBottom =
+				contentRef.current.getBoundingClientRect().bottom + window.scrollY;
+			const sidebarContainerTop = sidebarContainerRef.current.offsetTop;
+			const sidebarContainerHeight = sidebarContainerRef.current.offsetHeight;
+			const sidebarHeight = sidebarRef.current.clientHeight;
+			const windowHeight = window.innerHeight;
+
+			// Determine if sidebar should be sticky - only when content has scrolled to threshold
+			const isSticky =
+				scrollPosition > topThreshold &&
+				scrollPosition > sidebarContainerTop - topThreshold;
+
+			// Calculate where the sidebar should stop (at the bottom of the main content)
+			const stopPoint = contentBottom - sidebarHeight - 30; // 30px buffer from bottom
+
+			// Should sidebar stop following and anchor to bottom?
+			const shouldStop =
+				scrollPosition + topThreshold + sidebarHeight > contentBottom - 30;
+
+			setSidebarPosition({
+				isSticky,
+				shouldStop,
+			});
+
+			// Update active section based on scroll position
+			const activeSetionPos = scrollPosition + 200;
+			for (const section of sections) {
+				const element = section.ref.current;
+				if (element) {
+					const offsetTop = element.offsetTop;
+					const offsetBottom = offsetTop + element.offsetHeight;
+
+					if (activeSetionPos >= offsetTop && activeSetionPos < offsetBottom) {
+						setActiveSection(section.id);
+						break;
+					}
+				}
+			}
+		};
+
+		window.addEventListener("scroll", handleScroll);
+		handleScroll(); // Run once immediately to set initial state
+
+		// Call on window resize too
+		window.addEventListener("resize", handleScroll);
+
+		return () => {
+			window.removeEventListener("scroll", handleScroll);
+			window.removeEventListener("resize", handleScroll);
+		};
+	}, [sections, sidebarHeight]);
+
 	// Handle scrolling to section - improved for smoother scrolling
 	const scrollToSection = (sectionRef) => {
 		if (sectionRef && sectionRef.current) {
@@ -530,29 +619,6 @@ const PersonalAccidentPage = () => {
 			}
 		}
 	};
-
-	// Update active section based on scroll position
-	useEffect(() => {
-		const handleScroll = () => {
-			const scrollPosition = window.scrollY + 200;
-
-			for (const section of sections) {
-				const element = section.ref.current;
-				if (element) {
-					const offsetTop = element.offsetTop;
-					const offsetBottom = offsetTop + element.offsetHeight;
-
-					if (scrollPosition >= offsetTop && scrollPosition < offsetBottom) {
-						setActiveSection(section.id);
-						break;
-					}
-				}
-			}
-		};
-
-		window.addEventListener("scroll", handleScroll);
-		return () => window.removeEventListener("scroll", handleScroll);
-	}, [sections]);
 
 	const handleAccordionChange = (panel) => (event, isExpanded) => {
 		setExpanded(isExpanded ? panel : false);
@@ -655,7 +721,9 @@ const PersonalAccidentPage = () => {
 
 	return (
 		<ThemeProvider theme={theme}>
-			<Box sx={{ backgroundColor: "background.default", minHeight: "80vh" }}>
+			<Box
+				sx={{ backgroundColor: "background.default", minHeight: "80vh" }}
+				ref={contentRef}>
 				{/* Hero Banner */}
 				<HeroSection>
 					<Container maxWidth='xl' sx={{ mt: { xs: "80px", md: "160px" } }}>
@@ -760,9 +828,44 @@ const PersonalAccidentPage = () => {
 				<Container maxWidth='xl' sx={{ py: { xs: 4, md: 8 } }}>
 					<Grid container spacing={4}>
 						{/* Sticky Sidebar Navigation - Desktop Only */}
-						<Grid item xs={12} md={3} lg={2.5}>
+						<Grid item xs={12} md={3} lg={2.5} ref={sidebarContainerRef}>
 							<Hidden mdDown>
-								<StickyNav trigger={scrollTrigger}>
+								<Box
+									ref={sidebarRef}
+									sx={{
+										width: "300px",
+										transition: "all 0.3s ease",
+										position: sidebarPosition.isSticky
+											? sidebarPosition.shouldStop
+												? "absolute"
+												: "fixed"
+											: "static",
+										top:
+											sidebarPosition.isSticky && !sidebarPosition.shouldStop
+												? "130px"
+												: "auto",
+										bottom: sidebarPosition.shouldStop ? "30px" : "auto",
+										maxHeight: "80vh",
+										overflow: "auto",
+										// Custom scrollbar styles
+										"&::-webkit-scrollbar": {
+											width: "4px",
+										},
+										"&::-webkit-scrollbar-track": {
+											background: "#f1f1f1",
+											borderRadius: "10px",
+										},
+										"&::-webkit-scrollbar-thumb": {
+											background: "#95b8a2",
+											borderRadius: "10px",
+										},
+										"&::-webkit-scrollbar-thumb:hover": {
+											background: "#1b321d",
+										},
+										// Firefox scrollbar
+										scrollbarWidth: "thin",
+										scrollbarColor: "#95b8a2 #f1f1f1",
+									}}>
 									<NavList component='nav'>
 										{sections.map((section) => (
 											<NavItem
@@ -859,7 +962,7 @@ const PersonalAccidentPage = () => {
 											Tax Benefits
 										</Typography>
 										<Typography variant='body2' color='primary' paragraph>
-											Enjoy tax benefits on premiums under Section 80C
+											Enjoy tax benefits on premiums under Section 80D
 										</Typography>
 										{service?.packages && service.packages.length > 0 ? (
 											<Button
@@ -879,7 +982,7 @@ const PersonalAccidentPage = () => {
 											</Button>
 										)}
 									</Box>
-								</StickyNav>
+								</Box>
 							</Hidden>
 						</Grid>
 
@@ -897,19 +1000,23 @@ const PersonalAccidentPage = () => {
 								/>
 							)}
 
+							{/* Continue with the rest of the component's content */}
+
 							{/* Overview Section */}
 							<section ref={overviewRef} id='overview'>
-								<SectionBox id='overview-section'>
+								<SectionBox
+									id='overview-section'
+									style={{ paddingBottom: "51px" }}> 
 									<Typography
 										variant='h3'
 										color='primary'
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
-											"&:after": {
+											"&:after": { 
 												content: '""',
 												position: "absolute",
 												width: "60%",
@@ -928,20 +1035,44 @@ const PersonalAccidentPage = () => {
 											<Typography
 												variant='body1'
 												paragraph
-												sx={{ fontSize: "1.05rem", lineHeight: 1.7 }}>
-												Accidents can happen unexpectedly, disrupting lives and finances. At FinShelter, we offer comprehensive Personal Accident Insurance to provide financial security and peace of mind during such unforeseen events. Our plans are designed to protect you and your loved ones against the financial impact of accidental injuries, disabilities, or loss of life.
+												sx={{
+													fontSize: { xs: "1rem", md: "1.05rem" },
+													lineHeight: 1.7,
+												}}>
+												Accidents can happen unexpectedly, disrupting lives and
+												finances. At FinShelter, we offer comprehensive Personal
+												Accident Insurance to provide financial security and
+												peace of mind during such unforeseen events. Our plans
+												are designed to protect you and your loved ones against
+												the financial impact of accidental injuries,
+												disabilities, or loss of life.
 											</Typography>
 											<Typography
 												variant='body1'
 												paragraph
-												sx={{ fontSize: "1.05rem", lineHeight: 1.7 }}>
-												Personal Accident Insurance ensures that you are financially prepared to handle the challenges posed by accidents. It provides income replacement, medical expense coverage, disability benefits, and family protection in case of fatal accidents.
+												sx={{
+													fontSize: { xs: "1rem", md: "1.05rem" },
+													lineHeight: 1.7,
+												}}>
+												Personal Accident Insurance ensures that you are
+												financially prepared to handle the challenges posed by
+												accidents. It provides income replacement, medical
+												expense coverage, disability benefits, and family
+												protection in case of fatal accidents.
 											</Typography>
 											<Typography
 												variant='body1'
 												paragraph
-												sx={{ fontSize: "1.05rem", lineHeight: 1.7 }}>
-												Accidents are unpredictable, but their financial impact doesn't have to be. FinShelter's Personal Accident Insurance provides the support you need to recover and rebuild with confidence. Whether it's safeguarding your income, covering medical costs, or securing your family's future, we've got you covered.
+												sx={{
+													fontSize: { xs: "1rem", md: "1.05rem" },
+													lineHeight: 1.7,
+												}}>
+												Accidents are unpredictable, but their financial impact
+												doesn't have to be. FinShelter's Personal Accident
+												Insurance provides the support you need to recover and
+												rebuild with confidence. Whether it's safeguarding your
+												income, covering medical costs, or securing your
+												family's future, we've got you covered.
 											</Typography>
 										</Grid>
 										<Grid item xs={12} md={5}>
@@ -1030,14 +1161,14 @@ const PersonalAccidentPage = () => {
 
 							{/* Why Choose Vehicle Insurance Section */}
 							<section id='why-choose'>
-								<SectionBox>
+								<SectionBox sx={{ mb: { xs: 5, md: 4 } }}>
 									<Typography
 										variant='h3'
 										color='primary'
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1054,7 +1185,7 @@ const PersonalAccidentPage = () => {
 										Coverage Offered
 									</Typography>
 
-									<Grid container spacing={3} sx={{ mb: 4 }}>
+									<Grid container spacing={{ xs: 4, md: 2 }} sx={{ mb: 4 }}>
 										{[
 											{
 												title: "Medical Expenses",
@@ -1107,11 +1238,17 @@ const PersonalAccidentPage = () => {
 												),
 											},
 										].map((item, index) => (
-											<Grid item xs={12} sm={6} lg={4} key={index} style={{marginBottom:"60px"}}>
+											<Grid
+												item
+												xs={12}
+												sm={6}
+												lg={4}
+												key={index}
+												sx={{ mb: { xs: "40px", md: "60px" } }}>
 												<Card
 													sx={{
 														height: "100%",
-														p: 3,
+														p: { xs: 2.5, md: 3 },
 														border: "1px solid rgba(0,0,0,0.08)",
 														boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
 														transition:
@@ -1132,766 +1269,28 @@ const PersonalAccidentPage = () => {
 														<Typography
 															variant='h5'
 															color='primary'
-															sx={{ fontWeight: 600 }}>
+															sx={{
+																fontWeight: 600,
+																fontSize: { xs: "1.2rem", md: "1.5rem" },
+															}}>
 															{item.title}
 														</Typography>
 													</Box>
 													<Typography
 														variant='body1'
-														sx={{ color: "text.secondary", lineHeight: 1.7 }}>
+														sx={{
+															color: "text.secondary",
+															lineHeight: 1.7,
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}>
 														{item.description}
 													</Typography>
 												</Card>
 											</Grid>
 										))}
 									</Grid>
-									
-									<Box
-										sx={{
-											mt: 4,
-											p: 3,
-											borderRadius: '12px',
-											backgroundColor: alpha(theme.palette.warning.main, 0.1),
-											border: '1px solid',
-											borderColor: alpha(theme.palette.warning.main, 0.3),
-										}}>
-										<Typography
-											variant='h6'
-											sx={{ color: 'warning.dark', mb: 1, fontWeight: 600 }}>
-											Important Note
-										</Typography>
-										<Typography variant='body2' sx={{ color: 'text.secondary' }}>
-											Coverage details may vary based on the specific plan you choose. Some exclusions and waiting periods may apply. Please review the policy document carefully or consult with our experts to understand the exact coverage details.
-										</Typography>
-									</Box>
 								</SectionBox>
 							</section>
-
-							{/* Add-On Covers Section */}
-							<section id='add-on-covers'>
-								<SectionBox
-									sx={{
-										background:
-											"linear-gradient(to right, rgba(198, 219, 206, 0.4), rgba(198, 219, 206, 0.1))",
-									}}>
-									<Typography
-										variant='h3'
-										color='primary'
-										gutterBottom
-										sx={{
-											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
-											position: "relative",
-											display: "inline-block",
-											"&:after": {
-												content: '""',
-												position: "absolute",
-												width: "60%",
-												height: "4px",
-												bottom: "-10px",
-												left: "0",
-												backgroundColor: "accent.main",
-												borderRadius: "4px",
-											},
-										}}>
-										Why Choose FinShelter?
-									</Typography>
-
-									<Typography
-										variant='body1'
-										paragraph
-										sx={{ mb: 4, maxWidth: "850px" }}>
-										At FinShelter, we aim to provide employers with dependable,
-										cost-effective solutions that protect their workforce:
-									</Typography>
-
-									<Grid container spacing={3}>
-										{[
-											{
-												title: "Expert Guidance",
-												description:
-													"We help you understand your legal obligations and select the right coverage for your specific industry and workforce size.",
-												icon: <SupportAgentIcon />,
-											},
-											{
-												title: "Tailored Solutions",
-												description:
-													"Our policies are designed to meet the unique needs of your organization, ensuring maximum coverage and flexibility.",
-												icon: <CalculateIcon />,
-											},
-											{
-												title: "Efficient Claims Process",
-												description:
-													"We provide fast and hassle-free claims assistance, minimizing delays and disruptions.",
-												icon: <SecurityIcon />,
-											},
-											{
-												title: "Comprehensive Protection",
-												description:
-													"Our insurance plans offer holistic coverage, ensuring both the employer's and employees' interests are safeguarded.",
-												icon: <ShieldIcon />,
-											},
-										].map((offering, index) => (
-											<Grid item xs={12} sm={6} md={3} key={index}>
-												<Card sx={{ height: "100%" }}>
-													<CardContent sx={{ p: 3 }}>
-														<Box
-															sx={{
-																mb: 2,
-																display: "flex",
-																alignItems: "center",
-															}}>
-															<Avatar
-																sx={{
-																	bgcolor: "primary.main",
-																	color: "white",
-																	mr: 2,
-																}}>
-																{offering.icon}
-															</Avatar>
-															<Typography
-																variant='h5'
-																color='primary'
-																sx={{ fontWeight: 600 }}>
-																{offering.title}
-															</Typography>
-														</Box>
-														<Typography
-															variant='body2'
-															sx={{ color: "text.secondary" }}>
-															{offering.description}
-														</Typography>
-													</CardContent>
-												</Card>
-											</Grid>
-										))}
-									</Grid>
-								</SectionBox>
-							</section>
-
-							{/* Why Choose FinShelter Section */}
-							<section id='types' ref={typesRef}>
-								<SectionBox>
-									<Typography
-										variant='h3'
-										color='primary'
-										gutterBottom
-										sx={{
-											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
-											position: "relative",
-											display: "inline-block",
-											"&:after": {
-												content: '""',
-												position: "absolute",
-												width: "60%",
-												height: "4px",
-												bottom: "-10px",
-												left: "0",
-												backgroundColor: "accent.main",
-												borderRadius: "4px",
-											},
-										}}>
-										Protect Your Workforce, Secure Your Business
-									</Typography>
-
-									<Grid container spacing={4} alignItems='flex-start'>
-										<Grid item xs={12} md={6}>
-											<Box
-												sx={{
-													display: "flex",
-													flexDirection: "column",
-													justifyContent: "flex-start",
-													paddingTop: "20px",
-												}}>
-												<Typography
-													variant='body1'
-													paragraph
-													sx={{ fontSize: "1.05rem", lineHeight: 1.7 }}>
-													Investing in Personal Accident Insurance is more
-													than a legal obligation—it's a commitment to your
-													employees and the longevity of your business. With
-													FinShelter, you can ensure that your team is
-													protected, your business is compliant, and your
-													operations run smoothly.
-												</Typography>
-
-												<Typography
-													variant='body1'
-													paragraph
-													sx={{ fontSize: "1.05rem", lineHeight: 1.7, mb: 0 }}>
-													Our insurance plans provide comprehensive coverage for
-													a range of scenarios, including medical expenses,
-													disability benefits, death benefits, legal expenses,
-													and coverage for occupational diseases. Our team of
-													experts will help you navigate the complexities of
-													workmen compensation insurance and tailor a solution
-													that meets your specific business needs.
-												</Typography>
-
-												{/* Decorative Image Element */}
-												<Box
-													sx={{
-														mt: 4,
-														display: "flex",
-														justifyContent: "center",
-														alignItems: "center",
-													}}>
-													<Box
-														sx={{
-															width: "100%",
-															maxWidth: "250px",
-															height: "120px",
-															borderRadius: "10px",
-															position: "relative",
-															overflow: "hidden",
-															boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
-															background:
-																"linear-gradient(135deg, rgba(27, 50, 29, 0.02), rgba(198, 219, 206, 0.2))",
-															border: "1px solid rgba(198, 219, 206, 0.5)",
-															display: "flex",
-															alignItems: "center",
-															justifyContent: "center",
-															flexDirection: "column",
-														}}>
-														<ShieldIcon
-															sx={{
-																fontSize: 40,
-																color: "primary.main",
-																opacity: 0.8,
-																mb: 1,
-															}}
-														/>
-														<Typography
-															variant='body2'
-															color='primary.main'
-															sx={{ fontWeight: 600, textAlign: "center" }}>
-															Trusted Protection for Your Workforce
-														</Typography>
-													</Box>
-												</Box>
-											</Box>
-										</Grid>
-
-										<Grid item xs={12} md={6}>
-											<Box sx={{ pl: { xs: 0, md: 2 } }}>
-												<List
-													sx={{
-														display: "flex",
-														flexDirection: "column",
-														gap: 1,
-														pt: 0,
-													}}>
-													{[
-														{
-															title: "Legal Compliance",
-															description:
-																"Meet statutory obligations under the Workmen's Compensation Act and other relevant laws.",
-														},
-														{
-															title: "Financial Security",
-															description:
-																"Protect your business from unexpected financial liabilities arising from workplace accidents.",
-														},
-														{
-															title: "Employee Welfare",
-															description:
-																"Demonstrate your commitment to your employees' well-being and safety.",
-														},
-														{
-															title: "Operational Continuity",
-															description:
-																"Ensure uninterrupted business operations even in the face of workplace incidents.",
-														},
-														{
-															title: "Peace of Mind",
-															description:
-																"Focus on growing your business knowing your workforce is protected by comprehensive insurance coverage.",
-														},
-													].map((item, index) => (
-														<ListItem
-															key={index}
-															sx={{
-																py: 0,
-																px: 0,
-																borderBottom:
-																	index !== 4 ? "1px solid #e0e0e0" : "none",
-															}}>
-															<ListItemIcon sx={{ minWidth: "44px" }}>
-																<Avatar
-																	sx={{
-																		bgcolor: "primary.main",
-																		width: 34,
-																		height: 34,
-																		fontSize: "0.9rem",
-																	}}>
-																	{index + 1}
-																</Avatar>
-															</ListItemIcon>
-															<ListItemText
-																primary={
-																	<Typography
-																		variant='h6'
-																		color='primary'
-																		sx={{
-																			mb: 0.5,
-																			fontWeight: 600,
-																			fontSize: "1rem",
-																		}}>
-																		{item.title}
-																	</Typography>
-																}
-																secondary={
-																	<Typography
-																		variant='body2'
-																		color='text.secondary'
-																		sx={{ fontSize: "0.9rem" }}>
-																		{item.description}
-																	</Typography>
-																}
-															/>
-														</ListItem>
-													))}
-												</List>
-											</Box>
-										</Grid>
-									</Grid>
-								</SectionBox>
-							</section>
-
-							{/* How It Works Section */}
-							<section id='how-it-works' ref={howItWorksRef}>
-								<SectionBox
-									sx={{
-										background:
-											"linear-gradient(135deg, rgba(27, 50, 29, 0.05), rgba(198, 219, 206, 0.2))",
-									}}>
-									<Typography
-										variant='h3'
-										color='primary'
-										gutterBottom
-										sx={{
-											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
-											position: "relative",
-											display: "inline-block",
-											"&:after": {
-												content: '""',
-												position: "absolute",
-												width: "60%",
-												height: "4px",
-												bottom: "-10px",
-												left: "0",
-												backgroundColor: "accent.main",
-												borderRadius: "4px",
-											},
-										}}>
-										How It Works
-									</Typography>
-
-									<Typography
-										variant='body1'
-										paragraph
-										sx={{ mb: 4, maxWidth: "850px" }}>
-										We follow a simple and streamlined process to ensure you get
-										the right coverage for your workforce:
-									</Typography>
-
-									<Box sx={{ position: "relative" }}>
-										<Grid container spacing={3}>
-											<Grid item xs={12} md={6}>
-												<Box
-													sx={{
-														width: "100%",
-														height: { xs: "300px", md: "460px" },
-														backgroundColor: "accent.main",
-														borderRadius: "16px",
-														overflow: "hidden",
-														backgroundImage: "url('/images/loan1.jpg')",
-														backgroundSize: "cover",
-														backgroundPosition: "center",
-														boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
-														position: "relative",
-														"&::after": {
-															content: '""',
-															position: "absolute",
-															top: 0,
-															left: 0,
-															right: 0,
-															bottom: 0,
-															background: "rgba(27, 50, 29, 0.3)",
-															zIndex: 1,
-														},
-													}}
-												/>
-											</Grid>
-
-											<Grid item xs={12} md={6}>
-												<Box>
-													<Box
-														sx={{
-															mb: 4,
-															display: "flex",
-															alignItems: "flex-start",
-														}}>
-														<Box
-															sx={{
-																width: 36,
-																height: 36,
-																borderRadius: "50%",
-																bgcolor: "primary.main",
-																color: "white",
-																display: "flex",
-																justifyContent: "center",
-																alignItems: "center",
-																fontWeight: "bold",
-																fontSize: "1.2rem",
-																mr: 2,
-																flexShrink: 0,
-															}}>
-															1
-														</Box>
-														<Box>
-															<Typography
-																variant='h5'
-																color='primary'
-																sx={{ fontWeight: 600, mb: 1 }}>
-																Needs Assessment
-															</Typography>
-															<Typography
-																variant='body1'
-																color='text.secondary'>
-																Our team evaluates your business requirements
-																and risks to determine the most suitable
-																coverage.
-															</Typography>
-														</Box>
-													</Box>
-
-													<Box
-														sx={{
-															mb: 4,
-															display: "flex",
-															alignItems: "flex-start",
-														}}>
-														<Box
-															sx={{
-																width: 36,
-																height: 36,
-																borderRadius: "50%",
-																bgcolor: "primary.main",
-																color: "white",
-																display: "flex",
-																justifyContent: "center",
-																alignItems: "center",
-																fontWeight: "bold",
-																fontSize: "1.2rem",
-																mr: 2,
-																flexShrink: 0,
-															}}>
-															2
-														</Box>
-														<Box>
-															<Typography
-																variant='h5'
-																color='primary'
-																sx={{ fontWeight: 600, mb: 1 }}>
-																Policy Customization
-															</Typography>
-															<Typography
-																variant='body1'
-																color='text.secondary'>
-																We tailor the insurance plan to align with your
-																workforce size, industry, and operational risks.
-															</Typography>
-														</Box>
-													</Box>
-
-													<Box
-														sx={{
-															mb: 4,
-															display: "flex",
-															alignItems: "flex-start",
-														}}>
-														<Box
-															sx={{
-																width: 36,
-																height: 36,
-																borderRadius: "50%",
-																bgcolor: "primary.main",
-																color: "white",
-																display: "flex",
-																justifyContent: "center",
-																alignItems: "center",
-																fontWeight: "bold",
-																fontSize: "1.2rem",
-																mr: 2,
-																flexShrink: 0,
-															}}>
-															3
-														</Box>
-														<Box>
-															<Typography
-																variant='h5'
-																color='primary'
-																sx={{ fontWeight: 600, mb: 1 }}>
-																Seamless Enrollment
-															</Typography>
-															<Typography
-																variant='body1'
-																color='text.secondary'>
-																Benefit from our simplified documentation and
-																approval process for quick implementation.
-															</Typography>
-														</Box>
-													</Box>
-
-													<Box
-														sx={{ display: "flex", alignItems: "flex-start" }}>
-														<Box
-															sx={{
-																width: 36,
-																height: 36,
-																borderRadius: "50%",
-																bgcolor: "primary.main",
-																color: "white",
-																display: "flex",
-																justifyContent: "center",
-																alignItems: "center",
-																fontWeight: "bold",
-																fontSize: "1.2rem",
-																mr: 2,
-																flexShrink: 0,
-															}}>
-															4
-														</Box>
-														<Box>
-															<Typography
-																variant='h5'
-																color='primary'
-																sx={{ fontWeight: 600, mb: 1 }}>
-																Claims Assistance
-															</Typography>
-															<Typography
-																variant='body1'
-																color='text.secondary'>
-																In the event of an incident, our dedicated
-																claims team provides prompt and efficient
-																support to resolve issues.
-															</Typography>
-														</Box>
-													</Box>
-												</Box>
-											</Grid>
-										</Grid>
-
-										<Box
-											sx={{
-												position: "absolute",
-												bottom: -20,
-												left: "50%",
-												transform: "translateX(-50%)",
-												textAlign: "center",
-												zIndex: 2,
-												display: { xs: "block", md: "none" },
-											}}>
-											<Button
-												variant='contained'
-												color='primary'
-												size='large'
-												onClick={() => handleApplyNow(true)}
-												sx={{ px: 4 }}>
-												Contact Us Today
-											</Button>
-										</Box>
-
-										<Box
-											sx={{
-												display: { xs: "none", md: "flex" },
-												justifyContent: "center",
-												mt: 6,
-											}}>
-											<Button
-												variant='contained'
-												color='primary'
-												size='large'
-												onClick={() => handleApplyNow(true)}
-												sx={{ px: 4 }}>
-												Contact Us Today
-											</Button>
-										</Box>
-									</Box>
-								</SectionBox>
-							</section>
-
-							{/* Packages Section - Only render if packages exist */}
-							{service?.packages && service.packages.length > 0 && (
-								<section ref={packagesRef} id='packages'>
-									<SectionBox id='packages-section'>
-										<Typography
-											variant='h3'
-											color='primary'
-											gutterBottom
-											sx={{
-												mb: 1,
-												fontSize: { xs: "1.8rem", md: "2.2rem" },
-												position: "relative",
-												display: "inline-block",
-												"&:after": {
-													content: '""',
-													position: "absolute",
-													width: "60%",
-													height: "4px",
-													bottom: "-10px",
-													left: "0",
-													backgroundColor: "accent.main",
-													borderRadius: "4px",
-												},
-											}}>
-											Insurance Packages
-										</Typography>
-										<Typography
-											variant='subtitle1'
-											paragraph
-											sx={{ mb: 4, maxWidth: "850px" }}>
-											Choose the right coverage to safeguard your vehicle and
-											financial future. Our insurance plans offer comprehensive
-											protection at affordable rates.
-										</Typography>
-
-										<Grid container spacing={3}>
-											{service.packages.map((pkg, index) => (
-												<Grid item xs={12} sm={6} md={4} key={index}>
-													<PackageCard
-														featured={index === 1}
-														sx={{
-															transform: index === 1 ? "scale(1.05)" : "none",
-															my: index === 1 ? 0 : 2,
-															position: "relative",
-															overflow: "visible",
-															"&::before":
-																index === 1
-																	? {
-																			content: '""',
-																			position: "absolute",
-																			top: "-15px",
-																			right: "-10px",
-																			background: "primary.main",
-																			color: "white",
-																			padding: "5px 12px",
-																			borderRadius: "20px",
-																			fontSize: "0.7rem",
-																			fontWeight: "bold",
-																			boxShadow:
-																				"0 4px 8px rgba(0, 0, 0, 0.15)",
-																			zIndex: 2,
-																	  }
-																	: {},
-														}}
-														onClick={() => handlePackageSelect(pkg)}>
-														<CardContent sx={{ p: 3 }}>
-															<Box
-																sx={{
-																	mb: 2,
-																	display: "flex",
-																	justifyContent: "space-between",
-																	alignItems: "flex-start",
-																}}>
-																<Box>
-																	<Typography
-																		variant='h5'
-																		color='primary'
-																		sx={{
-																			fontWeight: 600,
-																			mb: 0.5,
-																			fontSize: "1.4rem",
-																		}}>
-																		{pkg.name}
-																	</Typography>
-																	<Typography
-																		variant='body2'
-																		color='text.secondary'
-																		sx={{ mb: 2 }}>
-																		{pkg.shortDescription}
-																	</Typography>
-																</Box>
-																{index === 1 && (
-																	<Chip
-																		label='Popular'
-																		size='small'
-																		sx={{
-																			bgcolor: "primary.main",
-																			color: "white",
-																			fontWeight: 600,
-																		}}
-																	/>
-																)}
-															</Box>
-
-															<Typography
-																variant='h4'
-																color='primary'
-																sx={{
-																	display: "flex",
-																	alignItems: "baseline",
-																	fontWeight: 700,
-																	mb: 3,
-																}}>
-																₹{pkg.price}
-																<Typography
-																	component='span'
-																	variant='subtitle2'
-																	color='text.secondary'
-																	sx={{ ml: 1, fontWeight: 400 }}>
-																	/ year
-																</Typography>
-															</Typography>
-
-															<Divider sx={{ mb: 2 }} />
-
-															<List sx={{ mb: 2 }}>
-																{pkg.features.map((feature, idx) => (
-																	<ListItem
-																		key={idx}
-																		sx={{
-																			px: 0,
-																			py: 0.5,
-																			alignItems: "flex-start",
-																		}}>
-																		<ListItemIcon sx={{ minWidth: "32px" }}>
-																			<CheckCircleOutlineIcon
-																				sx={{
-																					color: "success.main",
-																					fontSize: "1.2rem",
-																				}}
-																			/>
-																		</ListItemIcon>
-																		<ListItemText
-																			primary={feature}
-																			primaryTypographyProps={{
-																				fontSize: "0.9rem",
-																			}}
-																		/>
-																	</ListItem>
-																))}
-															</List>
-														</CardContent>
-														<CardActions sx={{ px: 3, pb: 3 }}>
-															<Button
-																variant='contained'
-																color='primary'
-																fullWidth
-																onClick={() => handlePackageSelect(pkg)}>
-																Select Package
-															</Button>
-														</CardActions>
-													</PackageCard>
-												</Grid>
-											))}
-										</Grid>
-									</SectionBox>
-								</section>
-							)}
 
 							{/* FAQ Section */}
 							<section ref={faqRef} id='faq'>
@@ -1902,7 +1301,7 @@ const PersonalAccidentPage = () => {
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1920,29 +1319,61 @@ const PersonalAccidentPage = () => {
 									</Typography>
 
 									<Box sx={{ mb: 5 }}>
-										<Typography variant="body1" paragraph sx={{ fontSize: "1.05rem", lineHeight: 1.7 }}>
-											Find answers to commonly asked questions about Personal Accident Insurance. If you don't see your question here, please contact our customer support team for personalized assistance.
+										<Typography
+											variant='body1'
+											paragraph
+											sx={{
+												fontSize: { xs: "0.95rem", md: "1.05rem" },
+												lineHeight: 1.7,
+											}}>
+											Find answers to commonly asked questions about Personal
+											Accident Insurance. If you don't see your question here,
+											please contact our customer support team for personalized
+											assistance.
 										</Typography>
 									</Box>
 
 									<Box sx={{ maxWidth: "100%" }}>
-										<Accordion>
+										<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 											<AccordionSummary
 												expandIcon={<ExpandMoreIcon />}
-												aria-controls="panel1a-content"
-												id="panel1a-header"
-												sx={{ 
-													backgroundColor: alpha(theme.palette.primary.main, 0.03),
-													'&.Mui-expanded': {
-														backgroundColor: alpha(theme.palette.primary.main, 0.08),
-													}
-												}}
-											>
-												<Typography variant="h6" sx={{ fontWeight: 600 }}>What is Personal Accident Insurance?</Typography>
+												aria-controls='panel1a-content'
+												id='panel1a-header'
+												sx={{
+													backgroundColor: alpha(
+														theme.palette.primary.main,
+														0.03
+													),
+													"&.Mui-expanded": {
+														backgroundColor: alpha(
+															theme.palette.primary.main,
+															0.08
+														),
+													},
+												}}>
+												<Typography
+													variant='h6'
+													sx={{
+														fontWeight: 600,
+														fontSize: { xs: "1rem", md: "1.25rem" },
+													}}>
+													What is Personal Accident Insurance?
+												</Typography>
 											</AccordionSummary>
 											<AccordionDetails>
-												<Typography paragraph>
-													Personal Accident Insurance is a type of insurance policy that provides financial protection in the event of accidental injuries, disability, or death. It offers compensation to the insured person or their nominees in case of an accident, helping to cover medical expenses, loss of income, and other financial burdens resulting from the accident.
+												<Typography
+													paragraph
+													sx={{
+														fontSize: { xs: "0.9rem", md: "1rem" },
+														lineHeight: 1.6,
+													}}>
+													Personal Accident Insurance is a type of insurance
+													policy that provides financial protection in the event
+													of accidental injuries, disability, or death. It
+													offers compensation to the insured person or their
+													nominees in case of an accident, helping to cover
+													medical expenses, loss of income, and other financial
+													burdens resulting from the accident.
 												</Typography>
 											</AccordionDetails>
 										</Accordion>
@@ -1950,35 +1381,75 @@ const PersonalAccidentPage = () => {
 										<Accordion>
 											<AccordionSummary
 												expandIcon={<ExpandMoreIcon />}
-												aria-controls="panel2a-content"
-												id="panel2a-header"
-												sx={{ 
-													backgroundColor: alpha(theme.palette.primary.main, 0.03),
-													'&.Mui-expanded': {
-														backgroundColor: alpha(theme.palette.primary.main, 0.08),
-													}
-												}}
-											>
-												<Typography variant="h6" sx={{ fontWeight: 600 }}>How is Personal Accident Insurance different from Health Insurance?</Typography>
+												aria-controls='panel2a-content'
+												id='panel2a-header'
+												sx={{
+													backgroundColor: alpha(
+														theme.palette.primary.main,
+														0.03
+													),
+													"&.Mui-expanded": {
+														backgroundColor: alpha(
+															theme.palette.primary.main,
+															0.08
+														),
+													},
+												}}>
+												<Typography
+													variant='h6'
+													sx={{
+														fontWeight: 600,
+														fontSize: { xs: "1rem", md: "1.25rem" },
+													}}>
+													How is Personal Accident Insurance different from
+													Health Insurance?
+												</Typography>
 											</AccordionSummary>
 											<AccordionDetails>
-												<Typography paragraph>
-													While both provide financial protection, they serve different purposes:
+												<Typography
+													paragraph
+													sx={{
+														fontSize: { xs: "0.9rem", md: "1rem" },
+														lineHeight: 1.6,
+													}}>
+													While both provide financial protection, they serve
+													different purposes:
 												</Typography>
 												<ul>
 													<li>
-														<Typography paragraph>
-															<strong>Personal Accident Insurance</strong> specifically covers injuries, disability, or death resulting from accidents. It does not cover illnesses or natural causes.
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															<strong>Personal Accident Insurance</strong>{" "}
+															specifically covers injuries, disability, or death
+															resulting from accidents. It does not cover
+															illnesses or natural causes.
 														</Typography>
 													</li>
 													<li>
-														<Typography paragraph>
-															<strong>Health Insurance</strong> primarily covers medical expenses related to illnesses, hospitalization, and treatments, including those not resulting from accidents.
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															<strong>Health Insurance</strong> primarily covers
+															medical expenses related to illnesses,
+															hospitalization, and treatments, including those
+															not resulting from accidents.
 														</Typography>
 													</li>
 												</ul>
-												<Typography>
-													Ideally, individuals should have both types of insurance for comprehensive coverage.
+												<Typography
+													sx={{
+														fontSize: { xs: "0.85rem", md: "0.95rem" },
+														lineHeight: 1.6,
+													}}>
+													Ideally, individuals should have both types of
+													insurance for comprehensive coverage.
 												</Typography>
 											</AccordionDetails>
 										</Accordion>
@@ -1986,45 +1457,96 @@ const PersonalAccidentPage = () => {
 										<Accordion>
 											<AccordionSummary
 												expandIcon={<ExpandMoreIcon />}
-												aria-controls="panel3a-content"
-												id="panel3a-header"
-												sx={{ 
-													backgroundColor: alpha(theme.palette.primary.main, 0.03),
-													'&.Mui-expanded': {
-														backgroundColor: alpha(theme.palette.primary.main, 0.08),
-													}
-												}}
-											>
-												<Typography variant="h6" sx={{ fontWeight: 600 }}>What does Personal Accident Insurance cover?</Typography>
+												aria-controls='panel3a-content'
+												id='panel3a-header'
+												sx={{
+													backgroundColor: alpha(
+														theme.palette.primary.main,
+														0.03
+													),
+													"&.Mui-expanded": {
+														backgroundColor: alpha(
+															theme.palette.primary.main,
+															0.08
+														),
+													},
+												}}>
+												<Typography
+													variant='h6'
+													sx={{
+														fontWeight: 600,
+														fontSize: { xs: "1rem", md: "1.25rem" },
+													}}>
+													What does Personal Accident Insurance cover?
+												</Typography>
 											</AccordionSummary>
 											<AccordionDetails>
-												<Typography paragraph>
+												<Typography
+													paragraph
+													sx={{
+														fontSize: { xs: "0.9rem", md: "1rem" },
+														lineHeight: 1.6,
+													}}>
 													Typical coverage includes:
 												</Typography>
 												<ol>
 													<li>
-														<Typography paragraph>
-															<strong>Accidental Death Benefit:</strong> Pays the sum assured to nominees if the insured person dies due to an accident.
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															<strong>Accidental Death Benefit:</strong> Pays
+															the sum assured to nominees if the insured person
+															dies due to an accident.
 														</Typography>
 													</li>
 													<li>
-														<Typography paragraph>
-															<strong>Permanent Total Disability:</strong> Provides the sum assured if the insured suffers permanent disability due to an accident.
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															<strong>Permanent Total Disability:</strong>{" "}
+															Provides the sum assured if the insured suffers
+															permanent disability due to an accident.
 														</Typography>
 													</li>
 													<li>
-														<Typography paragraph>
-															<strong>Permanent Partial Disability:</strong> Offers a percentage of the sum assured based on the degree of disability.
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															<strong>Permanent Partial Disability:</strong>{" "}
+															Offers a percentage of the sum assured based on
+															the degree of disability.
 														</Typography>
 													</li>
 													<li>
-														<Typography paragraph>
-															<strong>Temporary Total Disability:</strong> Provides weekly benefits for a limited period if the insured is temporarily unable to work.
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															<strong>Temporary Total Disability:</strong>{" "}
+															Provides weekly benefits for a limited period if
+															the insured is temporarily unable to work.
 														</Typography>
 													</li>
 													<li>
-														<Typography>
-															<strong>Medical Expenses:</strong> Reimburses accident-related hospitalization expenses up to a specified limit.
+														<Typography
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															<strong>Medical Expenses:</strong> Reimburses
+															accident-related hospitalization expenses up to a
+															specified limit.
 														</Typography>
 													</li>
 												</ol>
@@ -2034,43 +1556,108 @@ const PersonalAccidentPage = () => {
 										<Accordion>
 											<AccordionSummary
 												expandIcon={<ExpandMoreIcon />}
-												aria-controls="panel4a-content"
-												id="panel4a-header"
-												sx={{ 
-													backgroundColor: alpha(theme.palette.primary.main, 0.03),
-													'&.Mui-expanded': {
-														backgroundColor: alpha(theme.palette.primary.main, 0.08),
-													}
-												}}
-											>
-												<Typography variant="h6" sx={{ fontWeight: 600 }}>What incidents are not covered under Personal Accident Insurance?</Typography>
+												aria-controls='panel4a-content'
+												id='panel4a-header'
+												sx={{
+													backgroundColor: alpha(
+														theme.palette.primary.main,
+														0.03
+													),
+													"&.Mui-expanded": {
+														backgroundColor: alpha(
+															theme.palette.primary.main,
+															0.08
+														),
+													},
+												}}>
+												<Typography
+													variant='h6'
+													sx={{
+														fontWeight: 600,
+														fontSize: { xs: "1rem", md: "1.25rem" },
+													}}>
+													What incidents are not covered under Personal Accident
+													Insurance?
+												</Typography>
 											</AccordionSummary>
 											<AccordionDetails>
-												<Typography paragraph>
+												<Typography
+													paragraph
+													sx={{
+														fontSize: { xs: "0.9rem", md: "1rem" },
+														lineHeight: 1.6,
+													}}>
 													Common exclusions typically include:
 												</Typography>
 												<ul>
 													<li>
-														<Typography paragraph>Self-inflicted injuries or suicide attempts</Typography>
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															Self-inflicted injuries or suicide attempts
+														</Typography>
 													</li>
 													<li>
-														<Typography paragraph>Injuries due to influence of alcohol or drugs</Typography>
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															Injuries due to influence of alcohol or drugs
+														</Typography>
 													</li>
 													<li>
-														<Typography paragraph>Injuries from war, terrorism, or civil unrest</Typography>
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															Injuries from war, terrorism, or civil unrest
+														</Typography>
 													</li>
 													<li>
-														<Typography paragraph>Injuries from participation in criminal activities</Typography>
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															Injuries from participation in criminal activities
+														</Typography>
 													</li>
 													<li>
-														<Typography paragraph>Pre-existing disabilities or conditions</Typography>
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															Pre-existing disabilities or conditions
+														</Typography>
 													</li>
 													<li>
-														<Typography>Certain high-risk activities (unless specifically covered)</Typography>
+														<Typography
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															Certain high-risk activities (unless specifically
+															covered)
+														</Typography>
 													</li>
 												</ul>
-												<Typography>
-													Always review your policy document for the complete list of exclusions.
+												<Typography
+													sx={{
+														fontSize: { xs: "0.85rem", md: "0.95rem" },
+														lineHeight: 1.6,
+													}}>
+													Always review your policy document for the complete
+													list of exclusions.
 												</Typography>
 											</AccordionDetails>
 										</Accordion>
@@ -2078,37 +1665,89 @@ const PersonalAccidentPage = () => {
 										<Accordion>
 											<AccordionSummary
 												expandIcon={<ExpandMoreIcon />}
-												aria-controls="panel5a-content"
-												id="panel5a-header"
-												sx={{ 
-													backgroundColor: alpha(theme.palette.primary.main, 0.03),
-													'&.Mui-expanded': {
-														backgroundColor: alpha(theme.palette.primary.main, 0.08),
-													}
-												}}
-											>
-												<Typography variant="h6" sx={{ fontWeight: 600 }}>How much coverage should I opt for?</Typography>
+												aria-controls='panel5a-content'
+												id='panel5a-header'
+												sx={{
+													backgroundColor: alpha(
+														theme.palette.primary.main,
+														0.03
+													),
+													"&.Mui-expanded": {
+														backgroundColor: alpha(
+															theme.palette.primary.main,
+															0.08
+														),
+													},
+												}}>
+												<Typography
+													variant='h6'
+													sx={{
+														fontWeight: 600,
+														fontSize: { xs: "1rem", md: "1.25rem" },
+													}}>
+													How much coverage should I opt for?
+												</Typography>
 											</AccordionSummary>
 											<AccordionDetails>
-												<Typography paragraph>
+												<Typography
+													paragraph
+													sx={{
+														fontSize: { xs: "0.9rem", md: "1rem" },
+														lineHeight: 1.6,
+													}}>
 													The ideal coverage amount depends on several factors:
 												</Typography>
 												<ul>
 													<li>
-														<Typography paragraph>Your current income and future earning potential</Typography>
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															Your current income and future earning potential
+														</Typography>
 													</li>
 													<li>
-														<Typography paragraph>Number of dependents and their financial needs</Typography>
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															Number of dependents and their financial needs
+														</Typography>
 													</li>
 													<li>
-														<Typography paragraph>Outstanding debts and financial obligations</Typography>
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															Outstanding debts and financial obligations
+														</Typography>
 													</li>
 													<li>
-														<Typography paragraph>Your occupation and risk level</Typography>
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															Your occupation and risk level
+														</Typography>
 													</li>
 												</ul>
-												<Typography>
-													A general rule of thumb is to have coverage of at least 10 times your annual income, but our insurance advisors can help you determine the most appropriate amount based on your specific circumstances.
+												<Typography
+													sx={{
+														fontSize: { xs: "0.85rem", md: "0.95rem" },
+														lineHeight: 1.6,
+													}}>
+													A general rule of thumb is to have coverage of at
+													least 10 times your annual income, but our insurance
+													advisors can help you determine the most appropriate
+													amount based on your specific circumstances.
 												</Typography>
 											</AccordionDetails>
 										</Accordion>
@@ -2116,38 +1755,76 @@ const PersonalAccidentPage = () => {
 										<Accordion>
 											<AccordionSummary
 												expandIcon={<ExpandMoreIcon />}
-												aria-controls="panel6a-content"
-												id="panel6a-header"
-												sx={{ 
-													backgroundColor: alpha(theme.palette.primary.main, 0.03),
-													'&.Mui-expanded': {
-														backgroundColor: alpha(theme.palette.primary.main, 0.08),
-													}
-												}}
-											>
-												<Typography variant="h6" sx={{ fontWeight: 600 }}>How do I file a claim?</Typography>
+												aria-controls='panel6a-content'
+												id='panel6a-header'
+												sx={{
+													backgroundColor: alpha(
+														theme.palette.primary.main,
+														0.03
+													),
+													"&.Mui-expanded": {
+														backgroundColor: alpha(
+															theme.palette.primary.main,
+															0.08
+														),
+													},
+												}}>
+												<Typography
+													variant='h6'
+													sx={{
+														fontWeight: 600,
+														fontSize: { xs: "1rem", md: "1.25rem" },
+													}}>
+													How do I file a claim?
+												</Typography>
 											</AccordionSummary>
 											<AccordionDetails>
-												<Typography paragraph>
+												<Typography
+													paragraph
+													sx={{
+														fontSize: { xs: "0.9rem", md: "1rem" },
+														lineHeight: 1.6,
+													}}>
 													Follow these steps to file a claim:
 												</Typography>
 												<ol>
 													<li>
-														<Typography paragraph>
-															<strong>Notify Us:</strong> Inform our claims department as soon as possible after the accident.
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															<strong>Notify Us:</strong> Inform our claims
+															department as soon as possible after the accident.
 														</Typography>
 													</li>
 													<li>
-														<Typography paragraph>
-															<strong>Complete the Claim Form:</strong> Fill out the claim form available on our website or provided by our customer service.
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															<strong>Complete the Claim Form:</strong> Fill out
+															the claim form available on our website or
+															provided by our customer service.
 														</Typography>
 													</li>
 													<li>
-														<Typography paragraph>
-															<strong>Submit Documentation:</strong> Provide all necessary documents, including:
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															<strong>Submit Documentation:</strong> Provide all
+															necessary documents, including:
 															<ul>
 																<li>Medical reports and bills</li>
-																<li>Police FIR (in case of serious accidents)</li>
+																<li>
+																	Police FIR (in case of serious accidents)
+																</li>
 																<li>Identity proof</li>
 																<li>Original policy document</li>
 																<li>Other relevant evidence</li>
@@ -2155,13 +1832,25 @@ const PersonalAccidentPage = () => {
 														</Typography>
 													</li>
 													<li>
-														<Typography paragraph>
-															<strong>Assessment:</strong> Our claims team will assess your claim based on the provided documents.
+														<Typography
+															paragraph
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															<strong>Assessment:</strong> Our claims team will
+															assess your claim based on the provided documents.
 														</Typography>
 													</li>
 													<li>
-														<Typography>
-															<strong>Settlement:</strong> Once approved, the claim amount will be transferred to your registered bank account.
+														<Typography
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.95rem" },
+																lineHeight: 1.6,
+															}}>
+															<strong>Settlement:</strong> Once approved, the
+															claim amount will be transferred to your
+															registered bank account.
 														</Typography>
 													</li>
 												</ol>
@@ -2171,43 +1860,79 @@ const PersonalAccidentPage = () => {
 										<Accordion>
 											<AccordionSummary
 												expandIcon={<ExpandMoreIcon />}
-												aria-controls="panel7a-content"
-												id="panel7a-header"
-												sx={{ 
-													backgroundColor: alpha(theme.palette.primary.main, 0.03),
-													'&.Mui-expanded': {
-														backgroundColor: alpha(theme.palette.primary.main, 0.08),
-													}
-												}}
-											>
-												<Typography variant="h6" sx={{ fontWeight: 600 }}>Can I get tax benefits on my Personal Accident Insurance premium?</Typography>
+												aria-controls='panel7a-content'
+												id='panel7a-header'
+												sx={{
+													backgroundColor: alpha(
+														theme.palette.primary.main,
+														0.03
+													),
+													"&.Mui-expanded": {
+														backgroundColor: alpha(
+															theme.palette.primary.main,
+															0.08
+														),
+													},
+												}}>
+												<Typography
+													variant='h6'
+													sx={{
+														fontWeight: 600,
+														fontSize: { xs: "1rem", md: "1.25rem" },
+													}}>
+													Can I get tax benefits on my Personal Accident
+													Insurance premium?
+												</Typography>
 											</AccordionSummary>
 											<AccordionDetails>
-												<Typography paragraph>
-													Yes, under Section 80D of the Income Tax Act, you can claim tax deductions for premiums paid towards Personal Accident Insurance. The exact amount of deduction may vary based on current tax laws and individual circumstances.
+												<Typography
+													paragraph
+													sx={{
+														fontSize: { xs: "0.9rem", md: "1rem" },
+														lineHeight: 1.6,
+													}}>
+													Yes, under Section 80D of the Income Tax Act, you can
+													claim tax deductions for premiums paid towards
+													Personal Accident Insurance. The exact amount of
+													deduction may vary based on current tax laws and
+													individual circumstances.
 												</Typography>
-												<Typography>
-													We recommend consulting with a tax advisor for personalized guidance on tax benefits related to your insurance premiums.
+												<Typography
+													sx={{
+														fontSize: { xs: "0.85rem", md: "0.95rem" },
+														lineHeight: 1.6,
+													}}>
+													We recommend consulting with a tax advisor for
+													personalized guidance on tax benefits related to your
+													insurance premiums.
 												</Typography>
 											</AccordionDetails>
 										</Accordion>
 									</Box>
 
-									<Box sx={{ mt: 5, textAlign: 'center' }}>
-										<Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+									<Box sx={{ mt: 5, textAlign: "center" }}>
+										<Typography
+											variant='h6'
+											gutterBottom
+											sx={{
+												fontWeight: 600,
+												fontSize: { xs: "1.1rem", md: "1.25rem" },
+											}}>
 											Still have questions?
 										</Typography>
-										<Typography paragraph>
-											Our customer support team is available to assist you with any questions or concerns.
+										<Typography
+											paragraph
+											sx={{ fontSize: { xs: "0.9rem", md: "1rem" } }}>
+											Our customer support team is available to assist you with
+											any questions or concerns.
 										</Typography>
-										<Button 
-											variant="contained" 
-											color="primary"
+										<Button
+											variant='contained'
+											color='primary'
 											endIcon={<ContactSupportIcon />}
-											size="large"
+											size='large'
 											sx={{ mt: 2 }}
-											onClick={() => scrollToCalculator()}
-										>
+											onClick={() => scrollToCalculator()}>
 											Contact Us
 										</Button>
 									</Box>
@@ -2241,13 +1966,18 @@ const PersonalAccidentPage = () => {
 
 								<Grid
 									container
-									spacing={3}
+									spacing={{ xs: 4, md: 3 }}
 									alignItems='center'
 									sx={{ position: "relative", zIndex: 2 }}>
 									<Grid item xs={12} md={8}>
 										<Typography
 											variant='h3'
-											sx={{ mb: 2, fontWeight: 700, color: "white" }}>
+											sx={{
+												mb: 2,
+												fontWeight: 700,
+												color: "white",
+												fontSize: { xs: "1.6rem", md: "2rem" },
+											}}>
 											Secure Your Family's Future Today
 										</Typography>
 										<Typography
@@ -2257,6 +1987,7 @@ const PersonalAccidentPage = () => {
 												fontWeight: 400,
 												opacity: 0.9,
 												color: "white",
+												fontSize: { xs: "1.1rem", md: "1.3rem" },
 											}}>
 											Get comprehensive vehicle insurance coverage at affordable
 											rates starting from just ₹500 per month.
@@ -2325,7 +2056,7 @@ const PersonalAccidentPage = () => {
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -2345,8 +2076,13 @@ const PersonalAccidentPage = () => {
 									<Typography
 										variant='body1'
 										paragraph
-										sx={{ fontSize: "1.05rem", lineHeight: 1.7, mb: 4 }}>
-										To qualify for our Personal Accident Insurance policy, applicants must meet the following eligibility requirements:
+										sx={{
+											fontSize: { xs: "0.95rem", md: "1.05rem" },
+											lineHeight: 1.7,
+											mb: 4,
+										}}>
+										To qualify for our Personal Accident Insurance policy,
+										applicants must meet the following eligibility requirements:
 									</Typography>
 
 									<Grid container spacing={4}>
@@ -2355,20 +2091,24 @@ const PersonalAccidentPage = () => {
 												elevation={0}
 												sx={{
 													p: 3,
-													height: '100%',
-													backgroundColor: alpha(theme.palette.primary.main, 0.03),
-													border: '1px solid',
+													height: "100%",
+													backgroundColor: alpha(
+														theme.palette.primary.main,
+														0.03
+													),
+													border: "1px solid",
 													borderColor: alpha(theme.palette.primary.main, 0.12),
-													borderRadius: '12px',
+													borderRadius: "12px",
 												}}>
 												<Typography
 													variant='h6'
 													sx={{
 														mb: 2,
 														fontWeight: 600,
-														color: 'primary.main',
-														display: 'flex',
-														alignItems: 'center',
+														color: "primary.main",
+														display: "flex",
+														alignItems: "center",
+														fontSize: { xs: "1.1rem", md: "1.25rem" },
 													}}>
 													<PersonIcon sx={{ mr: 1 }} /> Basic Requirements
 												</Typography>
@@ -2376,63 +2116,67 @@ const PersonalAccidentPage = () => {
 												<List>
 													<ListItem>
 														<ListItemIcon>
-															<CheckCircleIcon color="success" />
+															<CheckCircleIcon color='success' />
 														</ListItemIcon>
-														<ListItemText 
-															primary="Age" 
-															secondary="Applicants must be between 18 and 65 years of age at the time of policy issuance." 
+														<ListItemText
+															primary='Age'
+															secondary='Applicants must be between 18 and 65 years of age at the time of policy issuance.'
 														/>
 													</ListItem>
 													<ListItem>
 														<ListItemIcon>
-															<CheckCircleIcon color="success" />
+															<CheckCircleIcon color='success' />
 														</ListItemIcon>
-														<ListItemText 
-															primary="Nationality" 
-															secondary="Indian residents with a valid identity and address proof." 
+														<ListItemText
+															primary='Nationality'
+															secondary='Indian residents with a valid identity and address proof.'
 														/>
 													</ListItem>
 													<ListItem>
 														<ListItemIcon>
-															<CheckCircleIcon color="success" />
+															<CheckCircleIcon color='success' />
 														</ListItemIcon>
-														<ListItemText 
-															primary="Documentation" 
-															secondary="Valid identity proof (Aadhaar, PAN, Passport) and address proof (Utility bills, Bank statements, etc.)." 
+														<ListItemText
+															primary='Documentation'
+															secondary='Valid identity proof (Aadhaar, PAN, Passport) and address proof (Utility bills, Bank statements, etc.).'
 														/>
 													</ListItem>
 													<ListItem>
 														<ListItemIcon>
-															<CheckCircleIcon color="success" />
+															<CheckCircleIcon color='success' />
 														</ListItemIcon>
-														<ListItemText 
-															primary="Health Status" 
-															secondary="No pre-existing conditions that significantly increase accident risk (evaluated case by case)." 
+														<ListItemText
+															primary='Health Status'
+															secondary='No pre-existing conditions that significantly increase accident risk (evaluated case by case).'
 														/>
 													</ListItem>
 												</List>
 											</Paper>
 										</Grid>
-										
+
 										<Grid item xs={12} md={6}>
 											<Paper
 												elevation={0}
 												sx={{
 													p: 3,
-													height: '100%',
-													backgroundColor: alpha(theme.palette.primary.main, 0.03),
-													border: '1px solid',
+													height: "100%",
+													backgroundColor: alpha(
+														theme.palette.primary.main,
+														0.03
+													),
+													border: "1px solid",
 													borderColor: alpha(theme.palette.primary.main, 0.12),
-													borderRadius: '12px',
+													borderRadius: "12px",
 												}}>
 												<Typography
 													variant='h6'
 													sx={{
 														mb: 2,
 														fontWeight: 600,
-														color: 'primary.main',
-														display: 'flex',
-														alignItems: 'center',
+														color: "primary.main",
+														display: "flex",
+														alignItems: "center",
+														fontSize: { xs: "1.1rem", md: "1.25rem" },
 													}}>
 													<InfoIcon sx={{ mr: 1 }} /> Additional Considerations
 												</Typography>
@@ -2440,38 +2184,38 @@ const PersonalAccidentPage = () => {
 												<List>
 													<ListItem>
 														<ListItemIcon>
-															<InfoIcon color="info" />
+															<InfoIcon color='info' />
 														</ListItemIcon>
-														<ListItemText 
-															primary="Occupation Risk" 
-															secondary="Premium rates may vary based on occupational hazard levels. High-risk occupations may require additional premiums." 
+														<ListItemText
+															primary='Occupation Risk'
+															secondary='Premium rates may vary based on occupational hazard levels. High-risk occupations may require additional premiums.'
 														/>
 													</ListItem>
 													<ListItem>
 														<ListItemIcon>
-															<InfoIcon color="info" />
+															<InfoIcon color='info' />
 														</ListItemIcon>
-														<ListItemText 
-															primary="Lifestyle Factors" 
-															secondary="Adventure sports enthusiasts or individuals with high-risk hobbies may need specialized coverage." 
+														<ListItemText
+															primary='Lifestyle Factors'
+															secondary='Adventure sports enthusiasts or individuals with high-risk hobbies may need specialized coverage.'
 														/>
 													</ListItem>
 													<ListItem>
 														<ListItemIcon>
-															<InfoIcon color="info" />
+															<InfoIcon color='info' />
 														</ListItemIcon>
-														<ListItemText 
-															primary="Coverage Extensions" 
-															secondary="Family members can be included with additional premium based on family size and ages." 
+														<ListItemText
+															primary='Coverage Extensions'
+															secondary='Family members can be included with additional premium based on family size and ages.'
 														/>
 													</ListItem>
 													<ListItem>
 														<ListItemIcon>
-															<InfoIcon color="info" />
+															<InfoIcon color='info' />
 														</ListItemIcon>
-														<ListItemText 
-															primary="Policy Term" 
-															secondary="Available for 1, 3, or 5 years with discounts on longer-term policies." 
+														<ListItemText
+															primary='Policy Term'
+															secondary='Available for 1, 3, or 5 years with discounts on longer-term policies.'
 														/>
 													</ListItem>
 												</List>
@@ -2484,8 +2228,9 @@ const PersonalAccidentPage = () => {
 											variant='h6'
 											sx={{
 												fontWeight: 600,
-												color: 'primary.main',
+												color: "primary.main",
 												mb: 4,
+												fontSize: { xs: "1.1rem", md: "1.25rem" },
 											}}>
 											How to Apply
 										</Typography>
@@ -2493,94 +2238,124 @@ const PersonalAccidentPage = () => {
 											elevation={0}
 											sx={{
 												p: 4,
-												backgroundColor: alpha(theme.palette.success.main, 0.05),
-												border: '1px solid',
+												backgroundColor: alpha(
+													theme.palette.success.main,
+													0.05
+												),
+												border: "1px solid",
 												borderColor: alpha(theme.palette.success.main, 0.2),
-												borderRadius: '12px',
+												borderRadius: "12px",
 											}}>
-											<Timeline position="alternate" sx={{ 
-												'& .MuiTimelineItem-root::before': {
-													flex: 0,
-													padding: 0
-												}
-											}}>
+											<Timeline
+												position='alternate'
+												sx={{
+													"& .MuiTimelineItem-root::before": {
+														flex: 0,
+														padding: 0,
+													},
+													mb: { xs: 5, md: 2 },
+												}}>
 												<TimelineItem>
 													<TimelineSeparator>
-														<TimelineDot color="primary" sx={{ 
-															width: 40, 
-															height: 40, 
-															display: 'flex', 
-															justifyContent: 'center', 
-															alignItems: 'center' 
-														}}>
+														<TimelineDot
+															color='primary'
+															sx={{
+																width: 40,
+																height: 40,
+																display: "flex",
+																justifyContent: "center",
+																alignItems: "center",
+															}}>
 															<DescriptionIcon />
 														</TimelineDot>
 														<TimelineConnector />
 													</TimelineSeparator>
-													<TimelineContent sx={{ py: '12px', px: 2 }}>
-														<Typography variant="h6" component="span">
+													<TimelineContent
+														sx={{ py: "12px", px: { xs: 1, md: 2 } }}>
+														<Typography
+															variant='h6'
+															component='span'
+															sx={{ fontSize: { xs: "1rem", md: "1.1rem" } }}>
 															Complete Application
 														</Typography>
-														<Typography>Fill the online application form with your personal details</Typography>
+														<Typography
+															sx={{
+																fontSize: { xs: "0.85rem", md: "0.9rem" },
+															}}>
+															Fill the online application form with your
+															personal details
+														</Typography>
 													</TimelineContent>
 												</TimelineItem>
 												<TimelineItem>
 													<TimelineSeparator>
-														<TimelineDot color="primary" sx={{ 
-															width: 40, 
-															height: 40, 
-															display: 'flex', 
-															justifyContent: 'center', 
-															alignItems: 'center' 
-														}}>
+														<TimelineDot
+															color='primary'
+															sx={{
+																width: 40,
+																height: 40,
+																display: "flex",
+																justifyContent: "center",
+																alignItems: "center",
+															}}>
 															<AttachFileIcon />
 														</TimelineDot>
 														<TimelineConnector />
 													</TimelineSeparator>
-													<TimelineContent sx={{ py: '12px', px: 2 }}>
-														<Typography variant="h6" component="span">
+													<TimelineContent sx={{ py: "12px", px: 2 }}>
+														<Typography variant='h6' component='span'>
 															Submit Documents
 														</Typography>
-														<Typography>Upload identity and address proof documents</Typography>
+														<Typography>
+															Upload identity and address proof documents
+														</Typography>
 													</TimelineContent>
 												</TimelineItem>
 												<TimelineItem>
 													<TimelineSeparator>
-														<TimelineDot color="primary" sx={{ 
-															width: 40, 
-															height: 40, 
-															display: 'flex', 
-															justifyContent: 'center', 
-															alignItems: 'center' 
-														}}>
+														<TimelineDot
+															color='primary'
+															sx={{
+																width: 40,
+																height: 40,
+																display: "flex",
+																justifyContent: "center",
+																alignItems: "center",
+															}}>
 															<PaymentIcon />
 														</TimelineDot>
 														<TimelineConnector />
 													</TimelineSeparator>
-													<TimelineContent sx={{ py: '12px', px: 2 }}>
-														<Typography variant="h6" component="span">
+													<TimelineContent sx={{ py: "12px", px: 2 }}>
+														<Typography variant='h6' component='span'>
 															Premium Payment
 														</Typography>
-														<Typography>Pay the premium through our secure payment gateway</Typography>
+														<Typography>
+															Pay the premium through our secure payment gateway
+														</Typography>
 													</TimelineContent>
 												</TimelineItem>
 												<TimelineItem>
 													<TimelineSeparator>
-														<TimelineDot color="primary" sx={{ 
-															width: 40, 
-															height: 40, 
-															display: 'flex', 
-															justifyContent: 'center', 
-															alignItems: 'center' 
-														}}>
+														<TimelineDot
+															color='primary'
+															sx={{
+																width: 40,
+																height: 40,
+																display: "flex",
+																justifyContent: "center",
+																alignItems: "center",
+															}}>
 															<DoneAllIcon />
 														</TimelineDot>
 													</TimelineSeparator>
-													<TimelineContent sx={{ py: '12px', px: 2 }}>
-														<Typography variant="h6" component="span">
+													<TimelineContent sx={{ py: "12px", px: 2 }}>
+														<Typography variant='h6' component='span'>
 															Policy Issuance
 														</Typography>
-														<Typography>Receive your policy document via email and SMS</Typography>
+														<Typography>
+															Receive your policy document via email and SMS
+														</Typography>
 													</TimelineContent>
 												</TimelineItem>
 											</Timeline>

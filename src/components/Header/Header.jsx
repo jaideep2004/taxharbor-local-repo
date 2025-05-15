@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "./header.css";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import DropDownMenu, { DropdownContext } from "./DropDownMenu";
-import CalculatorDropdown, { CalcDropdownContext } from "./CalculatorDropdown";
+import DropDownMenu, { DropdownContext, MobileDrawerContext as ServicesMobileDrawerContext } from "./DropDownMenu";
+import ResourcesDropdown, { CalcDropdownContext, MobileDrawerContext as ResourcesMobileDrawerContext } from "./ResourcesDropdown";
 import {
 	AppBar,
 	Box,
@@ -23,6 +23,7 @@ import {
 	Divider,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import CloseIcon from "@mui/icons-material/Close";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -55,14 +56,14 @@ const Header = () => {
 	const location = useLocation();
 	const navigate = useNavigate();
 	const isHomePage = location.pathname === "/";
-	
+
 	// Safely access customer auth context with fallback values
 	let isLoggedIn = false;
 	let user = null;
 	let logout = () => {};
 	let messages = [];
 	let unreadMessages = 0;
-	
+
 	try {
 		const customerAuth = useCustomerAuth();
 		isLoggedIn = customerAuth?.isLoggedIn || false;
@@ -70,15 +71,20 @@ const Header = () => {
 		logout = customerAuth?.logout || (() => {});
 		messages = customerAuth?.messages || [];
 		// Count only unread messages that were not sent by the customer
-		unreadMessages = messages ? messages.filter(msg => 
-			!msg.isRead && 
-			(msg.senderRole !== 'customer' || msg.sender !== user?.name)
-		).length : 0;
+		unreadMessages = messages
+			? messages.filter(
+					(msg) =>
+						!msg.isRead &&
+						(msg.senderRole !== "customer" || msg.sender !== user?.name)
+			  ).length
+			: 0;
 	} catch (error) {
 		console.log("Not in customer context");
 	}
-	
-	const isCustomerDashboard = location.pathname.includes("/customers/dashboard");
+
+	const isCustomerDashboard = location.pathname.includes(
+		"/customers/dashboard"
+	);
 	let dropdownTimeout;
 	let calcDropdownTimeout;
 
@@ -131,116 +137,181 @@ const Header = () => {
 	const handleLogout = () => {
 		logout();
 		handleUserMenuClose();
-		navigate('/');
+		navigate("/");
 	};
 
 	const drawerContent = (
 		<Box
 			sx={{
-				width: { xs: "80vw", sm: "50vw", md: "400px" },
+				width: { xs: "100%", sm: "50vw", md: "400px" },
 				bgcolor: "var(--primary)",
 				height: "100%",
 				color: "var(--secondary)",
+				display: 'flex',
+				flexDirection: 'column',
 			}}>
-			<Box 
-				sx={{ 
-					display: 'flex', 
-					alignItems: 'center', 
-					padding: '16px', 
-					borderBottom: '1px solid rgba(255,255,255,0.1)' 
-				}}
-			>
+			<Box
+				sx={{
+					display: "flex",
+					alignItems: "center",
+					padding: "16px",
+					borderBottom: "1px solid rgba(255,255,255,0.1)",
+				}}>
 				<img
 					src='/images/newlogofinshelter.png'
 					alt='FinShelter Logo'
 					style={{ width: "40px", marginRight: "10px" }}
 				/>
-				<Box sx={{ color: "white", fontFamily: "Agbalumo", fontSize: "18px" }}>
+				<Box sx={{ color: "white", fontFamily: "Agbalumo", fontSize: "23px" }}>
 					FinShelter
 				</Box>
 			</Box>
-			<List>
+			<List sx={{ overflow: 'auto', flexGrow: 1 }}>
 				<ListItem
 					component={NavLink}
 					to='/'
-					onClick={() => setMobileOpen(false)}>
+					onClick={() => setMobileOpen(false)}
+					sx={{
+						color: 'white',
+						'&.active': {
+							backgroundColor: 'rgba(255,255,255,0.1)',
+							borderLeft: '3px solid var(--accent)',
+						}
+					}}>
 					<ListItemText primary='Home' style={{ color: "white" }} />
 				</ListItem>
-				<ListItem onClick={() => setIsDropdownVisible(!isDropdownVisible)}>
+				
+				<ListItem 
+					onClick={() => setIsDropdownVisible(!isDropdownVisible)}
+					sx={{ color: 'white' }}>
 					<ListItemText primary='Services' style={{ color: "white" }} />
-					<ExpandMore />
+					<ExpandMore sx={{ 
+						transform: isDropdownVisible ? 'rotate(180deg)' : 'rotate(0deg)', 
+						transition: 'transform 0.3s ease'
+					}} />
 				</ListItem>
-				<Collapse in={isDropdownVisible} sx={{ position: 'relative', zIndex: isDropdownVisible ? 20 : 1 }}>
+				<Collapse
+					in={isDropdownVisible}
+					sx={{ position: "relative", zIndex: isDropdownVisible ? 20 : 1 }}>
 					<DropdownContext.Provider value={setIsDropdownVisible}>
-						<DropDownMenu />
+						<ServicesMobileDrawerContext.Provider value={setMobileOpen}>
+							<Box sx={{ py: 1 }}>
+								<DropDownMenu />
+							</Box>
+						</ServicesMobileDrawerContext.Provider>
 					</DropdownContext.Provider>
 				</Collapse>
-				<ListItem
-					onClick={() => setIsCalcDropdownVisible(!isCalcDropdownVisible)}>
+				
+				<ListItem 
+					onClick={() => setIsCalcDropdownVisible(!isCalcDropdownVisible)}
+					sx={{ color: 'white' }}>
 					<ListItemText primary='Resources' style={{ color: "white" }} />
-					<ExpandMore />
+					<ExpandMore sx={{ 
+						transform: isCalcDropdownVisible ? 'rotate(180deg)' : 'rotate(0deg)', 
+						transition: 'transform 0.3s ease'
+					}} />
 				</ListItem>
-				<Collapse in={isCalcDropdownVisible} sx={{ position: 'relative', zIndex: isCalcDropdownVisible ? 20 : 1 }}>
+				<Collapse
+					in={isCalcDropdownVisible}
+					sx={{ position: "relative", zIndex: isCalcDropdownVisible ? 20 : 1 }}>
 					<CalcDropdownContext.Provider value={setIsCalcDropdownVisible}>
-						<CalculatorDropdown />
+						<ResourcesMobileDrawerContext.Provider value={setMobileOpen}>
+							<Box sx={{ py: 1 }}>
+								<ResourcesDropdown />
+							</Box>
+						</ResourcesMobileDrawerContext.Provider>
 					</CalcDropdownContext.Provider>
 				</Collapse>
 
 				<ListItem
 					component={NavLink}
-					to='/our-story'
-					onClick={() => setMobileOpen(false)}>
-					<ListItemText primary='Our Story' style={{ color: "white" }} />
+					to='/contact'
+					onClick={() => setMobileOpen(false)}
+					sx={{
+						color: 'white',
+						'&.active': {
+							backgroundColor: 'rgba(255,255,255,0.1)',
+							borderLeft: '3px solid var(--accent)',
+						}
+					}}>
+					<ListItemText primary='Contact Us' style={{ color: "white" }} />
 				</ListItem>
 			</List>
-			{isLoggedIn ? (
-				<Box sx={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-					<Box sx={{ display: 'flex', alignItems: 'center', color: 'white', mb: 1 }}>
-						<Badge badgeContent={unreadMessages} color="error">
-							<Avatar sx={{ bgcolor: 'white', color: 'var(--primary)', mr: 1 }}>
-								{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
-							</Avatar>
-						</Badge>
-						<Typography sx={{ color: 'white' }}>
-							{user?.name || 'User'}
-						</Typography>
+			
+			<Box sx={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+				{isLoggedIn ? (
+					<Box
+						sx={{
+							padding: "16px",
+							display: "flex",
+							flexDirection: "column",
+							alignItems: "center",
+						}}>
+						<Box
+							sx={{
+								display: "flex",
+								alignItems: "center",
+								color: "white",
+								mb: 1,
+							}}>
+							<Badge badgeContent={unreadMessages} color='error'>
+								<Avatar sx={{ bgcolor: "white", color: "var(--primary)", mr: 1 }}>
+									{user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+								</Avatar>
+							</Badge>
+							<Typography sx={{ color: "white" }}>
+								{user?.name || "User"}
+							</Typography>
+						</Box>
+						{unreadMessages > 0 && (
+							<Typography
+								variant='body2'
+								sx={{
+									color: "white",
+									mb: 1,
+									display: "flex",
+									alignItems: "center",
+								}}>
+								<NotificationsIcon
+									sx={{ mr: 1, color: "error.main" }}
+									fontSize='small'
+								/>
+								{unreadMessages} new message{unreadMessages !== 1 ? "s" : ""}
+							</Typography>
+						)}
+						<Button
+							component={NavLink}
+							to={
+								user?.email
+									? `/customers/dashboard/${user.email}`
+									: "/customers/login"
+							}
+							variant='contained'
+							color='primary'
+							startIcon={<AccountCircleIcon />}
+							onClick={() => setMobileOpen(false)}
+							sx={{ width: "100%", mb: 1 }}>
+							Dashboard
+						</Button>
+						<Button
+							variant='contained'
+							color='warning'
+							startIcon={<LogoutIcon />}
+							onClick={handleLogout}
+							sx={{ width: "100%" }}>
+							Logout
+						</Button>
 					</Box>
-					{unreadMessages > 0 && (
-						<Typography variant="body2" sx={{ color: 'white', mb: 1, display: 'flex', alignItems: 'center' }}>
-							<NotificationsIcon sx={{ mr: 1, color: 'error.main' }} fontSize="small" />
-							{unreadMessages} new message{unreadMessages !== 1 ? 's' : ''}
-						</Typography>
-					)}
-					<Button 
-						component={NavLink}
-						to={user?.email ? `/customers/dashboard/${user.email}` : '/customers/login'}
-						variant="contained" 
-						color="primary" 
-						startIcon={<AccountCircleIcon />}
-						onClick={() => setMobileOpen(false)}
-						sx={{ width: '80%', mb: 1 }}
-					>
-						Dashboard
-					</Button>
-					<Button 
-						variant="contained" 
-						color="warning" 
-						startIcon={<LogoutIcon />}
-						onClick={handleLogout}
-						sx={{ width: '80%' }}
-					>
-						Logout
-					</Button>
-				</Box>
-			) : (
-				<NavLink to='/register' style={{ width: "85%" }}>
-					<div className='tax-header-btn'>
-						<button className='tax5-btn'>
-							Register Today <i className='fa-solid fa-arrow-right'></i>
-						</button>
-					</div>
-				</NavLink>
-			)}
+				) : (
+					<NavLink to='/register' style={{ width: "100%", display: 'block' }}>
+						<div className='tax-header-btn'>
+							<button className='tax5-btn'>
+								Login / SignUp <i className='fa-solid fa-arrow-right'></i>
+							</button>
+						</div>
+					</NavLink>
+				)}
+			</Box>
 		</Box>
 	);
 
@@ -261,20 +332,27 @@ const Header = () => {
 					<Box
 						component={NavLink}
 						to='/'
-						sx={{ color: "var(--secondary)", textDecoration: "none", display: "flex", alignItems: "center" }}>
+						sx={{
+							color: "var(--secondary)",
+							textDecoration: "none",
+							display: "flex",
+							alignItems: "center",
+							fontFamily: "Agbalumo",
+						}}>
 						<img
 							src='/images/newlogofinshelter.png'
 							alt='FinShelter Logo'
 							style={{ width: "40px", marginRight: "10px" }}
 						/>
-						FINSHELTER
+						<span style={{ fontSize: "23px" }}>FinShelter</span>
+						
 					</Box>
 					<IconButton
 						color='inherit'
 						aria-label='open drawer'
 						edge='end'
 						onClick={() => setMobileOpen(!mobileOpen)}>
-						<MenuIcon />
+						{mobileOpen ? <CloseIcon /> : <MenuIcon />}
 					</IconButton>
 				</Box>
 			</StyledAppBar>
@@ -285,8 +363,18 @@ const Header = () => {
 				anchor='right'
 				open={mobileOpen}
 				onClose={() => setMobileOpen(false)}
-				ModalProps={{ keepMounted: true }}>
-				{drawerContent}
+				ModalProps={{ keepMounted: true }}
+				PaperProps={{
+					sx: {
+						width: '100%',
+						maxWidth: { sm: '50vw', md: '400px' }
+					}
+				}}>
+				<ServicesMobileDrawerContext.Provider value={setMobileOpen}>
+					<ResourcesMobileDrawerContext.Provider value={setMobileOpen}>
+						{drawerContent}
+					</ResourcesMobileDrawerContext.Provider>
+				</ServicesMobileDrawerContext.Provider>
 			</Drawer>
 
 			{/* Desktop Header */}
@@ -346,17 +434,15 @@ const Header = () => {
 									}}>
 									Home
 								</NavLink>
-								<NavLink
-									to='#'
-									className={({ isActive }) =>
-										`nav-link ${isActive ? "active" : ""}`
-									}
+								<div
+									className='nav-link dropdown-trigger'
 									style={{
 										color: isHomePage
 											? isScrolled
 												? "var(--primary)"
 												: "var(--secondary)"
 											: "var(--primary)",
+										cursor: "pointer",
 									}}
 									onMouseEnter={handleMouseEnter}
 									onMouseLeave={handleMouseLeave}>
@@ -367,22 +453,24 @@ const Header = () => {
 											onMouseEnter={() => clearTimeout(dropdownTimeout)}
 											onMouseLeave={handleMouseLeave}>
 											<DropdownContext.Provider value={setIsDropdownVisible}>
-												<DropDownMenu />
+												<ServicesMobileDrawerContext.Provider value={setMobileOpen}>
+													<Box sx={{ py: 1 }}>
+														<DropDownMenu />
+													</Box>
+												</ServicesMobileDrawerContext.Provider>
 											</DropdownContext.Provider>
 										</div>
 									)}
-								</NavLink>
-								<NavLink
-									to='/resources'
-									className={({ isActive }) =>
-										`nav-link ${isActive ? "active" : ""}`
-									}
+								</div>
+								<div
+									className='nav-link dropdown-trigger'
 									style={{
 										color: isHomePage
 											? isScrolled
 												? "var(--primary)"
 												: "var(--secondary)"
 											: "var(--primary)",
+										cursor: "pointer",
 									}}
 									onMouseEnter={handleCalcMouseEnter}
 									onMouseLeave={handleCalcMouseLeave}>
@@ -392,12 +480,17 @@ const Header = () => {
 										<div
 											onMouseEnter={() => clearTimeout(calcDropdownTimeout)}
 											onMouseLeave={handleCalcMouseLeave}>
-											<CalcDropdownContext.Provider value={setIsCalcDropdownVisible}>
-												<CalculatorDropdown />
+											<CalcDropdownContext.Provider
+												value={setIsCalcDropdownVisible}>
+												<ResourcesMobileDrawerContext.Provider value={setMobileOpen}>
+													<Box sx={{ py: 1 }}>
+														<ResourcesDropdown />
+													</Box>
+												</ResourcesMobileDrawerContext.Provider>
 											</CalcDropdownContext.Provider>
 										</div>
 									)}
-								</NavLink>
+								</div>
 								<NavLink
 									to='/contact'
 									className={({ isActive }) =>
@@ -416,26 +509,31 @@ const Header = () => {
 						</div>
 
 						{isLoggedIn ? (
-							<Box sx={{ display: 'flex', alignItems: 'center' }}>
-								<IconButton 
+							<Box sx={{ display: "flex", alignItems: "center" }}>
+								<IconButton
 									onClick={handleUserClick}
-									sx={{ 
-										border: '2px solid',
-										borderColor: isHomePage && !isScrolled ? 'white' : 'var(--primary)',
-										marginRight: '8px',
-										padding: '8px'
-									}}
-								>
-									<Badge badgeContent={unreadMessages} color="error">
-										<Avatar 
-											sx={{ 
-												bgcolor: isHomePage && !isScrolled ? 'white' : 'var(--primary)',
-												color: isHomePage && !isScrolled ? 'var(--primary)' : 'white',
-												width: 32, 
-												height: 32 
-											}}
-										>
-											{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+									sx={{
+										border: "2px solid",
+										borderColor:
+											isHomePage && !isScrolled ? "white" : "var(--primary)",
+										marginRight: "8px",
+										padding: "8px",
+									}}>
+									<Badge badgeContent={unreadMessages} color='error'>
+										<Avatar
+											sx={{
+												bgcolor:
+													isHomePage && !isScrolled
+														? "white"
+														: "var(--primary)",
+												color:
+													isHomePage && !isScrolled
+														? "var(--primary)"
+														: "white",
+												width: 32,
+												height: 32,
+											}}>
+											{user?.name ? user.name.charAt(0).toUpperCase() : "U"}
 										</Avatar>
 									</Badge>
 								</IconButton>
@@ -444,53 +542,64 @@ const Header = () => {
 									anchorEl={anchorEl}
 									onClose={handleUserMenuClose}
 									anchorOrigin={{
-										vertical: 'bottom',
-										horizontal: 'right',
+										vertical: "bottom",
+										horizontal: "right",
 									}}
 									transformOrigin={{
-										vertical: 'top',
-										horizontal: 'right',
-									}}
-								>
+										vertical: "top",
+										horizontal: "right",
+									}}>
 									<Box sx={{ p: 2, width: 250 }}>
-										<Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-											<Avatar sx={{ bgcolor: 'var(--primary)', mr: 1 }}>
-												{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+										<Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+											<Avatar sx={{ bgcolor: "var(--primary)", mr: 1 }}>
+												{user?.name ? user.name.charAt(0).toUpperCase() : "U"}
 											</Avatar>
-											<Typography variant="body1" fontWeight="bold">
-												{user?.name || 'User'}
+											<Typography variant='body1' fontWeight='bold'>
+												{user?.name || "User"}
 											</Typography>
 										</Box>
-										<Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-											{user?.email || ''}
+										<Typography
+											variant='body2'
+											color='textSecondary'
+											sx={{ mb: 2 }}>
+											{user?.email || ""}
 										</Typography>
-										
+
 										<Divider sx={{ my: 1 }} />
-										
+
 										{unreadMessages > 0 && (
-											<Typography variant="body2" sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
-												<NotificationsIcon sx={{ mr: 1, color: 'error.main' }} fontSize="small" />
-												You have {unreadMessages} new message{unreadMessages !== 1 ? 's' : ''}
+											<Typography
+												variant='body2'
+												sx={{ mb: 1, display: "flex", alignItems: "center" }}>
+												<NotificationsIcon
+													sx={{ mr: 1, color: "error.main" }}
+													fontSize='small'
+												/>
+												You have {unreadMessages} new message
+												{unreadMessages !== 1 ? "s" : ""}
 											</Typography>
 										)}
-										
-										<Box sx={{ display: 'flex', flexDirection: 'column', mt: 1 }}>
-											<Button 
-												variant="outlined" 
+
+										<Box
+											sx={{ display: "flex", flexDirection: "column", mt: 1 }}>
+											<Button
+												variant='outlined'
 												component={NavLink}
-												to={user?.email ? `/customers/dashboard/${user.email}` : '/customers/login'} 
+												to={
+													user?.email
+														? `/customers/dashboard/${user.email}`
+														: "/customers/login"
+												}
 												startIcon={<AccountCircleIcon />}
 												sx={{ mb: 1 }}
-												onClick={handleUserMenuClose}
-											>
+												onClick={handleUserMenuClose}>
 												Dashboard
 											</Button>
-											<Button 
-												variant="contained" 
-												color="error"
+											<Button
+												variant='contained'
+												color='error'
 												startIcon={<LogoutIcon />}
-												onClick={handleLogout}
-											>
+												onClick={handleLogout}>
 												Logout
 											</Button>
 										</Box>
@@ -501,7 +610,7 @@ const Header = () => {
 							<NavLink to='/register'>
 								<div className='tax-header-btn'>
 									<button className='tax5-btn'>
-										Register Today <i className='fa-solid fa-arrow-right'></i>
+										Login / SignUp <i className='fa-solid fa-arrow-right'></i>
 									</button>
 								</div>
 							</NavLink>

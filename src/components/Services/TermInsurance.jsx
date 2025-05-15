@@ -411,15 +411,24 @@ const TermInsurancePage = () => {
 		annualPremium: 0,
 	});
 
-	// For sticky sidebar tracking with a threshold that allows smoother transition
-	const scrollTrigger = useScrollTrigger({
-		disableHysteresis: true,
-		threshold: 300,
-	});
-
 	// Service data from backend
 	const [service, setService] = useState(null);
 	const [loading, setLoading] = useState(true);
+
+	// Enhanced sticky sidebar behavior
+	const [sidebarPosition, setSidebarPosition] = useState({
+		isSticky: false,
+		shouldStop: false,
+		bottomPosition: 0,
+	});
+
+	// Store sidebar height
+	const [sidebarHeight, setSidebarHeight] = useState(0);
+
+	// Container refs for tracking positions
+	const contentRef = React.useRef(null);
+	const sidebarRef = React.useRef(null);
+	const sidebarContainerRef = React.useRef(null);
 
 	// Create refs for each section to use for smoother scrolling
 	const overviewRef = React.useRef(null);
@@ -439,6 +448,12 @@ const TermInsurancePage = () => {
 		{ id: "packages", label: "Packages", ref: packagesRef },
 		{ id: "faq", label: "FAQs", ref: faqRef },
 	];
+
+	// For sticky sidebar tracking with a threshold of 109px
+	const scrollTrigger = useScrollTrigger({
+		disableHysteresis: true,
+		threshold: 109, // Changed to 109px as specified
+	});
 
 	// Fetch service data from backend
 	useEffect(() => {
@@ -463,6 +478,81 @@ const TermInsurancePage = () => {
 		fetchServiceData();
 	}, [SERVICE_ID, showNotification]);
 
+	// Measure sidebar height after it renders
+	useEffect(() => {
+		if (sidebarRef.current) {
+			setSidebarHeight(sidebarRef.current.clientHeight);
+		}
+	}, [service]); // Re-measure when service data changes
+
+	// Enhanced scroll handler to control sidebar behavior
+	useEffect(() => {
+		const handleScroll = () => {
+			if (
+				!contentRef.current ||
+				!sidebarRef.current ||
+				!sidebarContainerRef.current
+			)
+				return;
+
+			const scrollPosition = window.scrollY;
+			const topThreshold = 109; // Specified threshold
+
+			// Get the content and sidebar boundaries
+			const contentTop =
+				contentRef.current.getBoundingClientRect().top + window.scrollY;
+			const contentBottom =
+				contentRef.current.getBoundingClientRect().bottom + window.scrollY;
+			const sidebarContainerTop = sidebarContainerRef.current.offsetTop;
+			const sidebarContainerHeight = sidebarContainerRef.current.offsetHeight;
+			const sidebarHeight = sidebarRef.current.clientHeight;
+			const windowHeight = window.innerHeight;
+
+			// Determine if sidebar should be sticky - only when content has scrolled to threshold
+			const isSticky =
+				scrollPosition > topThreshold &&
+				scrollPosition > sidebarContainerTop - topThreshold;
+
+			// Calculate where the sidebar should stop (at the bottom of the main content)
+			const stopPoint = contentBottom - sidebarHeight - 30; // 30px buffer from bottom
+
+			// Should sidebar stop following and anchor to bottom?
+			const shouldStop =
+				scrollPosition + topThreshold + sidebarHeight > contentBottom - 30;
+
+			setSidebarPosition({
+				isSticky,
+				shouldStop,
+			});
+
+			// Set active section
+			const activeSetionPos = scrollPosition + 200;
+			for (const section of sections) {
+				const element = section.ref.current;
+				if (element) {
+					const offsetTop = element.offsetTop;
+					const offsetBottom = offsetTop + element.offsetHeight;
+
+					if (activeSetionPos >= offsetTop && activeSetionPos < offsetBottom) {
+						setActiveSection(section.id);
+						break;
+					}
+				}
+			}
+		};
+
+		window.addEventListener("scroll", handleScroll);
+		handleScroll(); // Run once immediately to set initial state
+
+		// Call on window resize too
+		window.addEventListener("resize", handleScroll);
+
+		return () => {
+			window.removeEventListener("scroll", handleScroll);
+			window.removeEventListener("resize", handleScroll);
+		};
+	}, [sections, sidebarHeight]);
+
 	// Handle scrolling to section - improved for smoother scrolling
 	const scrollToSection = (sectionRef) => {
 		if (sectionRef && sectionRef.current) {
@@ -480,29 +570,6 @@ const TermInsurancePage = () => {
 			}
 		}
 	};
-
-	// Update active section based on scroll position
-	useEffect(() => {
-		const handleScroll = () => {
-			const scrollPosition = window.scrollY + 200;
-
-			for (const section of sections) {
-				const element = section.ref.current;
-				if (element) {
-					const offsetTop = element.offsetTop;
-					const offsetBottom = offsetTop + element.offsetHeight;
-
-					if (scrollPosition >= offsetTop && scrollPosition < offsetBottom) {
-						setActiveSection(section.id);
-						break;
-					}
-				}
-			}
-		};
-
-		window.addEventListener("scroll", handleScroll);
-		return () => window.removeEventListener("scroll", handleScroll);
-	}, [sections]);
 
 	const handleAccordionChange = (panel) => (event, isExpanded) => {
 		setExpanded(isExpanded ? panel : false);
@@ -605,7 +672,9 @@ const TermInsurancePage = () => {
 
 	return (
 		<ThemeProvider theme={theme}>
-			<Box sx={{ backgroundColor: "background.default", minHeight: "80vh" }}>
+			<Box
+				sx={{ backgroundColor: "background.default", minHeight: "80vh" }}
+				ref={contentRef}>
 				{/* Hero Banner */}
 				<HeroSection>
 					<Container maxWidth='xl' sx={{ mt: { xs: "80px", md: "160px" } }}>
@@ -708,9 +777,44 @@ const TermInsurancePage = () => {
 				<Container maxWidth='xl' sx={{ py: { xs: 4, md: 8 } }}>
 					<Grid container spacing={4}>
 						{/* Sticky Sidebar Navigation - Desktop Only */}
-						<Grid item xs={12} md={3} lg={2.5}>
+						<Grid item xs={12} md={3} lg={2.5} ref={sidebarContainerRef}>
 							<Hidden mdDown>
-								<StickyNav trigger={scrollTrigger}>
+								<Box
+									ref={sidebarRef}
+									sx={{
+										width: "300px",
+										transition: "all 0.3s ease",
+										position: sidebarPosition.isSticky
+											? sidebarPosition.shouldStop
+												? "absolute"
+												: "fixed"
+											: "static",
+										top:
+											sidebarPosition.isSticky && !sidebarPosition.shouldStop
+												? "130px"
+												: "auto",
+										bottom: sidebarPosition.shouldStop ? "30px" : "auto",
+										maxHeight: "80vh",
+										overflow: "auto",
+										// Custom scrollbar styles
+										"&::-webkit-scrollbar": {
+											width: "4px",
+										},
+										"&::-webkit-scrollbar-track": {
+											background: "#f1f1f1",
+											borderRadius: "10px",
+										},
+										"&::-webkit-scrollbar-thumb": {
+											background: "#95b8a2",
+											borderRadius: "10px",
+										},
+										"&::-webkit-scrollbar-thumb:hover": {
+											background: "#1b321d",
+										},
+										// Firefox scrollbar
+										scrollbarWidth: "thin",
+										scrollbarColor: "#95b8a2 #f1f1f1",
+									}}>
 									<NavList component='nav'>
 										{sections.map((section) => (
 											<NavItem
@@ -817,7 +921,7 @@ const TermInsurancePage = () => {
 											View Plans
 										</Button>
 									</Box>
-								</StickyNav>
+								</Box>
 							</Hidden>
 						</Grid>
 
@@ -837,16 +941,18 @@ const TermInsurancePage = () => {
 
 							{/* Overview Section */}
 							<section ref={overviewRef} id='overview'>
-								<SectionBox id='overview-section'>
+								<SectionBox
+									id='overview-section'
+									style={{ paddingBottom: "90px" }}>
 									<Typography
 										variant='h3'
 										color='primary'
 										gutterBottom
 										sx={{
-											mb: 4,
 											fontSize: { xs: "1.8rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
+
 											"&:after": {
 												content: '""',
 												position: "absolute",
@@ -901,14 +1007,16 @@ const TermInsurancePage = () => {
 												sx={{
 													backgroundColor: "accent.main" + "15",
 													borderRadius: "12px",
-													p: 3,
+													p: { xs: 3, md: 3 },
 													height: "100%",
 													boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
 													border: "1px solid",
 													borderColor: "accent.main" + "30",
 													position: "relative",
 													overflow: "hidden",
-													marginTop: { xs: 0, md: "-70px" },
+													marginTop: { xs: 3, md: "-70px" },
+													marginBottom: { xs: 4, md: 0 },
+													paddingBottom: { xs: 5, md: 3 },
 													"&:after": {
 														content: '""',
 														position: "absolute",
@@ -990,7 +1098,7 @@ const TermInsurancePage = () => {
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1007,7 +1115,7 @@ const TermInsurancePage = () => {
 										Why Choose Life Insurance?
 									</Typography>
 
-									<Grid container spacing={2} sx={{ mx: -1 }}>
+									<Grid container spacing={{ xs: 4, md: 2 }} sx={{ mx: -1 }}>
 										{[
 											{
 												title: "Provide Financial Stability",
@@ -1050,11 +1158,16 @@ const TermInsurancePage = () => {
 												),
 											},
 										].map((item, index) => (
-											<Grid item xs={12} sm={6} key={index} marginBottom='60px'>
+											<Grid
+												item
+												xs={12}
+												sm={6}
+												key={index}
+												sx={{ mb: { xs: "40px", md: "60px" } }}>
 												<Card
 													sx={{
 														height: "100%",
-														p: 3,
+														p: { xs: 2.5, md: 3 },
 														border: "1px solid rgba(0,0,0,0.08)",
 														boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
 														transition:
@@ -1075,13 +1188,20 @@ const TermInsurancePage = () => {
 														<Typography
 															variant='h5'
 															color='primary'
-															sx={{ fontWeight: 600 }}>
+															sx={{
+																fontWeight: 600,
+																fontSize: { xs: "1.2rem", md: "1.5rem" },
+															}}>
 															{item.title}
 														</Typography>
 													</Box>
 													<Typography
 														variant='body1'
-														sx={{ color: "text.secondary", lineHeight: 1.7 }}>
+														sx={{
+															color: "text.secondary",
+															lineHeight: 1.7,
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}>
 														{item.description}
 													</Typography>
 												</Card>
@@ -1097,6 +1217,8 @@ const TermInsurancePage = () => {
 									sx={{
 										background:
 											"linear-gradient(to right, rgba(198, 219, 206, 0.4), rgba(198, 219, 206, 0.1))",
+										p: { xs: 2.5, md: 3 },
+										mb: { xs: 5, md: 4 },
 									}}>
 									<Typography
 										variant='h3'
@@ -1104,7 +1226,7 @@ const TermInsurancePage = () => {
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1117,19 +1239,23 @@ const TermInsurancePage = () => {
 												backgroundColor: "accent.main",
 												borderRadius: "4px",
 											},
+											mb: 4,
 										}}>
 										Our Offerings
 									</Typography>
 
 									<Typography
 										variant='body1'
-										paragraph
-										sx={{ mb: 4, maxWidth: "850px" }}>
+										sx={{
+											mb: 4,
+											maxWidth: "850px",
+											fontSize: { xs: "0.95rem", md: "1rem" },
+										}}>
 										FinShelter offers a variety of life insurance policies
 										tailored to different life stages and requirements:
 									</Typography>
 
-									<Grid container spacing={3}>
+									<Grid container spacing={{ xs: 4, md: 3 }}>
 										{[
 											{
 												title: "Term Insurance",
@@ -1168,13 +1294,20 @@ const TermInsurancePage = () => {
 												icon: <SavingsIcon />,
 											},
 										].map((offering, index) => (
-											<Grid item xs={12} sm={6} md={4} key={index}>
-												<Card sx={{ height: "100%" }}>
-													<CardContent sx={{ p: 3 }}>
+											<Grid
+												item
+												xs={12}
+												sm={6}
+												md={4}
+												key={index}
+												sx={{ mb: { xs: 5, md: 0 } }}>
+												<Card sx={{ height: "100%", pb: { xs: 2, md: 0 } }}>
+													<CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
 														<Box
 															sx={{
 																mb: 2,
 																display: "flex",
+
 																alignItems: "center",
 															}}>
 															<Avatar
@@ -1188,13 +1321,20 @@ const TermInsurancePage = () => {
 															<Typography
 																variant='h5'
 																color='primary'
-																sx={{ fontWeight: 600 }}>
+																sx={{
+																	fontWeight: 600,
+																	fontSize: { xs: "1.1rem", md: "1.25rem" },
+																}}>
 																{offering.title}
 															</Typography>
 														</Box>
 														<Typography
 															variant='body2'
-															sx={{ color: "text.secondary" }}>
+															sx={{
+																color: "text.secondary",
+																fontSize: { xs: "0.85rem", md: "0.9rem" },
+																lineHeight: 1.6,
+															}}>
 															{offering.description}
 														</Typography>
 													</CardContent>
@@ -1207,14 +1347,14 @@ const TermInsurancePage = () => {
 
 							{/* Why FinShelter Section - NEW */}
 							<section id='why-finshelter'>
-								<SectionBox>
+								<SectionBox sx={{ p: { xs: 2.5, md: 3 } }}>
 									<Typography
 										variant='h3'
 										color='primary'
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1401,6 +1541,7 @@ const TermInsurancePage = () => {
 									sx={{
 										background:
 											"linear-gradient(135deg, rgba(27, 50, 29, 0.05), rgba(198, 219, 206, 0.2))",
+										p: { xs: 2.5, md: 3 },
 									}}>
 									<Typography
 										variant='h3'
@@ -1408,7 +1549,7 @@ const TermInsurancePage = () => {
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -1428,7 +1569,11 @@ const TermInsurancePage = () => {
 									<Typography
 										variant='body1'
 										paragraph
-										sx={{ mb: 4, maxWidth: "850px" }}>
+										sx={{
+											mb: 4,
+											maxWidth: "850px",
+											fontSize: { xs: "0.95rem", md: "1rem" },
+										}}>
 										We follow a simple and streamlined process to ensure you get
 										the right coverage effortlessly:
 									</Typography>
@@ -1623,31 +1768,16 @@ const TermInsurancePage = () => {
 											</Grid>
 										</Grid>
 
-										<Box
-											sx={{
-												position: "absolute",
-												bottom: -20,
-												left: "50%",
-												transform: "translateX(-50%)",
-												textAlign: "center",
-												zIndex: 2,
-												display: { xs: "block", md: "none" },
-											}}>
-											<Button
-												variant='contained'
-												color='primary'
-												size='large'
-												onClick={() => handleApplyNow(true)}
-												sx={{ px: 4 }}>
-												Contact Us Today
-											</Button>
-										</Box>
+										{/* Completely remove the overlapping absolute position button */}
 
+										{/* Add clear spacing and make button container visible on all devices */}
 										<Box
 											sx={{
-												display: { xs: "none", md: "flex" },
+												display: "flex",
 												justifyContent: "center",
-												mt: 6,
+												mt: { xs: 8, md: 6 },
+												position: "relative",
+												zIndex: 1,
 											}}>
 											<Button
 												variant='contained'
@@ -1697,9 +1827,15 @@ const TermInsurancePage = () => {
 									</Typography>
 
 									{service?.packages && service.packages.length > 0 ? (
-										<Grid container spacing={3}>
+										<Grid container spacing={{ xs: 6, md: 3 }}>
 											{service.packages.map((pkg, index) => (
-												<Grid item xs={12} sm={6} md={4} key={index}>
+												<Grid
+													item
+													xs={12}
+													sm={6}
+													md={4}
+													key={index}
+													sx={{ mb: { xs: 9, md: 0 } }}>
 													<PackageCard
 														featured={index === 1}
 														sx={{
@@ -1727,7 +1863,7 @@ const TermInsurancePage = () => {
 																	: {},
 														}}
 														onClick={() => handlePackageSelect(pkg)}>
-														<CardContent sx={{ p: 3 }}>
+														<CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
 															<Box
 																sx={{
 																	mb: 2,
@@ -1814,7 +1950,7 @@ const TermInsurancePage = () => {
 																))}
 															</List>
 														</CardContent>
-														<CardActions sx={{ px: 3, pb: 3 }}>
+														<CardActions sx={{ px: 3, pb: { xs: 4, md: 3 } }}>
 															<Button
 																variant='contained'
 																color='primary'
@@ -1828,9 +1964,15 @@ const TermInsurancePage = () => {
 											))}
 										</Grid>
 									) : (
-										<Grid container spacing={3}>
+										<Grid container spacing={{ xs: 6, md: 3 }}>
 											{packageData.map((pkg, index) => (
-												<Grid item xs={12} sm={6} md={4} key={index}>
+												<Grid
+													item
+													xs={12}
+													sm={6}
+													md={4}
+													key={index}
+													sx={{ mb: { xs: 9, md: 0 } }}>
 													<PackageCard
 														featured={pkg.featured}
 														sx={{
@@ -1855,7 +1997,7 @@ const TermInsurancePage = () => {
 																  }
 																: {},
 														}}>
-														<CardContent sx={{ p: 3 }}>
+														<CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
 															<Box
 																sx={{
 																	mb: 2,
@@ -1957,7 +2099,7 @@ const TermInsurancePage = () => {
 																))}
 															</List>
 														</CardContent>
-														<CardActions sx={{ px: 3, pb: 3 }}>
+														<CardActions sx={{ px: 3, pb: { xs: 4, md: 3 } }}>
 															<Button
 																variant='contained'
 																color='primary'
@@ -1987,14 +2129,14 @@ const TermInsurancePage = () => {
 
 							{/* FAQ Section */}
 							<section ref={faqRef} id='faq'>
-								<SectionBox id='faq-section'>
+								<SectionBox id='faq-section' sx={{ p: { xs: 2.5, md: 3 } }}>
 									<Typography
 										variant='h3'
 										color='primary'
 										gutterBottom
 										sx={{
 											mb: 4,
-											fontSize: { xs: "1.8rem", md: "2.2rem" },
+											fontSize: { xs: "1.6rem", md: "2.2rem" },
 											position: "relative",
 											display: "inline-block",
 											"&:after": {
@@ -2011,17 +2153,23 @@ const TermInsurancePage = () => {
 										Frequently Asked Questions
 									</Typography>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel1a-content'
 											id='panel1a-header'>
-											<Typography variant='h6'>
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
 												What is term insurance?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography>
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
 												Term insurance is a type of life insurance policy that
 												provides coverage for a specific period or "term." If
 												the insured person passes away during the policy term,
@@ -2033,18 +2181,24 @@ const TermInsurancePage = () => {
 										</AccordionDetails>
 									</Accordion>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel2a-content'
 											id='panel2a-header'>
-											<Typography variant='h6'>
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
 												How is term insurance different from other types of life
 												insurance?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography>
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
 												Term insurance differs from other types of life
 												insurance in several ways. It only provides death
 												benefits for a specific period without any investment or
@@ -2056,17 +2210,24 @@ const TermInsurancePage = () => {
 										</AccordionDetails>
 									</Accordion>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel3a-content'
 											id='panel3a-header'>
-											<Typography variant='h6'>
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
 												How much coverage do I need?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography paragraph>
+											<Typography
+												paragraph
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
 												The amount of coverage you need depends on several
 												factors including:
 											</Typography>
@@ -2075,28 +2236,52 @@ const TermInsurancePage = () => {
 													<ListItemIcon>
 														<ArrowRightIcon color='primary' />
 													</ListItemIcon>
-													<ListItemText primary='Your current income and expected future earnings' />
+													<ListItemText
+														primary='Your current income and expected future earnings'
+														primaryTypographyProps={{
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}
+													/>
 												</ListItem>
 												<ListItem>
 													<ListItemIcon>
 														<ArrowRightIcon color='primary' />
 													</ListItemIcon>
-													<ListItemText primary='Outstanding debts (mortgage, loans, credit cards)' />
+													<ListItemText
+														primary='Outstanding debts (mortgage, loans, credit cards)'
+														primaryTypographyProps={{
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}
+													/>
 												</ListItem>
 												<ListItem>
 													<ListItemIcon>
 														<ArrowRightIcon color='primary' />
 													</ListItemIcon>
-													<ListItemText primary='Number of dependents and their future needs (education, marriage)' />
+													<ListItemText
+														primary='Number of dependents and their future needs (education, marriage)'
+														primaryTypographyProps={{
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}
+													/>
 												</ListItem>
 												<ListItem>
 													<ListItemIcon>
 														<ArrowRightIcon color='primary' />
 													</ListItemIcon>
-													<ListItemText primary='Expected funeral and estate settlement costs' />
+													<ListItemText
+														primary='Expected funeral and estate settlement costs'
+														primaryTypographyProps={{
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}
+													/>
 												</ListItem>
 											</List>
-											<Typography>
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
 												A common rule of thumb is to have coverage that's 10-15
 												times your annual income, but our coverage calculator
 												can help you determine a more precise figure based on
@@ -2105,17 +2290,23 @@ const TermInsurancePage = () => {
 										</AccordionDetails>
 									</Accordion>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel4a-content'
 											id='panel4a-header'>
-											<Typography variant='h6'>
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
 												What happens if I outlive my term insurance policy?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography>
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
 												If you outlive your term insurance policy, the coverage
 												simply ends, and no benefits are paid out. However, many
 												term policies offer conversion options that allow you to
@@ -2128,17 +2319,23 @@ const TermInsurancePage = () => {
 										</AccordionDetails>
 									</Accordion>
 
-									<Accordion>
+									<Accordion sx={{ mb: { xs: 3, md: 2 } }}>
 										<AccordionSummary
 											expandIcon={<ExpandMoreIcon />}
 											aria-controls='panel5a-content'
 											id='panel5a-header'>
-											<Typography variant='h6'>
+											<Typography
+												variant='h6'
+												sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}>
 												Can I get term insurance if I have health issues?
 											</Typography>
 										</AccordionSummary>
 										<AccordionDetails>
-											<Typography>
+											<Typography
+												sx={{
+													fontSize: { xs: "0.9rem", md: "1rem" },
+													lineHeight: 1.6,
+												}}>
 												Yes, it's possible to get term insurance even if you
 												have health issues, though it may affect your premiums
 												or coverage options. Insurance companies categorize
@@ -2155,7 +2352,10 @@ const TermInsurancePage = () => {
 									</Accordion>
 
 									<Box sx={{ mt: 4, textAlign: "center" }}>
-										<Typography variant='body1' paragraph>
+										<Typography
+											variant='body1'
+											paragraph
+											sx={{ fontSize: { xs: "0.95rem", md: "1rem" } }}>
 											Have more questions? Our insurance experts are here to
 											help.
 										</Typography>
@@ -2164,7 +2364,8 @@ const TermInsurancePage = () => {
 											color='primary'
 											size='large'
 											startIcon={<ContactSupportIcon />}
-											onClick={() => handleApplyNow(true)}>
+											onClick={() => handleApplyNow(true)}
+											sx={{ mt: { xs: 2, md: 0 } }}>
 											Contact Our Support Team
 										</Button>
 									</Box>
@@ -2198,13 +2399,18 @@ const TermInsurancePage = () => {
 
 								<Grid
 									container
-									spacing={3}
+									spacing={{ xs: 4, md: 3 }}
 									alignItems='center'
 									sx={{ position: "relative", zIndex: 2 }}>
 									<Grid item xs={12} md={8}>
 										<Typography
 											variant='h3'
-											sx={{ mb: 2, fontWeight: 700, color: "white" }}>
+											sx={{
+												mb: 2,
+												fontWeight: 700,
+												color: "white",
+												fontSize: { xs: "1.6rem", md: "2rem" },
+											}}>
 											Secure Your Family's Future Today
 										</Typography>
 										<Typography
@@ -2214,11 +2420,18 @@ const TermInsurancePage = () => {
 												fontWeight: 400,
 												opacity: 0.9,
 												color: "white",
+												fontSize: { xs: "1.1rem", md: "1.3rem" },
 											}}>
 											Get comprehensive term insurance coverage at affordable
 											rates starting from just ₹500 per month.
 										</Typography>
-										<Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+										<Box
+											sx={{
+												display: "flex",
+												flexDirection: { xs: "column", sm: "row" },
+												flexWrap: "wrap",
+												gap: 2,
+											}}>
 											<Button
 												variant='contained'
 												size='large'
@@ -2230,6 +2443,7 @@ const TermInsurancePage = () => {
 													},
 													px: 4,
 													fontWeight: 600,
+													width: { xs: "100%", sm: "auto" },
 												}}
 												onClick={() => handleApplyNow(true)}>
 												Apply Now
@@ -2244,6 +2458,7 @@ const TermInsurancePage = () => {
 														borderColor: "#c6dbce",
 														bgcolor: "rgba(255,255,255,0.1)",
 													},
+													width: { xs: "100%", sm: "auto" },
 												}}
 												onClick={() => scrollToCalculator()}>
 												Calculate Coverage

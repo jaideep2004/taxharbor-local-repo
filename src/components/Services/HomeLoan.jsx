@@ -43,6 +43,7 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import AutoGraphIcon from "@mui/icons-material/AutoGraph";
 import GroupIcon from "@mui/icons-material/Group";
 import SavingsIcon from "@mui/icons-material/Savings";
+import MenuIcon from "@mui/icons-material/Menu";
 import "./services.css";
 
 // Theme configuration with updated colors
@@ -203,108 +204,6 @@ const HomeLoanPage = () => {
 	// Additional state for tab height
 	const [tabHeight, setTabHeight] = useState(0);
 
-	// First, add a new useEffect for scroll tracking to update active tab based on section visibility
-	useEffect(() => {
-		const handleScroll = () => {
-			// Get all section elements with their positions
-			const sections = [
-				{ ref: aboutLoanRef, index: 0 },
-				{ ref: typesLoanRef, index: 1 },
-				{ ref: featuresRef, index: 2 },
-				{ ref: eligibilityRef, index: 3 },
-				{ ref: faqsRef, index: 4 },
-			];
-
-			// Add calculator section (Apply Now tab)
-			const calculatorIndex = service?.packages?.length > 0 ? 6 : 5;
-			sections.push({ ref: calculatorRef, index: calculatorIndex });
-
-			// Add packages section if it exists
-			if (service?.packages?.length > 0) {
-				sections.push({ ref: packagesRef, index: 5 });
-			}
-
-			// Get current scroll position with a buffer
-			const scrollPosition = window.scrollY + 150; // Reduced buffer for better precision
-
-			// Get the height of the viewport
-			const viewportHeight = window.innerHeight;
-
-			// Get the height of the document
-			const documentHeight = document.documentElement.scrollHeight;
-
-			// Check if we're at the bottom of the page
-			const isAtBottom =
-				window.innerHeight + window.scrollY >= documentHeight - 100;
-
-			// Find the current visible section
-			let currentSection = 0; // Default to the first tab
-
-			// Sort sections by their position to ensure proper order when scrolling
-			const sortedSections = [...sections].sort((a, b) => {
-				if (!a.ref?.current || !b.ref?.current) return 0;
-				return a.ref.current.offsetTop - b.ref.current.offsetTop;
-			});
-
-			// Find the section that is currently in view
-			for (const section of sortedSections) {
-				if (section.ref && section.ref.current) {
-					const sectionTop = section.ref.current.offsetTop;
-					const sectionHeight = section.ref.current.offsetHeight;
-					const sectionBottom = sectionTop + sectionHeight;
-
-					// Check if the section is currently visible in the viewport
-					if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
-						currentSection = section.index;
-						break;
-					}
-				}
-			}
-
-			// Special case: if at bottom of page, select the last tab (Apply Now/Calculator)
-			if (isAtBottom) {
-				currentSection = calculatorIndex;
-			}
-
-			// Only update the active tab if it's different (prevent unnecessary re-renders)
-			if (currentSection !== activeTab) {
-				setActiveTab(currentSection);
-			}
-		};
-
-		// Add scroll event listener with throttling to improve performance
-		let scrollTimeout;
-		const throttledScroll = () => {
-			if (!scrollTimeout) {
-				scrollTimeout = setTimeout(() => {
-					handleScroll();
-					scrollTimeout = null;
-				}, 100); // 100ms throttle
-			}
-		};
-
-		window.addEventListener("scroll", throttledScroll);
-
-		// Run once on mount to set initial active tab
-		handleScroll();
-
-		// Clean up event listener
-		return () => {
-			window.removeEventListener("scroll", throttledScroll);
-			clearTimeout(scrollTimeout);
-		};
-	}, [
-		aboutLoanRef,
-		typesLoanRef,
-		featuresRef,
-		eligibilityRef,
-		faqsRef,
-		calculatorRef,
-		packagesRef,
-		service,
-		activeTab, // Add activeTab to dependencies
-	]);
-
 	// Scroll listener for fixed tabs
 	useEffect(() => {
 		const handleScroll = () => {
@@ -321,20 +220,34 @@ const HomeLoanPage = () => {
 					document
 						.getElementById("tabs-spacer")
 						?.classList.add("active-spacer");
+					
+					// Don't automatically close the sidebar if it was manually opened
+					// Only keep it closed if it was already closed
+					if (isMobile && !tabsContainer.classList.contains("sidebar-open")) {
+						tabsContainer.classList.remove("sidebar-open");
+					}
 				} else {
 					tabsContainer.classList.remove("fixed-tabs");
 					document
 						.getElementById("tabs-spacer")
 						?.classList.remove("active-spacer");
+					
+					// Don't automatically open sidebar when scrolling back to top
+					if (isMobile) {
+						tabsContainer.classList.remove("sidebar-open");
+					}
 				}
 			}
 		};
 
 		window.addEventListener("scroll", handleScroll);
+		// Run once on mount to set initial state
+		handleScroll();
+		
 		return () => {
 			window.removeEventListener("scroll", handleScroll);
 		};
-	}, [tabHeight]);
+	}, [tabHeight, isMobile]);
 
 	// Fetch service data from backend
 	useEffect(() => {
@@ -644,6 +557,35 @@ const HomeLoanPage = () => {
 	return (
 		<ThemeProvider theme={theme}>
 			<Box className='borrow-loan-page' style={{ marginTop: "100px" }}>
+				{/* Mobile tab toggle button - Always visible and outside the tab container */}
+				{isMobile && (
+					<Box
+						className="mobile-tab-toggle"
+						onClick={() => {
+							const tabsContainer = document.getElementById('sticky-tabs-container');
+							tabsContainer?.classList.toggle('sidebar-open');
+						}}
+						sx={{
+							position: "fixed !important",
+							top: "64px !important",
+							left: "0 !important",
+							width: "40px !important",
+							height: "40px !important",
+							backgroundColor: "#1e4a30 !important",
+							color: "white !important", 
+							zIndex: "9999 !important",
+							display: "flex !important",
+							alignItems: "center !important",
+							justifyContent: "center !important",
+							borderRadius: "0 4px 4px 0 !important",
+							boxShadow: "2px 2px 5px rgba(0,0,0,0.2) !important",
+							cursor: "pointer !important"
+						}}
+					>
+						<MenuIcon />
+					</Box>
+				)}
+				
 				{/* Hero Section - Redesigned with enhanced visuals */}
 				<Box
 					ref={heroRef}
@@ -657,7 +599,7 @@ const HomeLoanPage = () => {
 						backgroundPosition: "center",
 						backgroundRepeat: "no-repeat",
 						borderBottom: "5px solid #1e4a30",
-						pt: 4,
+						pt: { xs: 8, md: 4 },
 						pb: 3,
 						"&::before": {
 							content: '""',
@@ -680,25 +622,27 @@ const HomeLoanPage = () => {
 						<Box
 							sx={{
 								boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-								borderRadius: "0 8px 8px 8px",
+								borderRadius: { xs: "8px", md: "0 8px 8px 8px" },
 								overflow: "hidden",
+								mx: { xs: 1, md: 0 }
 							}}>
 							<HeroPaper
 								sx={{
-									borderLeft: "4px solid #1e4a30",
-									borderRadius: "0 8px 0 0", // Only top-right radius
+									borderLeft: { xs: "none", md: "4px solid #1e4a30" },
+									borderRadius: { xs: "8px 8px 0 0", md: "0 8px 0 0" },
 									boxShadow: "none", // Remove shadow from this component
 									my: 0, // No vertical margin
 									mb: 0,
 									p: { xs: 2, md: 4 },
 									backgroundColor: "rgba(255,255,255,0.95)",
+									flexDirection: { xs: "column", md: "row" }
 								}}>
 								<Box sx={{ flex: 1, textAlign: { xs: "center", md: "left" } }}>
 									<Typography
 										variant='h1'
 										color='primary'
 										sx={{
-											fontSize: { xs: "2.2rem", md: "2.8rem" },
+											fontSize: { xs: "1.8rem", sm: "2.2rem", md: "2.8rem" },
 											fontWeight: 700,
 											position: "relative",
 											paddingBottom: "10px",
@@ -729,6 +673,7 @@ const HomeLoanPage = () => {
 										alignItems: "center",
 										gap: 2,
 										mt: { xs: 2, md: 0 },
+										width: { xs: "100%", md: "auto" }
 									}}>
 									<Box
 										sx={{
@@ -738,11 +683,12 @@ const HomeLoanPage = () => {
 											px: 3,
 											py: 1,
 											textAlign: "center",
+											width: { xs: "100%", md: "auto" }
 										}}>
 										<Typography
 											variant='h2'
-											sx={{ fontWeight: 700, color: "#ff4081" }}>
-											{service?.interestRate || interestRate}%
+											sx={{ fontWeight: 700, color: "#ff4081", fontSize: { xs: "1.8rem", md: "2.2rem" } }}>
+											8.1% - 13.5%
 										</Typography>
 										<Typography variant='body2' color='text.secondary'>
 											Rate of Interest
@@ -754,6 +700,7 @@ const HomeLoanPage = () => {
 											display: "flex",
 											flexDirection: { xs: "column", sm: "row" },
 											gap: 2,
+											width: { xs: "100%", md: "auto" }
 										}}>
 										<Button
 											variant='contained'
@@ -807,11 +754,13 @@ const HomeLoanPage = () => {
 									ml: "4px",
 									justifyContent: "space-between",
 									position: "relative",
+									width: "100%",
+									overflowX: { xs: "auto", md: "visible" },
 								}}>
 								<style jsx='true'>{`
 									.fixed-tabs {
 										position: fixed;
-										top: 125px;
+										top: 109px;
 										left: 0;
 										right: 0;
 										z-index: 1100;
@@ -856,13 +805,71 @@ const HomeLoanPage = () => {
 									.MuiTabs-indicator {
 										position: absolute !important;
 									}
+									
+									/* Mobile sidebar navigation */
+									@media (max-width: 768px) {
+										.fixed-tabs {
+											position: fixed;
+											top: 60px;
+											left: 0;
+											width: 180px !important; 
+											height: calc(100vh - 60px);
+											max-height: 100vh;
+											overflow-y: auto;
+											z-index: 999;
+											box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
+											background-color: #f2f6f4;
+											padding: 0;
+											transform: translateX(-100%);
+											transition: transform 0.3s ease;
+											border-radius: 0 !important;
+										}
+										
+										.fixed-tabs.sidebar-open {
+											transform: translateX(0);
+										}
+										
+										.tabs-container .MuiTabs-flexContainer {
+											flex-direction: column;
+										}
+										
+										.tabs-container .MuiTab-root {
+											border-bottom: 1px solid rgba(30,74,48,0.1);
+											text-align: left;
+											justify-content: flex-start;
+											min-height: 56px;
+											padding: 12px 15px;
+										}
+										
+										.tabs-container .MuiTabs-indicator {
+											display: none !important;
+										}
+										
+										.mobile-tab-toggle {
+											position: fixed !important;
+											top: 64px !important;
+											left: 0 !important;
+											width: 40px !important;
+											height: 40px !important;
+											background-color: #1e4a30 !important;
+											color: white !important;
+											z-index: 9999 !important;
+											display: flex !important;
+											align-items: center !important;
+											justify-content: center !important;
+											border-radius: 0 4px 4px 0 !important;
+											cursor: pointer !important;
+											box-shadow: 2px 2px 5px rgba(0,0,0,0.2) !important;
+										}
+									}
 								`}</style>
 								<StyledTabs
 									value={activeTab}
 									onChange={handleTabChange}
-									variant='fullWidth'
+									variant={isMobile ? "standard" : "fullWidth"}
 									scrollButtons={false}
-									centered
+									centered={!isMobile}
+									orientation={isMobile ? "vertical" : "horizontal"}
 									sx={{
 										"& .MuiTabs-indicator": {
 											backgroundColor: "#1e4a30",
@@ -870,46 +877,59 @@ const HomeLoanPage = () => {
 											transition: "all 0.3s ease",
 											position: "absolute",
 											bottom: 0,
+											display: { xs: "none", md: "block" }
 										},
 										"& .MuiTabs-flexContainer": {
 											width: "100%",
 											justifyContent: "space-between",
+											flexDirection: { xs: "column", md: "row" }
 										},
 										"& .MuiTab-root": {
 											transition: "all 0.3s ease",
 											position: "relative",
-											fontSize: "13px",
+											fontSize: { xs: "15px", md: "17px" },
 											minWidth: "auto",
-											padding: "15px 5px",
+											padding: { xs: "12px 15px", md: "15px 5px" },
 											textTransform: "uppercase",
-											fontWeight: 500,
+											fontWeight: 600,
 											color: "#555555",
+											backgroundColor: "#c6e9bc",
 											flex: 1,
+											textAlign: { xs: "left", md: "center" },
+											justifyContent: { xs: "flex-start", md: "center" },
 											"&::after": {
 												content: '""',
 												position: "absolute",
 												bottom: 0,
-												left: "50%",
-												width: "0%",
-												height: "3px",
+												left: { xs: 0, md: "50%" },
+												width: { xs: "4px", md: "0%" },
+												height: { xs: "100%", md: "3px" },
 												backgroundColor: "transparent",
-												transform: "translateX(-50%)",
-												transition: "width 0.3s ease",
+												transform: { xs: "none", md: "translateX(-50%)" },
+												transition: "width 0.3s ease, height 0.3s ease",
 											},
 											"&:hover": {
 												color: "#1e4a30",
 												backgroundColor: "rgba(30,74,48,0.05)",
 												"&::after": {
-													width: "30%",
+													width: { xs: "4px", md: "30%" },
+													height: { xs: "70%", md: "3px" },
 													backgroundColor: "rgba(30, 74, 48, 0.3)",
 												},
 											},
 											"&.Mui-selected": {
 												color: "#1e4a30",
 												fontWeight: "600",
+												backgroundColor: { xs: "rgba(30,74,48,0.1)", md: "#c6e9bc" },
+												"&::after": {
+													width: { xs: "4px", md: "30%" },
+													height: { xs: "70%", md: "3px" },
+													backgroundColor: "#1e4a30",
+												},
 											},
 										},
 										width: "100%",
+										height: { xs: "100%", md: "auto" }
 									}}
 									aria-label='home loan tabs'>
 									<StyledTab label='ABOUT LOAN' />
@@ -977,7 +997,7 @@ const HomeLoanPage = () => {
 										position: "absolute",
 										bottom: 0,
 										left: 0,
-										width: "80px", 
+										width: "80px",
 										height: "3px",
 										background: "#1e4a30",
 									},
@@ -1017,7 +1037,7 @@ const HomeLoanPage = () => {
 										sx={{
 											fontSize: "1.1rem",
 											lineHeight: 1.7,
-											color: "#555",
+											color: "black",
 											mb: 3,
 										}}>
 										A home loan is a financial solution that provides the funds
@@ -1085,6 +1105,7 @@ const HomeLoanPage = () => {
 								position: "relative",
 								paddingBottom: "15px",
 								marginBottom: "15px",
+								fontSize: { xs: "1.8rem", md: "2.2rem" },
 								"&::after": {
 									content: '""',
 									position: "absolute",
@@ -1104,15 +1125,16 @@ const HomeLoanPage = () => {
 							sx={{ mb: 6, maxWidth: "800px", mx: "auto", color: "#666" }}>
 							{service?.productsTagline || ""}
 						</Typography>
-						<Grid container spacing={4} style={{ justifyContent: "center" }}>
-							{loanProducts.map((product, index) => (
-								<Grid item xs={12} sm={6} md={3} key={index}>
+						
+						{/* Mobile view uses a different approach with no grid spacing to prevent overlap */}
+						{isMobile ? (
+							<Box sx={{ px: 1 }}>
+								{loanProducts.map((product, index) => (
 									<Card
+										key={index}
 										sx={{
-											height: "100%",
 											display: "flex",
 											flexDirection: "column",
-
 											boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
 											transition: "transform 0.3s ease, box-shadow 0.3s ease",
 											borderRadius: "8px",
@@ -1122,6 +1144,8 @@ const HomeLoanPage = () => {
 												transform: "translateY(-5px)",
 												boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
 											},
+											mb: 5, // Large fixed bottom margin to ensure no overlap
+											mx: 1,  // Side margin
 										}}>
 										<CardContent sx={{ p: 3, flexGrow: 1 }}>
 											<Box
@@ -1136,7 +1160,7 @@ const HomeLoanPage = () => {
 													fontWeight: 600,
 													textAlign: "center",
 													color: "#1e4a30",
-													fontSize: "1.3rem",
+													fontSize: { xs: "1.1rem", md: "1.3rem" },
 													mb: 2,
 												}}>
 												{product.title}
@@ -1145,17 +1169,73 @@ const HomeLoanPage = () => {
 												variant='body2'
 												color='text.secondary'
 												sx={{
-													fontSize: "0.95rem",
+													fontSize: { xs: "0.95rem", md: "1.06rem" },
+													color: "black",
 													lineHeight: 1.6,
 													textAlign: "center",
+													mb: 2,
 												}}>
 												{product.description}
 											</Typography>
 										</CardContent>
 									</Card>
-								</Grid>
-							))}
-						</Grid>
+								))}
+							</Box>
+						) : (
+							<Grid container spacing={4} style={{ justifyContent: "center" }}>
+								{loanProducts.map((product, index) => (
+									<Grid item xs={12} sm={6} md={3} key={index}>
+										<Card
+											sx={{
+												height: "100%",
+												display: "flex",
+												flexDirection: "column",
+												boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
+												transition: "transform 0.3s ease, box-shadow 0.3s ease",
+												borderRadius: "8px",
+												border: "1px solid #eaeaea",
+												overflow: "hidden",
+												"&:hover": {
+													transform: "translateY(-5px)",
+													boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
+												},
+											}}>
+											<CardContent sx={{ p: 3, flexGrow: 1 }}>
+												<Box
+													sx={{ mb: 2.5, color: "#ff4081", textAlign: "center" }}>
+													{product.icon || <MoneyIcon fontSize='large' />}
+												</Box>
+												<Typography
+													variant='h5'
+													component='h3'
+													gutterBottom
+													sx={{
+														fontWeight: 600,
+														textAlign: "center",
+														color: "#1e4a30",
+														fontSize: { xs: "1.1rem", md: "1.3rem" },
+														mb: 2,
+													}}>
+													{product.title}
+												</Typography>
+												<Typography
+													variant='body2'
+													color='text.secondary'
+													sx={{
+														fontSize: { xs: "0.95rem", md: "1.06rem" },
+														color: "black",
+														lineHeight: 1.6,
+														textAlign: "center",
+														mb: 2,
+													}}>
+													{product.description}
+												</Typography>
+											</CardContent>
+										</Card>
+									</Grid>
+								))}
+							</Grid>
+						)}
 					</Container>
 				</Box>
 
@@ -1240,6 +1320,7 @@ const HomeLoanPage = () => {
 								color: "#1e4a30",
 								position: "relative",
 								paddingBottom: "15px",
+								fontSize: { xs: "1.8rem", md: "2.2rem" },
 								"&::after": {
 									content: '""',
 									position: "absolute",
@@ -1256,12 +1337,19 @@ const HomeLoanPage = () => {
 						<Typography
 							variant='subtitle1'
 							align='center'
-							sx={{ mb: 6, maxWidth: "800px", mx: "auto", color: "#666" }}>
+							sx={{ 
+								mb: 6, 
+								maxWidth: "800px", 
+								mx: "auto", 
+								color: "#666",
+								px: { xs: 2, md: 0 },
+								fontSize: { xs: "0.95rem", md: "1.1rem" }
+							}}>
 							{service?.featuresTagline || ""}
 						</Typography>
 						<Grid
 							container
-							spacing={4}
+							spacing={{ xs: 2, md: 4 }}
 							alignItems='stretch'
 							justifyContent='center'>
 							{loanFeatures.map((feature, index) => (
@@ -1271,11 +1359,11 @@ const HomeLoanPage = () => {
 									sm={6}
 									md={3}
 									key={index}
-									sx={{ display: "flex", marginBottom: "50px" }}>
+									sx={{ display: "flex", marginBottom: { xs: "30px", md: "50px" } }}>
 									<Box
 										sx={{
 											textAlign: "center",
-											padding: 3,
+											padding: { xs: 2, md: 3 },
 											transition: "all 0.3s ease",
 											borderRadius: "8px",
 											border: "1px solid #eaeaea",
@@ -1285,7 +1373,6 @@ const HomeLoanPage = () => {
 											display: "flex",
 											flexDirection: "column",
 											alignItems: "center",
-
 											"&:hover": {
 												transform: "translateY(-5px)",
 												backgroundColor: "#f5f9f6",
@@ -1296,7 +1383,6 @@ const HomeLoanPage = () => {
 										<Box
 											sx={{
 												mb: 3,
-
 												color: "#ff4081",
 												display: "inline-flex",
 												p: 2.5,
@@ -1320,7 +1406,7 @@ const HomeLoanPage = () => {
 												fontWeight: 600,
 												color: "#1e4a30",
 												mb: 2,
-												fontSize: "1.3rem",
+												fontSize: { xs: "1.1rem", md: "1.3rem" },
 											}}>
 											{feature.title}
 										</Typography>
@@ -1328,7 +1414,8 @@ const HomeLoanPage = () => {
 											variant='body2'
 											color='text.secondary'
 											sx={{
-												fontSize: "0.95rem",
+												fontSize: { xs: "0.95rem", md: "1.06rem" },
+												color: "black",
 												lineHeight: 1.6,
 												flexGrow: 1,
 											}}>
@@ -1374,6 +1461,7 @@ const HomeLoanPage = () => {
 								position: "relative",
 								paddingBottom: "15px",
 								marginBottom: "15px",
+								fontSize: { xs: "1.8rem", md: "2.2rem" },
 								"&::after": {
 									content: '""',
 									position: "absolute",
@@ -1390,346 +1478,24 @@ const HomeLoanPage = () => {
 						<Typography
 							variant='body1'
 							align='center'
-							sx={{ mb: 5, maxWidth: "800px", mx: "auto", color: "#666" }}>
-							{service?.eligibilityText || ""}
-						</Typography>
-						<Grid container spacing={4} justifyContent='center'>
-							{(
-								service?.eligibilityCriteria || [
-									{
-										title: "Age",
-										description:
-											"<ul style='list-style-type: disc; padding-left: 20px; margin-top: 8px;text-align:left;'>" +
-											"<li>Minimum age: 21 years</li>" +
-											"<li>Maximum age: 60 years for salaried individuals and 65 years for self-employed applicants.</li>" +
-											"</ul>",
-									},
-									{
-										title: "Income",
-										description:
-											"<ul style='list-style-type: disc; padding-left: 20px; margin-top: 8px;text-align:left;'>" +
-											"<li>Salaried individuals: Stable monthly income with proof of employment.</li>" +
-											"<li>Self-employed: Consistent annual income supported by financial records.</li>" +
-											"</ul>",
-									},
-									{
-										title: "Credit Score",
-										description:
-											"A credit score of 700 or above enhances approval chances and offers better loan terms.",
-									},
-									{
-										title: " Employment History ",
-										description:
-											"<ul style='list-style-type: disc; padding-left: 20px; margin-top: 8px;text-align:left;'>" +
-											"<li>Salaried applicants: Minimum 6–12 months in current job.</li>" +
-											"<li>Self-employed applicants: At least 2–3 years of stable business operations.</li>" +
-											"</ul>",
-									},
-									{
-										title: " Property Requirements",
-										description:
-											"The property should comply with regulatory approvals and be free from legal disputes.",
-									},
-								]
-							).map((criteria, index) => (
-								<Grid item xs={12} sm={6} md={4} key={index}>
-									<Card
-										sx={{
-											boxShadow: "0 3px 10px rgba(0,0,0,0.06)",
-											height: "100%",
-											borderRadius: "8px",
-											transition: "transform 0.3s ease, box-shadow 0.3s ease",
-											"&:hover": {
-												transform: "translateY(-5px)",
-												boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
-											},
-										}}>
-										<CardContent sx={{ p: 3 }}>
-											<Typography
-												variant='h5'
-												gutterBottom
-												sx={{
-													fontWeight: 600,
-													color: "#1e4a30",
-													textAlign: "center",
-													position: "relative",
-													paddingBottom: "10px",
-													marginBottom: "15px",
-													"&::after": {
-														content: '""',
-														position: "absolute",
-														bottom: 0,
-														left: "50%",
-														transform: "translateX(-50%)",
-														width: "40px",
-														height: "2px",
-														background: "#8cc63f",
-													},
-												}}>
-												{criteria.title}
-											</Typography>
-											<Typography
-												variant='body1'
-												sx={{
-													textAlign: "center",
-													color: "#555",
-												}}
-												dangerouslySetInnerHTML={{
-													__html: criteria.description,
-												}}
-											/>
-										</CardContent>
-									</Card>
-								</Grid>
-							))}
-						</Grid>
-					</Container>
-				</Box>
-
-				{/* FAQ Section - Updated to match reference */}
-				<Box
-					sx={{
-						py: 7,
-						bgcolor: "#ffffff",
-					}}
-					ref={faqsRef}
-					className='section-container'>
-					<Container maxWidth='lg'>
-						<Typography
-							variant='h3'
-							gutterBottom
-							color='primary'
-							align='center'
-							sx={{
-								fontWeight: 700,
-								color: "#1e4a30",
-								position: "relative",
-								paddingBottom: "15px",
-								marginBottom: "15px",
-								"&::after": {
-									content: '""',
-									position: "absolute",
-									bottom: 0,
-									left: "50%",
-									transform: "translateX(-50%)",
-									width: "80px",
-									height: "3px",
-									background: "#1e4a30",
-								},
+							sx={{ 
+								mb: 5, 
+								maxWidth: "800px", 
+								mx: "auto", 
+								color: "#666",
+								fontSize: "1.1rem",
 							}}>
-							Frequently Ask Questions
+							Choose the package that best fits your needs
 						</Typography>
-						<Typography
-							variant='body1'
-							align='center'
-							sx={{ mb: 5, maxWidth: "900px", mx: "auto", color: "#666" }}>
-							{service?.faqTagline || ""}
-						</Typography>
-
-						{/* Two column FAQ layout */}
-						<Grid container spacing={3}>
-							{/* Left Column */}
-							<Grid item xs={12} md={6}>
-								{faqs.slice(0, Math.ceil(faqs.length / 2)).map((faq, index) => (
-									<Accordion
-										key={index}
-										expanded={expanded === index}
-										onChange={() =>
-											setExpanded(expanded === index ? false : index)
-										}
-										sx={{
-											mb: 2,
-											boxShadow: "none",
-											"&:before": {
-												display: "none",
-											},
-											border: "1px solid #e0e0e0",
-											borderRadius: "8px !important", // Important to override default
-											overflow: "hidden",
-											position: "relative",
-											"&::before":
-												expanded === index
-													? {
-															content: '""',
-															position: "absolute",
-															left: 0,
-															top: 0,
-															height: "100%",
-															width: "4px",
-															background:
-																"linear-gradient(to bottom, #1e4a30, #8cc63f)",
-															borderRadius: "4px 0 0 4px",
-													  }
-													: {},
-										}}>
-										<AccordionSummary
-											expandIcon={
-												<ExpandMoreIcon
-													sx={{
-														color: expanded === index ? "#1e4a30" : "#666",
-													}}
-												/>
-											}
-											sx={{
-												backgroundColor:
-													expanded === index ? "rgba(30,74,48,0.05)" : "#fff",
-												borderBottom:
-													expanded === index
-														? "1px solid rgba(30,74,48,0.1)"
-														: "none",
-												borderRadius: "8px",
-												transition: "all 0.3s ease",
-												"& .MuiAccordionSummary-content": {
-													margin: "12px 0",
-												},
-												"&:hover": {
-													backgroundColor:
-														expanded === index
-															? "rgba(30,74,48,0.07)"
-															: "rgba(30,74,48,0.02)",
-												},
-											}}>
-											<Typography
-												variant='h6'
-												sx={{
-													fontSize: "1.1rem",
-													fontWeight: 600,
-													color: expanded === index ? "#1e4a30" : "#333",
-													pl: expanded === index ? 1 : 0,
-													transition: "all 0.3s ease",
-												}}>
-												{faq.question}
-											</Typography>
-										</AccordionSummary>
-										<AccordionDetails
-											sx={{
-												p: 3,
-												backgroundColor: "rgba(248,250,249,0.7)",
-												borderTop: "1px solid rgba(30,74,48,0.05)",
-											}}>
-											<Typography
-												variant='body1'
-												sx={{
-													color: "#555",
-													lineHeight: 1.7,
-												}}
-												dangerouslySetInnerHTML={{ __html: faq.answer }}
-											/>
-										</AccordionDetails>
-									</Accordion>
-								))}
-							</Grid>
-
-							{/* Right Column */}
-							<Grid item xs={12} md={6}>
-								{faqs.slice(Math.ceil(faqs.length / 2)).map((faq, index) => {
-									// Adjust index for the right column
-									const actualIndex = index + Math.ceil(faqs.length / 2);
-									return (
-										<Accordion
-											key={actualIndex}
-											expanded={expanded === actualIndex}
-											onChange={() =>
-												setExpanded(
-													expanded === actualIndex ? false : actualIndex
-												)
-											}
-											sx={{
-												mb: 2,
-												boxShadow: "none",
-												"&:before": {
-													display: "none",
-												},
-												border: "1px solid #e0e0e0",
-												borderRadius: "8px !important",
-												overflow: "hidden",
-												position: "relative",
-												"&::before":
-													expanded === actualIndex
-														? {
-																content: '""',
-																position: "absolute",
-																left: 0,
-																top: 0,
-																height: "100%",
-																width: "4px",
-																background:
-																	"linear-gradient(to bottom, #1e4a30, #8cc63f)",
-																borderRadius: "4px 0 0 4px",
-														  }
-														: {},
-											}}>
-											<AccordionSummary
-												expandIcon={
-													<ExpandMoreIcon
-														sx={{
-															color:
-																expanded === actualIndex ? "#1e4a30" : "#666",
-														}}
-													/>
-												}
-												sx={{
-													backgroundColor:
-														expanded === actualIndex
-															? "rgba(30,74,48,0.05)"
-															: "#fff",
-													borderBottom:
-														expanded === actualIndex
-															? "1px solid rgba(30,74,48,0.1)"
-															: "none",
-													borderRadius: "8px",
-													transition: "all 0.3s ease",
-													"& .MuiAccordionSummary-content": {
-														margin: "12px 0",
-													},
-													"&:hover": {
-														backgroundColor:
-															expanded === actualIndex
-																? "rgba(30,74,48,0.07)"
-																: "rgba(30,74,48,0.02)",
-													},
-												}}>
-												<Typography
-													variant='h6'
-													sx={{
-														fontSize: "1.1rem",
-														fontWeight: 600,
-														color:
-															expanded === actualIndex ? "#1e4a30" : "#333",
-														pl: expanded === actualIndex ? 1 : 0,
-														transition: "all 0.3s ease",
-													}}>
-													{faq.question}
-												</Typography>
-											</AccordionSummary>
-											<AccordionDetails
-												sx={{
-													p: 3,
-													backgroundColor: "rgba(248,250,249,0.7)",
-													borderTop: "1px solid rgba(30,74,48,0.05)",
-												}}>
-												<Typography
-													variant='body1'
-													sx={{
-														color: "#555",
-														lineHeight: 1.7,
-													}}
-													dangerouslySetInnerHTML={{ __html: faq.answer }}
-												/>
-											</AccordionDetails>
-										</Accordion>
-									);
-								})}
-							</Grid>
-						</Grid>
 					</Container>
 				</Box>
-
+				
 				{/* Packages Section - only shown if service has packages */}
 				{service && service.packages && service.packages.length > 0 && (
 					<Box
 						sx={{
 							pt: 8,
+							pb: { xs: 5, md: 8 },
 							bgcolor: "white",
 							position: "relative",
 							"&::before": {
@@ -1758,6 +1524,7 @@ const HomeLoanPage = () => {
 										position: "relative",
 										display: "inline-block",
 										pb: 2,
+										fontSize: { xs: "1.8rem", md: "2.2rem" },
 										"&::after": {
 											content: '""',
 											position: "absolute",
@@ -1778,149 +1545,306 @@ const HomeLoanPage = () => {
 										mb: 6,
 										maxWidth: "800px",
 										mx: "auto",
-										fontSize: "1.1rem",
+										fontSize: { xs: "0.95rem", md: "1.1rem" },
+										px: { xs: 2, md: 0 },
 									}}>
 									Choose the package that best fits your needs
 								</Typography>
 							</Box>
 
-							<Grid container spacing={4} justifyContent='center'>
-								{service.packages.map((pkg, index) => (
-									<Grid
-										item
-										xs={12}
-										sm={6}
-										md={4}
-										key={index}
-										data-aos='fade-up'
-										data-aos-delay={index * 150}>
+							{/* Mobile view: vertical stack to prevent overlap */}
+							{isMobile ? (
+								<Box sx={{ px: 2 }}>
+									{service.packages.map((pkg, index) => (
 										<Paper
 											elevation={3}
+											key={index}
 											sx={{
-												height: "100%",
 												display: "flex",
 												flexDirection: "column",
 												position: "relative",
 												borderRadius: "16px",
-												border:
-													index === 1
-														? `2px solid ${theme.palette.primary.main}`
-														: "none",
+												border: index === 1 ? `2px solid ${theme.palette.primary.main}` : "none",
 												transition: "transform 0.3s ease, box-shadow 0.3s ease",
 												p: 4,
+												mb: 5, // Large bottom margin to prevent overlap
 												"&:hover": {
 													transform: "translateY(-10px)",
 													boxShadow: "0 20px 30px rgba(0,0,0,0.1)",
 												},
 											}}>
-											{index === 1 && (
-												<Box
-													sx={{
-														position: "absolute",
-														top: "-15px",
-														left: "50%",
-														transform: "translateX(-50%)",
-														bgcolor: theme.palette.primary.main,
-														color: "white",
-														py: 0.5,
-														px: 3,
-														borderRadius: "30px",
-														fontWeight: "bold",
-														boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+												{index === 1 && (
+													<Box
+														sx={{
+															position: "absolute",
+															top: "-15px",
+															left: "50%",
+															transform: "translateX(-50%)",
+															bgcolor: theme.palette.primary.main,
+															color: "white",
+															py: 0.5,
+															px: 3,
+															borderRadius: "30px",
+															fontWeight: "bold",
+															boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+														}}>
+															<Typography variant='body2' fontWeight='bold'>
+																Most Popular
+															</Typography>
+														</Box>
+												)}
+
+												<Typography
+													variant='h5'
+													gutterBottom
+													color='primary'
+													sx={{ 
+														fontWeight: 700, 
+														mb: 2,
+														fontSize: { xs: "1.2rem", md: "1.5rem" },
 													}}>
-													<Typography variant='body2' fontWeight='bold'>
-														Most Popular
+														{pkg.name}
 													</Typography>
+
+													<Typography
+														variant='body2'
+														paragraph
+														sx={{ 
+															mb: 3, 
+															flexGrow: 1, 
+															color: "text.secondary",
+															fontSize: { xs: "0.9rem", md: "1rem" },
+														}}>
+														{pkg.description}
+													</Typography>
+
+													<Box
+														sx={{ display: "flex", alignItems: "baseline", mb: 3 }}>
+														<Typography
+															variant='h3'
+															component='span'
+															sx={{ 
+																fontWeight: 700, 
+																color: "primary.main",
+																fontSize: { xs: "1.8rem", md: "2.2rem" },
+															}}>
+																₹{pkg.salePrice || pkg.actualPrice}
+															</Typography>
+															{pkg.salePrice &&
+																pkg.actualPrice &&
+																pkg.salePrice < pkg.actualPrice && (
+																	<Typography
+																		component='span'
+																		sx={{
+																			textDecoration: "line-through",
+																			color: "text.secondary",
+																			fontSize: { xs: "0.9rem", md: "1rem" },
+																			ml: 1,
+																		}}>
+																		₹{pkg.actualPrice}
+																		</Typography>
+																)}
+														</Box>
+
+														<Divider sx={{ my: 2 }} />
+
+														{pkg.features && pkg.features.length > 0 && (
+															<List dense sx={{ mb: 3 }}>
+																{pkg.features.map((feature, idx) => (
+																	<ListItem key={idx} disableGutters sx={{ pb: 1 }}>
+																		<ListItemIcon sx={{ minWidth: 30 }}>
+																			<CheckCircleIcon
+																				sx={{
+																					color: "primary.main",
+																					fontSize: "1rem",
+																				}}
+																			/>
+																		</ListItemIcon>
+																		<ListItemText
+																			primary={feature}
+																			primaryTypographyProps={{ 
+																				variant: "body2",
+																				fontSize: { xs: "0.9rem", md: "1rem" },
+																			}}
+																		/>
+																	</ListItem>
+																))}
+															</List>
+														)}
+
+														<Button
+															variant='contained'
+															color='primary'
+															fullWidth
+															onClick={() => handlePackageSelect(pkg)}
+															endIcon={<ArrowForwardIcon />}
+															sx={{
+																mt: "auto",
+																py: 1.5,
+																borderRadius: "30px",
+																fontWeight: 600,
+																boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+																"&:hover": {
+																	boxShadow: "0 6px 15px rgba(0,0,0,0.2)",
+																},
+															}}>
+															Select Package
+														</Button>
+													</Paper>
+												))}
+											</Box>
+										) : (
+											<Grid container spacing={4} justifyContent='center'>
+												{service.packages.map((pkg, index) => (
+													<Grid
+														item
+														xs={12}
+														sm={6}
+														md={4}
+														key={index}
+														data-aos='fade-up'
+														data-aos-delay={index * 150}>
+														<Paper
+															elevation={3}
+															sx={{
+																height: "100%",
+																display: "flex",
+																flexDirection: "column",
+																position: "relative",
+																borderRadius: "16px",
+																border:
+																	index === 1
+																		? `2px solid ${theme.palette.primary.main}`
+																		: "none",
+																transition: "transform 0.3s ease, box-shadow 0.3s ease",
+																p: 4,
+																"&:hover": {
+																	transform: "translateY(-10px)",
+																	boxShadow: "0 20px 30px rgba(0,0,0,0.1)",
+																},
+															}}>
+																{index === 1 && (
+																	<Box
+																		sx={{
+																			position: "absolute",
+																			top: "-15px",
+																			left: "50%",
+																			transform: "translateX(-50%)",
+																			bgcolor: theme.palette.primary.main,
+																			color: "white",
+																			py: 0.5,
+																			px: 3,
+																			borderRadius: "30px",
+																			fontWeight: "bold",
+																			boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+																		}}>
+																		<Typography variant='body2' fontWeight='bold'>
+																			Most Popular
+																		</Typography>
+																	</Box>
+																)}
+
+																<Typography
+																	variant='h5'
+																	gutterBottom
+																	color='primary'
+																	sx={{ 
+																		fontWeight: 700, 
+																		mb: 2,
+																		fontSize: { xs: "1.2rem", md: "1.5rem" },
+																	}}>
+																		{pkg.name}
+																	</Typography>
+
+																	<Typography
+																		variant='body2'
+																		paragraph
+																		sx={{ 
+																			mb: 3, 
+																			flexGrow: 1, 
+																			color: "text.secondary",
+																			fontSize: { xs: "0.9rem", md: "1rem" },
+																		}}>
+																		{pkg.description}
+																	</Typography>
+
+																	<Box
+																		sx={{ display: "flex", alignItems: "baseline", mb: 3 }}>
+																		<Typography
+																			variant='h3'
+																			component='span'
+																			sx={{ 
+																				fontWeight: 700, 
+																				color: "primary.main",
+																				fontSize: { xs: "1.8rem", md: "2.2rem" },
+																			}}>
+																					₹{pkg.salePrice || pkg.actualPrice}
+																			</Typography>
+																		{pkg.salePrice &&
+																			pkg.actualPrice &&
+																			pkg.salePrice < pkg.actualPrice && (
+																				<Typography
+																					component='span'
+																					sx={{
+																						textDecoration: "line-through",
+																						color: "text.secondary",
+																						fontSize: { xs: "0.9rem", md: "1rem" },
+																						ml: 1,
+																					}}>
+																						₹{pkg.actualPrice}
+																					</Typography>
+																				)}
+																		</Box>
+
+																		<Divider sx={{ my: 2 }} />
+
+																		{pkg.features && pkg.features.length > 0 && (
+																			<List dense sx={{ mb: 3 }}>
+																				{pkg.features.map((feature, idx) => (
+																					<ListItem key={idx} disableGutters sx={{ pb: 1 }}>
+																						<ListItemIcon sx={{ minWidth: 30 }}>
+																							<CheckCircleIcon
+																								sx={{
+																									color: "primary.main",
+																									fontSize: "1rem",
+																								}}
+																							/>
+																						</ListItemIcon>
+																						<ListItemText
+																							primary={feature}
+																							primaryTypographyProps={{ variant: "body2" }}
+																						/>
+																					</ListItem>
+																				))}
+																			</List>
+																		)}
+
+																		<Button
+																			variant='contained'
+																			color='primary'
+																			fullWidth
+																			onClick={() => handlePackageSelect(pkg)}
+																			endIcon={<ArrowForwardIcon />}
+																			sx={{
+																				mt: "auto",
+																				py: 1.5,
+																				borderRadius: "30px",
+																				fontWeight: 600,
+																				boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+																				"&:hover": {
+																					boxShadow: "0 6px 15px rgba(0,0,0,0.2)",
+																				},
+																			}}>
+																				Select Package
+																			</Button>
+																		</Paper>
+																	</Grid>
+																))}
+															</Grid>
+														)}
+													</Container>
 												</Box>
 											)}
-
-											<Typography
-												variant='h5'
-												gutterBottom
-												color='primary'
-												sx={{ fontWeight: 700, mb: 2 }}>
-												{pkg.name}
-											</Typography>
-
-											<Typography
-												variant='body2'
-												paragraph
-												sx={{ mb: 3, flexGrow: 1, color: "text.secondary" }}>
-												{pkg.description}
-											</Typography>
-
-											<Box
-												sx={{ display: "flex", alignItems: "baseline", mb: 3 }}>
-												<Typography
-													variant='h3'
-													component='span'
-													sx={{ fontWeight: 700, color: "primary.main" }}>
-													₹{pkg.salePrice || pkg.actualPrice}
-												</Typography>
-												{pkg.salePrice &&
-													pkg.actualPrice &&
-													pkg.salePrice < pkg.actualPrice && (
-														<Typography
-															component='span'
-															sx={{
-																textDecoration: "line-through",
-																color: "text.secondary",
-																fontSize: "1rem",
-																ml: 1,
-															}}>
-															₹{pkg.actualPrice}
-														</Typography>
-													)}
-											</Box>
-
-											<Divider sx={{ my: 2 }} />
-
-											{pkg.features && pkg.features.length > 0 && (
-												<List dense sx={{ mb: 3 }}>
-													{pkg.features.map((feature, idx) => (
-														<ListItem key={idx} disableGutters sx={{ pb: 1 }}>
-															<ListItemIcon sx={{ minWidth: 30 }}>
-																<CheckCircleIcon
-																	sx={{
-																		color: "primary.main",
-																		fontSize: "1rem",
-																	}}
-																/>
-															</ListItemIcon>
-															<ListItemText
-																primary={feature}
-																primaryTypographyProps={{ variant: "body2" }}
-															/>
-														</ListItem>
-													))}
-												</List>
-											)}
-
-											<Button
-												variant='contained'
-												color='primary'
-												fullWidth
-												onClick={() => handlePackageSelect(pkg)}
-												endIcon={<ArrowForwardIcon />}
-												sx={{
-													mt: "auto",
-													py: 1.5,
-													borderRadius: "30px",
-													fontWeight: 600,
-													boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-													"&:hover": {
-														boxShadow: "0 6px 15px rgba(0,0,0,0.2)",
-													},
-												}}>
-												Select Package
-											</Button>
-										</Paper>
-									</Grid>
-								))}
-							</Grid>
-						</Container>
-					</Box>
-				)}
 
 				{/* EMI Calculator Section */}
 				<Box
@@ -1945,6 +1869,7 @@ const HomeLoanPage = () => {
 								position: "relative",
 								paddingBottom: "15px",
 								marginBottom: "15px",
+								fontSize: { xs: "1.8rem", md: "2.2rem" },
 								"&::after": {
 									content: '""',
 									position: "absolute",
@@ -1962,7 +1887,14 @@ const HomeLoanPage = () => {
 							variant='body1'
 							align='center'
 							className='scroll-animation'
-							sx={{ mb: 6, maxWidth: "800px", mx: "auto", color: "#666" }}>
+							sx={{ 
+								mb: 6, 
+								maxWidth: "800px", 
+								mx: "auto", 
+								color: "#666",
+								px: { xs: 2, md: 0 },
+								fontSize: { xs: "0.95rem", md: "1.1rem" }
+							}}>
 							Use our simple calculator to estimate your monthly loan payment
 						</Typography>
 						<Grid container spacing={4} justifyContent='center'>
@@ -1970,17 +1902,23 @@ const HomeLoanPage = () => {
 								<Paper
 									className='calculator-form'
 									sx={{
-										p: 4,
+										p: { xs: 3, md: 4 },
 										borderRadius: "8px",
 										boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
 										border: "1px solid #e8e8e8",
 										overflow: "hidden",
+										mx: { xs: 2, md: 0 },
 									}}>
 									<Grid container spacing={3}>
 										<Grid item xs={12} md={6}>
 											<Typography
 												gutterBottom
-												sx={{ fontWeight: 600, color: "#333", mb: 1 }}>
+												sx={{ 
+													fontWeight: 600, 
+													color: "#333", 
+													mb: 1,
+													fontSize: { xs: "0.95rem", md: "1rem" } 
+												}}>
 												Loan Amount
 											</Typography>
 											<Slider
@@ -1997,8 +1935,8 @@ const HomeLoanPage = () => {
 														opacity: 0.3,
 													},
 													"& .MuiSlider-thumb": {
-														width: 14,
-														height: 14,
+														width: { xs: 16, md: 14 },
+														height: { xs: 16, md: 14 },
 														backgroundColor: "#fff",
 														border: "2px solid currentColor",
 														"&:focus, &:hover, &.Mui-active, &.Mui-focusVisible":
@@ -2038,8 +1976,8 @@ const HomeLoanPage = () => {
 											<Slider
 												value={interestRate}
 												onChange={(e, newValue) => setInterestRate(newValue)}
-												min={5}
-												max={20}
+												min={8.1}
+												max={13.5}
 												step={0.1}
 												valueLabelDisplay='auto'
 												sx={{
